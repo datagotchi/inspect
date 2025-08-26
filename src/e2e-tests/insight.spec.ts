@@ -57,7 +57,7 @@ test.describe("Insight page", () => {
           (user_id, uid, title, created_at, updated_at)
           values ($1::integer, $2::text, $3::text, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
           returning *`,
-        values: [2, uid, "E2E test insight"],
+        values: [1, uid, "E2E test insight"],
       })
       .then((result: pg.QueryResult<Insight>) => result.rows[0]);
 

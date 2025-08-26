@@ -755,7 +755,6 @@ const ClientSidePage = ({
         {currentUser && (
           <AddCitationsToOtherInsightsDialog
             id={ADD_CITATIONS_TO_OTHER_INSIGHTS_DIALOG_ID}
-            // potentialInsightsInput={potentialInsightsToModify}
             selectedCitations={selectedCitations}
             setServerFunctionInput={
               setServerFunctionInputForSnippets as React.Dispatch<
