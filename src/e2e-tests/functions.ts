@@ -157,7 +157,7 @@ const selectCitationToRemove = async (
 // };
 
 const selectTableRow = async (tableRow: Locator) => {
-  await expect(tableRow.locator("td")).toHaveCount(3); // checkbox > date > title
+  await expect(tableRow.locator("td")).toHaveCount(4); // checkbox > date > title
   await tableRow.locator("td").nth(0).locator("input").click();
   return await tableRow.locator("td").nth(2).innerText();
 };

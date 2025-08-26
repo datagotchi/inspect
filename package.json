@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "NODE_OPTIONS='--max-old-space-size=2048' next build",
+    "start": "next start",
+    "start:local": "IS_LOCAL_PRODUCTION=true next start",
     "deploy": "git stash && git pull && git stash pop && yarn cache clean && yarn install && yarn build && sudo pm2 flush && sudo pm2 restart 0",
     "db:create": "PGPASSWORD=${POSTGRES_PASSWORD} psql -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -c 'CREATE DATABASE inspect'",
     "db:migrate": "PGPASSWORD=${POSTGRES_PASSWORD} psql -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d inspect < inspect-dump.sql",
-    "start": "next start",
     "export": "next export",
     "jest:watch": "jest --watch",
     "e2e": "yarn playwright test --reporter=list --workers=5"

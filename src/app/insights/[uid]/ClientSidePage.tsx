@@ -142,7 +142,11 @@ const ClientSidePage = ({
   const [
     activeServerFunctionForChildInsights,
     setActiveServerFunctionForChildInsights,
-  ] = useState<any>();
+  ] = useState<{
+    function: ServerFunction<
+      ServerFunctionInputSchemaForChildInsights | InsightLink[]
+    >;
+  }>();
 
   // shared functions for snippets
   const [serverFunctionInputForSnippets, setServerFunctionInputForSnippets] =

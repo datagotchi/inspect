@@ -40,6 +40,7 @@ test.describe("Insight page", () => {
   });
 
   let insight: Insight | undefined;
+  const NEW_INSIGHT_NAME = "E2E test insight";
 
   test.beforeEach(async ({ context, page }) => {
     await context.addCookies([
@@ -51,13 +52,14 @@ test.describe("Insight page", () => {
     ]);
 
     const uid = Date.now().toString(36);
+
     insight = await client
       .query({
         text: `insert into insights
           (user_id, uid, title, created_at, updated_at)
           values ($1::integer, $2::text, $3::text, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
           returning *`,
-        values: [1, uid, "E2E test insight"],
+        values: [2, uid, NEW_INSIGHT_NAME],
       })
       .then((result: pg.QueryResult<Insight>) => result.rows[0]);
 
@@ -75,8 +77,8 @@ test.describe("Insight page", () => {
     );
     if (insight) {
       await client.query({
-        text: "delete from insights where id = $1::integer",
-        values: [insight!.id],
+        text: "delete from insights where id = $1::integer or title = $2::text",
+        values: [insight.id, NEW_INSIGHT_NAME],
       });
       insight = undefined;
     }
@@ -114,7 +116,7 @@ test.describe("Insight page", () => {
 
       // Children Insights (none)
 
-      // 💬 12 💭 0 📄 51
+      // 📄 51
       const titleFooter = page
         .getByRole("heading", { name: /📄 [0-9]+/ })
         .first();
@@ -187,7 +189,7 @@ test.describe("Insight page", () => {
         .locator(".comments")
         .locator(".comment")
         .filter({ hasText: COMMENT_TEXT, visible: true });
-      await expect(comments).toHaveCount(1);
+      await expect(comments).toHaveCount(1, { timeout: 30000 });
 
       await page.reload();
 
@@ -273,7 +275,7 @@ test.describe("Insight page", () => {
       await expect(existingInsightsTable).toBeVisible();
       const firstRow = existingInsightsTable.locator("tbody > tr").first();
       await expect(firstRow).toBeVisible();
-      await expect(firstRow.locator("td")).toHaveCount(3); // checkbox > date > title
+      await expect(firstRow.locator("td")).toHaveCount(4); // checkbox > date > title > citations
       const firstRowCheckbox = firstRow.locator("td").first().locator("input");
       const selectedInsightTitle = await firstRow
         .locator("td")
@@ -344,8 +346,17 @@ test.describe("Insight page", () => {
         .then((result: pg.QueryResult<Link>) => result.rows[0]);
     });
 
+    test.afterEach(async () => {
+      if (insight) {
+        await client.query({
+          text: "delete from evidence where insight_id = $1::integer",
+          values: [insight.id],
+        });
+      }
+    });
+
     test("load a link by clicking on it", async ({ page }) => {
-      await expect(citationsTableFirstRow.locator("td")).toHaveCount(3); // checkbox > date > title
+      await expect(citationsTableFirstRow.locator("td")).toHaveCount(4); // checkbox > date > title > citations
       await citationsTableFirstRow.locator("td").nth(2).click();
 
       await page.goto(

@@ -29,17 +29,19 @@ export const getInsightFromServer = async (
   origin: string,
   params: Awaited<InsightRouteProps["params"]>,
   token?: string,
-): Promise<Insight> => {
+): Promise<Insight | boolean> => {
   const response = (await fetch(`${origin}/api/insights/${params.uid}`, {
     headers: {
       "Content-Type": "application/json",
       "x-access-token": token ?? "",
     },
   })) as GetInsightRouteResponse;
+
   if (response.status == 200) {
     return (await response.json()) as Insight;
   } else {
-    throw response;
+    console.error("Not ok response: ", response);
+    return false;
   }
 };
 
