@@ -17,6 +17,31 @@ const RegisterPage = (): React.JSX.Element => {
   }, []);
   const { setLoggedIn, setToken } = useUser();
 
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault(); // Stop the default browser submission
+    try {
+      const newUser = await handleRegister();
+      if (newUser) {
+        if (newUser.token) {
+          setToken(newUser.token);
+          setLoggedIn(true);
+        }
+        if (newUser.enable_email_notifications) {
+          open(
+            `${window.location.origin}/follow?return=${returnParam}`,
+            "_self",
+          );
+        } else if (returnParam) {
+          open(`${window.location.origin}${returnParam}`, "_self");
+        } else {
+          open(`${window.location.origin}/confirm`, "_self");
+        }
+      }
+    } catch (err) {
+      alert(err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-neutral-100 flex items-center justify-center p-6">
       <div className="card w-full max-w-lg">

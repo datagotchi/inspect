@@ -144,8 +144,11 @@ const ClientSidePage = ({
     activeServerFunctionForChildInsights,
     setActiveServerFunctionForChildInsights,
   ] = useState<
-    | { function: ServerFunction<ServerFunctionInputSchemaForChildInsights> }
-    | { function: ServerFunction<InsightLink[]> }
+    | {
+        function: ServerFunction<
+          ServerFunctionInputSchemaForChildInsights | InsightLink[]
+        >;
+      }
     | undefined
   >();
 
@@ -432,7 +435,7 @@ const ClientSidePage = ({
                         setIsAddChildInsightsDialogOpen(true);
                         // Set the active server function so it gets called when the dialog submits
                         setActiveServerFunctionForChildInsights({
-                          function: async ({
+                          function: (async ({
                             insight,
                             children,
                             newInsightName,
@@ -466,7 +469,10 @@ const ClientSidePage = ({
                               });
                             }
                             return Promise.resolve([]);
-                          },
+                          }) as ServerFunction<
+                            | ServerFunctionInputSchemaForChildInsights
+                            | InsightLink[]
+                          >,
                         });
                       }}
                       className={cardStyles.addButton}
@@ -488,7 +494,7 @@ const ClientSidePage = ({
                               selectedChildInsights,
                             );
                             setActiveServerFunctionForChildInsights({
-                              function: async (
+                              function: (async (
                                 childLinksToDelete: InsightLink[],
                                 token: string,
                               ) => {
@@ -499,7 +505,10 @@ const ClientSidePage = ({
                                   );
                                 }
                                 return Promise.resolve();
-                              },
+                              }) as ServerFunction<
+                                | ServerFunctionInputSchemaForChildInsights
+                                | InsightLink[]
+                              >,
                             });
                           }
                         }}
@@ -915,7 +924,7 @@ const ClientSidePage = ({
                 setActiveServerFunction={(value) => {
                   if (value) {
                     setActiveServerFunctionForChildInsights({
-                      function: async (
+                      function: (async (
                         input: ServerFunctionInputSchemaForChildInsights,
                       ) => {
                         if (token) {
@@ -945,7 +954,10 @@ const ClientSidePage = ({
                           });
                         }
                         return Promise.resolve([]);
-                      },
+                      }) as ServerFunction<
+                        | ServerFunctionInputSchemaForChildInsights
+                        | InsightLink[]
+                      >,
                     });
                   } else {
                     setActiveServerFunctionForChildInsights(undefined);

@@ -16,6 +16,8 @@ jest.mock("../../functions", () => ({
 jest.mock("../models/insight_links", () => {
   const mockQueryBuilder = {
     insert: jest.fn().mockReturnThis(),
+    onConflict: jest.fn().mockReturnThis(),
+    ignore: jest.fn().mockReturnThis(),
     withGraphFetched: jest.fn().mockReturnThis(),
     then: jest.fn(),
   };

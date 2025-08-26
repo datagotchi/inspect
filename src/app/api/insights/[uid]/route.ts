@@ -1,3 +1,5 @@
+"use server";
+
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { NextURL } from "next/dist/server/web/next-url";
@@ -116,7 +118,7 @@ export async function PATCH(
   if (authUser) {
     const params = await props.params;
     const { uid } = params;
-    if (uid && uid.match(/^[0-9a-z]+$/)) {
+    if (uid && uid.match(/^[0-9a-z-]+$/)) {
       const { title: newTitle, is_public: newIsPublic } = await req.json();
       if (newTitle || newIsPublic) {
         const insight = await InsightModel.query()
@@ -136,6 +138,8 @@ export async function PATCH(
           await InsightModel.query()
             .patch(insightUpdateData)
             .where("id", insight.id!);
+
+          // revalidatePath(`/api/insights/${uid}`);
 
           return NextResponse.json(insightUpdateData as Insight);
         }

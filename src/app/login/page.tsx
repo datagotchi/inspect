@@ -21,22 +21,16 @@ const LoginPage = (): React.JSX.Element => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      console.log("Attempting login with:", email);
       const user = await handleLogin(email, password);
-      console.log("Login response:", user);
       if (user?.token) {
-        console.log("Login successful, setting token and redirecting");
         setToken(user.token);
         setLoggedIn(true);
 
-        // Redirect to the return URL or default to insights
-        const redirectUrl = returnParam || "/insights";
-        console.log("Redirecting to:", redirectUrl);
         if (window) {
-          window.location.href = `${window.location.origin}${redirectUrl}`;
+          window.open(`${window.location.origin}${returnParam}`, "_self");
         }
       } else {
-        console.log("No token in response");
+        console.error("No token in response");
       }
     } catch (err) {
       console.error("Login error:", err);

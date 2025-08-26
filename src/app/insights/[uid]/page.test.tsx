@@ -31,6 +31,37 @@ describe("GET /insights/uid SSR page", () => {
     (cookies as jest.Mock).mockReturnValue(mockCookies);
   });
 
+  it("should only pass serializable data to the client-side component", async () => {
+    const mockInsight = {
+      id: 1,
+      uid: "123",
+      title: "Test Insight",
+      evidence: [{ summary_id: 1 }],
+      parent_uids: ["456"],
+      children: [],
+    };
+    const mockUser = { id: 4 };
+
+    (getInsightFromServer as jest.Mock).mockResolvedValueOnce(mockInsight);
+    (getUserFromServer as jest.Mock).mockResolvedValue(mockUser);
+
+    const result = await InsightPage({
+      params: Promise.resolve({ uid: "123" }),
+    });
+
+    // Ensure all props are serializable (no functions, symbols, etc.)
+    const isSerializable = (obj: any) => {
+      try {
+        JSON.stringify(obj);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    expect(isSerializable(result.props)).toBe(true);
+  });
+
   it("should render the InsightPage with insight data", async () => {
     const mockInsight = {
       id: 1,

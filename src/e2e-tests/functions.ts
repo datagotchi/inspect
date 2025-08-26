@@ -1,5 +1,4 @@
 import { expect, Locator, Page } from "@playwright/test";
-// import { Insight } from "../app/types";
 
 const getRowUid = async (tableRow: Locator, urlPrefix: string) => {
   const href = await tableRow
@@ -113,7 +112,6 @@ const insightPageHasCitation = async (
   await expect(page.getByRole("heading", { name: insightTitle })).toBeVisible();
 
   const citationsTable: Locator = page.locator("#body > table.facts-table");
-  // FIXME: works in debug, not otherwise -- wait or something?
   await expect(citationsTable).toBeVisible();
   const bodyTableRow = citationsTable
     .locator("tbody > tr")
@@ -157,7 +155,7 @@ const selectCitationToRemove = async (
 // };
 
 const selectTableRow = async (tableRow: Locator) => {
-  await expect(tableRow.locator("td")).toHaveCount(3); // checkbox > date > title
+  await expect(tableRow.locator("td")).toHaveCount(4); // checkbox > date > title
   await tableRow.locator("td").nth(0).locator("input").click();
   return await tableRow.locator("td").nth(2).innerText();
 };

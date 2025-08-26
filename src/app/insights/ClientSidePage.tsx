@@ -44,6 +44,8 @@ const ClientSidePage = ({
   const [liveData, setLiveData] = useState(insights);
   const [selectedInsights, setSelectedInsights] = useState<Insight[]>([]);
   const [isSaveLinkDialogOpen, setIsSaveLinkDialogOpen] = useState(false);
+  const LIMIT = 20;
+  const loggedIn = !!currentUser;
 
   const [
     serverFunctionInputForInsightsList,
@@ -136,8 +138,12 @@ const ClientSidePage = ({
     return responses;
   };
 
-  const LIMIT = 20;
-  const loggedIn = !!currentUser;
+  const showConfirmation = (selectedInsights?: Insight[]) => {
+    if (selectedInsights && confirm("Are you sure?")) {
+      setServerFunctionInputForInsightsList({ insights: selectedInsights });
+    }
+  };
+
   return (
     <div className={styles.pageContainer}>
       <div className={styles.mainContent}>
@@ -293,15 +299,72 @@ const ClientSidePage = ({
                       React.SetStateAction<Fact[]>
                     >
                   }
-                  unselectedActions={[]}
-                  selectedActions={[]}
+                  unselectedActions={[
+                    {
+                      className: "btn btn-primary",
+                      text: "Save Link in Insight(s)",
+                      enabled: !!currentUser,
+                      handleOnClick: () => {
+                        const dialog =
+                          document.getElementById(SAVE_LINK_DIALOG_ID);
+                        (dialog as HTMLDialogElement).showModal();
+                      },
+                      serverFunction: createLinkAndAddToInsights,
+                    },
+                    {
+                      className: "btn btn-primary",
+                      text: "Create Insight",
+                      enabled: !!currentUser,
+                      handleOnClick: promptForNewInsightName,
+                      serverFunction: ({ insights }: InsightsAPISchema) => {
+                        if (token) {
+                          return createInsights({ insights }, token);
+                        }
+                        return Promise.resolve([]);
+                      },
+                    },
+                  ]}
+                  selectedActions={[
+                    {
+                      className: "btn btn-primary",
+                      text: "Publish Insights",
+                      enabled: !!currentUser,
+                      handleOnClick: showConfirmation,
+                      serverFunction: publishInsights,
+                    },
+                    {
+                      className: "btn bg-danger",
+                      text: "Delete Insights",
+                      enabled: !!currentUser,
+                      handleOnClick: showConfirmation,
+                      serverFunction: deleteInsights,
+                    },
+                  ]}
                   columns={[
+                    {
+                      name: "💭↑",
+                      dataColumn: "parents",
+                      display: (insight: Fact | Insight) => (
+                        <span className="badge text-bg-danger">
+                          {insight.parents?.length ?? 0}
+                        </span>
+                      ),
+                    },
+                    {
+                      name: "💭↓",
+                      dataColumn: "children",
+                      display: (insight: Fact | Insight) => (
+                        <span className="badge text-bg-danger">
+                          {insight.children?.length ?? 0}
+                        </span>
+                      ),
+                    },
                     {
                       name: "📄",
                       dataColumn: "evidence",
                       display: (insight: Fact | Insight) => (
                         <span className="badge text-bg-danger">
-                          {insight.evidence?.length || 0}
+                          {insight.evidence?.length ?? 0}
                         </span>
                       ),
                     },

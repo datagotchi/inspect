@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "NODE_OPTIONS='--max-old-space-size=2048' next build",
+    "start": "next start",
+    "start:local": "IS_LOCAL_PRODUCTION=true next start",
     "deploy": "git stash && git pull && git stash pop && yarn cache clean && yarn install && yarn build && sudo pm2 flush && sudo pm2 restart 0",
     "db:create": "PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} -c 'CREATE DATABASE inspect'",
     "db:migrate": "PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} -d inspect < inspect-dump.sql",
@@ -52,6 +54,7 @@
     "http-proxy-middleware": "^3.0.5",
     "knex": "^3.1.0",
     "moment": "^2.30.1",
+    "nanoid": "^5.1.5",
     "next": "^15.4.7",
     "next-client-cookies": "^2.0.0",
     "objection": "^3.1.5",

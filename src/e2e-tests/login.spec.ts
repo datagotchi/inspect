@@ -1,51 +1,72 @@
-import { test, expect } from "@playwright/test";
-import { email, password } from "./constants";
+import { expect, Page } from "@playwright/test";
 
-test("click on login link", async ({ page }) => {
-  await page.goto("http://localhost:3000");
-  await page.waitForURL("http://localhost:3000/insights");
-  await expect(page).toHaveURL("http://localhost:3000/insights");
-  await expect(
-    page.getByRole("heading", { name: /My Insights \([0-9]+\)/ }),
-  ).toBeVisible();
+import { test as testBase } from "./fixtures";
+import { testAccount } from "./constants";
 
-  await expect(page.getByRole("link", { name: "Login" })).toBeVisible();
-  await page.getByRole("link", { name: "Login" }).click();
+const { email, password } = testAccount;
 
-  await expect(page).toHaveURL("http://localhost:3000/login?return=/insights");
+const test = testBase.extend<{ anonymousPage: Page }>({
+  anonymousPage: [
+    async ({ anonymousContext }, use) => {
+      const page = await anonymousContext.newPage();
+      await use(page);
+    },
+    { scope: "test" },
+  ],
 });
 
-test("do login", async ({ page }) => {
-  await page.goto("http://localhost:3000/login?return=/insights");
+test("click on login link", async ({ anonymousPage }) => {
+  await anonymousPage.goto("http://localhost:3000");
+  await anonymousPage.waitForURL("http://localhost:3000/insights");
+  await expect(anonymousPage).toHaveURL("http://localhost:3000/insights");
 
   await expect(
-    page.getByRole("heading", { name: "Login to Inspect" }),
+    anonymousPage.getByRole("link", { name: "Login" }),
+  ).toBeVisible();
+  await anonymousPage.getByRole("link", { name: "Login" }).click();
+
+  await expect(anonymousPage).toHaveURL(
+    "http://localhost:3000/login?return=/insights",
+  );
+});
+
+test("do login", async ({ anonymousPage }) => {
+  await anonymousPage.goto("http://localhost:3000/login?return=/insights");
+
+  await expect(
+    anonymousPage.getByRole("heading", { name: "Login to Inspect" }),
   ).toBeVisible();
 
-  const loginButton = page.getByRole("button", { name: "Login" });
+  const loginButton = anonymousPage.getByRole("button", { name: "Login" });
   await expect(loginButton).toBeVisible();
   await expect(loginButton).toBeDisabled();
 
-  await expect(page.getByRole("textbox", { name: "Email:" })).toBeVisible();
-  await page.getByRole("textbox", { name: "Email:" }).fill(email);
+  await expect(
+    anonymousPage.getByRole("textbox", { name: "Email:" }),
+  ).toBeVisible();
+  await anonymousPage.getByRole("textbox", { name: "Email:" }).fill(email);
 
   await expect(loginButton).toBeDisabled();
 
-  await expect(page.getByRole("textbox", { name: "Password:" })).toBeVisible();
-  await page
+  await expect(
+    anonymousPage.getByRole("textbox", { name: "Password:" }),
+  ).toBeVisible();
+  await anonymousPage
     .getByRole("textbox", { name: "Password:" })
     .fill(`${password}-wrong`);
 
   await expect(loginButton).toBeEnabled();
   await loginButton.click();
 
-  await expect(page.getByText("Invalid credentials")).toBeVisible();
+  await expect(anonymousPage.getByText("Invalid credentials")).toBeVisible();
 
-  await page.getByRole("textbox", { name: "Password:" }).fill(password);
+  await anonymousPage
+    .getByRole("textbox", { name: "Password:" })
+    .fill(password);
 
   await loginButton.click();
 
-  await page.waitForURL("http://localhost:3000/insights");
+  await anonymousPage.waitForURL("http://localhost:3000/insights");
 
-  await expect(page).toHaveURL("http://localhost:3000/insights");
+  await expect(anonymousPage).toHaveURL("http://localhost:3000/insights");
 });
