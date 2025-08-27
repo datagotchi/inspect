@@ -3,7 +3,6 @@
 // const bcrypt = require("bcryptjs");
 
 module.exports = async () => {
-  // dotenv.config({ path: "./.env", quiet: true });
   // const client = new Client({
   //   user: process.env.DATABASE_USER,
   //   password: process.env.DATABASE_PASSWORD,

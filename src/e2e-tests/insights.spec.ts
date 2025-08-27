@@ -14,7 +14,6 @@ let token: string;
 test.describe("Insights page", () => {
   // TODO: perform tests as me, Test, and anonymous
   test.beforeAll(async ({ request }) => {
-    dotenv.config({ path: "./.env", quiet: true });
     client = new Client({
       user: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,

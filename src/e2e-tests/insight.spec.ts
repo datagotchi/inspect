@@ -2,6 +2,8 @@ import { test, expect, Locator } from "@playwright/test";
 import dotenv from "dotenv";
 import pg from "pg";
 const Client = pg.Client;
+import path from "path";
+
 import { password, email } from "./constants";
 import { Insight, Link } from "../app/types";
 import {
@@ -23,7 +25,6 @@ let token: string;
 test.describe("Insight page", () => {
   // TODO: perform tests as me, Test, and anonymous
   test.beforeAll(async ({ request }) => {
-    dotenv.config({ path: "./.env", quiet: true });
     client = new Client({
       user: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,

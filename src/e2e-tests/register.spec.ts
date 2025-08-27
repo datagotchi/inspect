@@ -6,7 +6,6 @@ const Client = pg.Client;
 let client: pg.Client;
 
 test.beforeAll(async () => {
-  dotenv.config({ path: "./.env", quiet: true });
   client = new Client({
     user: process.env.DATABASE_USER,
     password: process.env.DATABASE_PASSWORD,
