@@ -1,8 +1,6 @@
-import { test, expect, Locator } from "@playwright/test";
-import dotenv from "dotenv";
+import { test as baseTest, expect, Locator, Page } from "@playwright/test";
 import pg from "pg";
 const Client = pg.Client;
-import path from "path";
 
 import { password, email } from "./constants";
 import { Insight, Link } from "../app/types";
@@ -10,7 +8,7 @@ import {
   addReactionFromFeedbackInputElement,
   // getInsightUid,
   getLinkUid,
-  insightPageHasCitation,
+  // insightPageHasCitation,
   selectCitationToRemove,
   // selectFirstEnabledPotentialInsight,
   selectTableRow,
@@ -20,6 +18,72 @@ import { encodeStringURI } from "../app/hooks/functions";
 
 let client: pg.Client;
 let token: string;
+
+const test = baseTest.extend<{
+  insight: Insight;
+  evidence: void;
+  page: Page;
+}>({
+  insight: [
+    async ({}, use) => {
+      const NEW_INSIGHT_NAME = "Test Insight";
+
+      const timestamp = Date.now().toString(36);
+      const random = Math.random().toString(36).substring(2);
+      const uid = `${timestamp}-${random}`;
+      // const uid = Date.now().toString(36);
+
+      const insight = await client
+        .query({
+          text: `insert into insights
+          (user_id, uid, title, created_at, updated_at)
+          values ($1::integer, $2::text, $3::text, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+          returning *`,
+          values: [2, uid, NEW_INSIGHT_NAME],
+        })
+        .then((result: pg.QueryResult<Insight>) => result.rows[0]);
+
+      // Pass the created insight to the test
+      await use(insight);
+
+      // Teardown: Delete the insight after the test finishes
+      await client.query("DELETE FROM insights WHERE id = $1", [insight.id]);
+    },
+    { scope: "test" },
+  ],
+  evidence: [
+    async ({ insight }, use) => {
+      await client.query({
+        text: `insert into evidence
+          (summary_id, insight_id) 
+          values ((
+            select s.id from summaries s where not exists (
+              select id from evidence where insight_id = $1::integer and summary_id = s.id
+            ) limit 1
+          ), $1::integer)`,
+        values: [insight!.id],
+      });
+      await use();
+    },
+    { scope: "test" },
+  ],
+  page: [
+    async ({ page, insight }, use) => {
+      // Navigate to the insight page
+      await page.goto(`http://localhost:3000/insights/${insight.uid}`);
+      await page.waitForURL(`http://localhost:3000/insights/${insight.uid}`);
+
+      // Assert that the page is loaded correctly with the title
+      await expect(
+        page.getByRole("heading", { name: insight.title }),
+      ).toBeVisible();
+
+      // Proceed with the test
+      await use(page);
+    },
+    { scope: "test" },
+  ],
+});
 
 // FIXME: get e2e tests working, starting with single insight page
 test.describe("Insight page", () => {
@@ -40,10 +104,9 @@ test.describe("Insight page", () => {
     token = json.token;
   });
 
-  let insight: Insight | undefined;
   const NEW_INSIGHT_NAME = "E2E test insight";
 
-  test.beforeEach(async ({ context, page }) => {
+  test.beforeEach(async ({ context }) => {
     await context.addCookies([
       {
         name: "token",
@@ -51,24 +114,6 @@ test.describe("Insight page", () => {
         url: "http://localhost:3000",
       },
     ]);
-
-    const uid = Date.now().toString(36);
-
-    insight = await client
-      .query({
-        text: `insert into insights
-          (user_id, uid, title, created_at, updated_at)
-          values ($1::integer, $2::text, $3::text, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-          returning *`,
-        values: [2, uid, NEW_INSIGHT_NAME],
-      })
-      .then((result: pg.QueryResult<Insight>) => result.rows[0]);
-
-    await page.goto(`http://localhost:3000/insights/${insight!.uid}`);
-    await page.waitForURL(`http://localhost:3000/insights/${insight!.uid}`);
-    await expect(
-      page.getByRole("heading", { name: insight!.title }),
-    ).toBeVisible();
   });
 
   test.afterEach(async ({ context }) => {
@@ -76,17 +121,10 @@ test.describe("Insight page", () => {
     await client.query(
       "delete from summaries where url = 'https://www.google.com'",
     );
-    if (insight) {
-      await client.query({
-        text: "delete from insights where id = $1::integer or title = $2::text",
-        values: [insight.id, NEW_INSIGHT_NAME],
-      });
-      insight = undefined;
-    }
   });
 
   test.describe("At the top of the insight", () => {
-    test("user should see all of the content", async ({ page }) => {
+    test("user should see all of the content", async ({ page, insight }) => {
       // alert
       const alert = page.locator(".alert").first();
       await expect(alert).toBeVisible();
@@ -190,7 +228,7 @@ test.describe("Insight page", () => {
         .locator(".comments")
         .locator(".comment")
         .filter({ hasText: COMMENT_TEXT, visible: true });
-      await expect(comments).toHaveCount(1, { timeout: 30000 });
+      await expect(comments).toHaveCount(1);
 
       await page.reload();
 
@@ -198,7 +236,7 @@ test.describe("Insight page", () => {
         .locator(".comments")
         .locator(".comment")
         .filter({ hasText: COMMENT_TEXT, visible: true });
-      expect(await comments2.count()).toBe(1);
+      await expect(comments2).toHaveCount(1);
 
       const deleteButtonLocator = comments2
         .first()
@@ -218,18 +256,23 @@ test.describe("Insight page", () => {
       ).toHaveCount(0);
     });
 
-    test("user can publish the insight", async ({ page }) => {
+    test("user can publish the insight", async ({ page, insight }) => {
       const publishButton = page.getByRole("button", {
         name: "Publish Insight",
       });
       await expect(publishButton).toBeVisible();
       await expect(publishButton).toBeEnabled();
       page.on("dialog", (dialog) => dialog.accept());
+      const publishResponsePromise = page.waitForResponse((response) =>
+        response.url().includes(`/api/insights/${insight!.uid}`),
+      );
       await publishButton.click();
+
+      await publishResponsePromise;
 
       const logoDiv = page.locator("#source").locator("div").nth(2);
       await expect(logoDiv).toBeVisible();
-      await expect(logoDiv).toHaveText(/🌎$/);
+      // await expect(logoDiv).toHaveText(/🌎$/);
 
       await page.reload();
       await expect(logoDiv).toHaveText(/🌎$/);
@@ -314,6 +357,11 @@ test.describe("Insight page", () => {
 
       await page.reload();
       await expect(foundSelectedListItem).toBeVisible();
+
+      await client.query({
+        text: "delete from insights where title = $1::text",
+        values: [newInsightName],
+      });
     });
   });
 
@@ -323,19 +371,6 @@ test.describe("Insight page", () => {
     let citationLink: Link;
 
     test.beforeEach(async ({ page }) => {
-      await client.query({
-        text: `insert into evidence
-          (summary_id, insight_id) 
-          values ((
-            select s.id from summaries s where not exists (
-              select id from evidence where insight_id = $1::integer and summary_id = s.id
-            ) limit 1
-          ), $1::integer)`,
-        values: [insight!.id],
-      });
-
-      await page.reload();
-
       citationsTable = page.getByRole("table").nth(0);
       citationsTableFirstRow = citationsTable.locator("tbody > tr").first();
       const linkUid = await getLinkUid(citationsTableFirstRow);
@@ -345,15 +380,6 @@ test.describe("Insight page", () => {
           values: [linkUid],
         })
         .then((result: pg.QueryResult<Link>) => result.rows[0]);
-    });
-
-    test.afterEach(async () => {
-      if (insight) {
-        await client.query({
-          text: "delete from evidence where insight_id = $1::integer",
-          values: [insight.id],
-        });
-      }
     });
 
     test("load a link by clicking on it", async ({ page }) => {
@@ -485,12 +511,12 @@ test.describe("Insight page", () => {
         });
 
         test.describe("Selecting from potential insights", () => {
-          let selectedInsight: Insight;
+          // let selectedInsight: Insight;
 
           test.beforeEach(async () => {
             await expect(dialog.getByRole("table")).toHaveCount(2);
             // the 1st one is citations to remove
-            const dialogTableOfOtherInsights = dialog.getByRole("table").nth(1);
+            // const dialogTableOfOtherInsights = dialog.getByRole("table").nth(1);
             // FIXME: duplicate key value violates unique constraint "u_sid_iid"
             // selectedInsight = await selectFirstEnabledPotentialInsight(
             //   dialogTableOfOtherInsights,

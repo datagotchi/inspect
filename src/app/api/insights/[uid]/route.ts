@@ -8,7 +8,7 @@ import "../../../api/db";
 import { InsightModel } from "../../models/insights";
 import { Insight, InsightEvidence } from "../../../types";
 import { getAuthUser } from "../../../functions";
-import { EvidenceModel } from "../../models/evidence";
+// import { revalidatePath } from "next/cache";
 
 export interface InsightRouteProps {
   params: Promise<{ uid?: string }>;
@@ -119,7 +119,7 @@ export async function PATCH(
   if (authUser) {
     const params = await props.params;
     const { uid } = params;
-    if (uid && uid.match(/^[0-9a-z]+$/)) {
+    if (uid && uid.match(/^[0-9a-z-]+$/)) {
       const { title: newTitle, is_public: newIsPublic } = await req.json();
       if (newTitle || newIsPublic) {
         const insight = await InsightModel.query()
@@ -139,6 +139,8 @@ export async function PATCH(
           await InsightModel.query()
             .patch(insightUpdateData)
             .where("id", insight.id!);
+
+          // revalidatePath(`/api/insights/${uid}`);
 
           return NextResponse.json(insightUpdateData as Insight);
         }

@@ -1,5 +1,4 @@
 import { test, expect, Locator } from "@playwright/test";
-import dotenv from "dotenv";
 import pg from "pg";
 const Client = pg.Client;
 import { getInsightUid } from "./functions";
