@@ -1,61 +1,15 @@
-import { test, expect, Locator } from "@playwright/test";
+import { expect, Locator } from "@playwright/test";
 import pg from "pg";
-const Client = pg.Client;
+
+// TODO: perform tests as me, Test, and anonymous
+import { test } from "./fixtures";
 import { getInsightUid } from "./functions";
 import { Insight, User } from "../app/types";
-import { encodeStringURI } from "../app/hooks/functions";
-import { email, password } from "./constants";
 
 let client: pg.Client;
 let user: User;
-let token: string;
 
 test.describe("Insights page", () => {
-  // TODO: perform tests as me, Test, and anonymous
-  test.beforeAll(async ({ request }) => {
-    client = new Client({
-      user: process.env.DATABASE_USER,
-      password: process.env.DATABASE_PASSWORD,
-      host: process.env.DATABASE_HOST,
-      port: parseInt(process.env.DATABASE_PORT!),
-      database: "inspect",
-    });
-    await client.connect();
-
-    user = await client
-      .query({
-        text: "select * from users where email = $1::text",
-        values: [email],
-      })
-      .then((result) => result.rows[0]);
-    const response = await request.post("http://localhost:3000/api/login", {
-      data: { email, password },
-    });
-    const json = await response.json();
-    token = json.token;
-  });
-
-  test.beforeEach(async ({ context, page }) => {
-    await context.addCookies([
-      {
-        name: "token",
-        value: encodeStringURI(token),
-        domain: "localhost",
-        path: "/",
-      },
-    ]);
-    await page.goto("http://localhost:3000/insights");
-    await page.waitForURL("http://localhost:3000/insights");
-  });
-
-  test.afterAll(async () => {
-    await client.end();
-  });
-
-  test.afterEach(async ({ context }) => {
-    await context.clearCookies();
-  });
-
   test.describe("Unselected actions", () => {
     test.describe("Save Link in Insight(s) button", () => {
       let dialog: Locator;

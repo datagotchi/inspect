@@ -7,6 +7,7 @@ import { defineConfig, devices } from "@playwright/test";
 import dotenv from "dotenv";
 import path from "path";
 const __dirname = import.meta.dirname;
+// FIXME: error on github -- Error: SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string
 dotenv.config({ path: path.resolve(__dirname, "./.env"), quiet: true });
 
 /**

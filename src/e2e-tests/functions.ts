@@ -1,5 +1,4 @@
 import { expect, Locator, Page } from "@playwright/test";
-import { Insight } from "../app/types";
 
 const getRowUid = async (tableRow: Locator, urlPrefix: string) => {
   const href = await tableRow

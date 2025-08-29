@@ -1,52 +1,13 @@
-import { test, expect } from "@playwright/test";
+import { expect } from "@playwright/test";
 import pg from "pg";
-const Client = pg.Client;
 
-import { encodeStringURI } from "../app/hooks/functions";
-import { email, password } from "./constants";
+// TODO: perform tests as me, Test, and anonymous
+import { test } from "./fixtures";
 import { Link } from "../app/types";
 
 let client: pg.Client;
-let token: string;
 
 test.describe("Link page", () => {
-  // TODO: perform tests as me, Test, and anonymous
-  test.beforeAll(async ({ request }) => {
-    client = new Client({
-      user: process.env.DATABASE_USER,
-      password: process.env.DATABASE_PASSWORD,
-      host: process.env.DATABASE_HOST,
-      port: parseInt(process.env.DATABASE_PORT!),
-      database: "inspect",
-    });
-    await client.connect();
-
-    const response = await request.post("http://localhost:3000/api/login", {
-      data: { email, password },
-    });
-    const json = await response.json();
-    token = json.token;
-  });
-
-  test.beforeEach(async ({ context }) => {
-    await context.addCookies([
-      {
-        name: "token",
-        value: encodeStringURI(token),
-        domain: "localhost",
-        path: "/",
-      },
-    ]);
-  });
-
-  test.afterEach(async ({ context }) => {
-    await context.clearCookies();
-  });
-
-  test.afterAll(async () => {
-    await client.end();
-  });
-
   let link: Link;
   test.beforeAll(async () => {
     link = await client

@@ -18,13 +18,13 @@ export async function handleLogin(): Promise<User | undefined> {
       password: formData.get("password") as string,
     };
     const bodyString = JSON.stringify(formObject);
-    const response = (await fetch("/api/login", {
+    const response = await fetch("/api/login", {
       method: "POST",
       body: bodyString,
       headers: {
         "Content-Type": "application/json",
       },
-    })) as PostLoginSessionResponse;
+    });
     if (response.status == 200) {
       return await response.json();
     } else {
