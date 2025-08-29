@@ -1,18 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-import dotenv from "dotenv";
-import path from "path";
-
-// FIXME: error on github -- Error: SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string
-// const __dirname = import.meta.dirname;
-const __dirname = process.cwd();
-dotenv.config({ path: path.join(__dirname, "./.env"), quiet: true });
-
-/**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
