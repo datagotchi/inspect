@@ -1,4 +1,4 @@
-import { expect, Locator, Page } from "@playwright/test";
+import { expect, Locator } from "@playwright/test";
 import pg from "pg";
 
 import { test as baseTest } from "./fixtures";
@@ -13,16 +13,7 @@ import {
   selectTableRow,
   verifyNewInsightExists,
 } from "./functions";
-
-type LocalPageFixtures = {
-  myAccountPage: Page;
-  testAccountPage: Page;
-  anonymousPage: Page;
-};
-
-type MetaPageFixture = {
-  userPage: Page;
-};
+import { LocalPageFixtures, MetaPageFixture, userRoles } from "./user-contexts";
 
 const test = baseTest.extend<
   LocalPageFixtures &
@@ -51,6 +42,27 @@ const test = baseTest.extend<
         await use(insight);
 
         await client.query("DELETE FROM insights WHERE id = $1", [insight.id]);
+      } finally {
+        client.release();
+      }
+    },
+    { scope: "test" },
+  ],
+  insertEvidence: [
+    async ({ pool, insight }, use) => {
+      const client = await pool.connect();
+      try {
+        await client.query({
+          text: `insert into evidence
+          (summary_id, insight_id) 
+          values ((
+            select s.id from summaries s where not exists (
+              select id from evidence where insight_id = $1::integer and summary_id = s.id
+            ) limit 1
+          ), $1::integer)`,
+          values: [insight!.id],
+        });
+        await use();
       } finally {
         client.release();
       }
@@ -99,27 +111,6 @@ const test = baseTest.extend<
     },
     { scope: "test" },
   ],
-  insertEvidence: [
-    async ({ pool, insight }, use) => {
-      const client = await pool.connect();
-      try {
-        await client.query({
-          text: `insert into evidence
-          (summary_id, insight_id) 
-          values ((
-            select s.id from summaries s where not exists (
-              select id from evidence where insight_id = $1::integer and summary_id = s.id
-            ) limit 1
-          ), $1::integer)`,
-          values: [insight!.id],
-        });
-        await use();
-      } finally {
-        client.release();
-      }
-    },
-    { scope: "test" },
-  ],
   userPage: [
     async ({}, use) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -128,19 +119,6 @@ const test = baseTest.extend<
     { scope: "test" },
   ],
 });
-
-export type TestFixtures = keyof LocalPageFixtures;
-
-type UserRole = {
-  name: string;
-  pageFixture: TestFixtures;
-};
-
-export const userRoles: UserRole[] = [
-  { name: "My Account", pageFixture: "myAccountPage" },
-  { name: "Test User", pageFixture: "testAccountPage" },
-  { name: "Anonymous", pageFixture: "anonymousPage" },
-];
 
 userRoles.forEach((role) => {
   test.describe(`Insight page as ${role.name}`, () => {
@@ -377,7 +355,6 @@ userRoles.forEach((role) => {
           .locator("td")
           .nth(2)
           .innerText();
-        console.log("*** selecting existing insight: ", selectedInsightTitle);
         await firstRowCheckbox.click();
 
         await expect(dialogSubmitButton).toBeEnabled();
@@ -404,8 +381,6 @@ userRoles.forEach((role) => {
         await expect(childrenSection).toBeVisible();
         const childrenTable = childrenSection.locator("table");
         await expect(childrenTable).toBeVisible();
-
-        console.log("*** childrenTable: ", await childrenTable.innerHTML());
 
         const foundSelectedListItem =
           childrenTable.getByText(selectedInsightTitle);

@@ -3,6 +3,7 @@ import { Pool } from "pg";
 
 import { myAccount, testAccount } from "./constants";
 import { encodeStringURI } from "../app/hooks/functions";
+import { User } from "../app/types";
 
 type ContextFixtures = {
   myAccountContext: BrowserContext;
@@ -13,7 +14,10 @@ type WorkerFixtures = {
   pool: Pool;
 };
 
-export const test = baseTest.extend<ContextFixtures, WorkerFixtures>({
+export const test = baseTest.extend<
+  { myUser: User; testUser: User } & ContextFixtures,
+  WorkerFixtures
+>({
   pool: [
     // eslint-disable-next-line no-empty-pattern
     async ({}, use) => {
@@ -31,13 +35,20 @@ export const test = baseTest.extend<ContextFixtures, WorkerFixtures>({
     },
     { scope: "worker" },
   ],
-  myAccountContext: [
-    async ({ request, browser }, use) => {
+  myUser: [
+    async ({ request }, use) => {
       const response = await request.post("http://localhost:3000/api/login", {
         data: { email: myAccount.email, password: myAccount.password },
       });
-      const json = await response.json();
-      const token = json.token;
+      const user = await response.json();
+
+      await use(user);
+    },
+    { scope: "test" },
+  ],
+  myAccountContext: [
+    async ({ myUser, browser }, use) => {
+      const token = myUser.token!;
 
       const context = await browser.newContext();
       await context.addCookies([
@@ -55,13 +66,20 @@ export const test = baseTest.extend<ContextFixtures, WorkerFixtures>({
     },
     { scope: "test" },
   ],
-  testAccountContext: [
-    async ({ request, browser }, use) => {
+  testUser: [
+    async ({ request }, use) => {
       const response = await request.post("http://localhost:3000/api/login", {
         data: { email: testAccount.email, password: testAccount.password },
       });
-      const json = await response.json();
-      const token = json.token;
+      const user = await response.json();
+
+      await use(user);
+    },
+    { scope: "test" },
+  ],
+  testAccountContext: [
+    async ({ testUser, browser }, use) => {
+      const token = testUser.token!;
 
       const context = await browser.newContext();
       await context.addCookies([
