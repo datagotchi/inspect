@@ -2,60 +2,16 @@ import { expect, Locator } from "@playwright/test";
 
 import {
   test as baseTest,
-  LocalPageFixtures,
-  MetaPageFixture,
+  AccountPageFixtures,
   userRoles,
+  LocalTestFixtures,
 } from "./fixtures";
 import { getInsightUid } from "./functions";
 import { Insight, User } from "../app/types";
 
 const test = baseTest.extend<
-  LocalPageFixtures & MetaPageFixture & { user: User }
+  AccountPageFixtures & LocalTestFixtures & { user: User }
 >({
-  myAccountPage: [
-    async ({ myAccountContext }, use) => {
-      const page = await myAccountContext.newPage();
-      await page.goto("http://localhost:3000/insights/");
-      await page.waitForURL("http://localhost:3000/insights/");
-
-      await expect(
-        page.getByRole("heading", { name: /My Insights \([0-9]+\)/ }),
-      ).toBeVisible();
-
-      await use(page);
-    },
-    { scope: "test" },
-  ],
-  testAccountPage: [
-    async ({ testAccountContext }, use) => {
-      const page = await testAccountContext.newPage();
-      await page.goto("http://localhost:3000/insights/");
-      await page.waitForURL("http://localhost:3000/insights/");
-
-      await expect(
-        page.getByRole("heading", { name: /My Insights \([0-9]+\)/ }),
-      ).toBeVisible();
-
-      await use(page);
-    },
-    { scope: "test" },
-  ],
-  anonymousPage: [
-    async ({ anonymousContext }, use) => {
-      const page = await anonymousContext.newPage();
-      await page.goto("http://localhost:3000/insights/");
-      await page.waitForURL("http://localhost:3000/insights/");
-
-      await expect(
-        page.getByText(
-          "No insights available for anonymous users. Please Login or Register.",
-        ),
-      ).toBeVisible();
-
-      await use(page);
-    },
-    { scope: "test" },
-  ],
   userPage: [
     async ({}, use) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

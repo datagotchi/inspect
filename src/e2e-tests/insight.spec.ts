@@ -1,7 +1,12 @@
 import { expect, Locator, Page } from "@playwright/test";
 import pg from "pg";
 
-import { test as baseTest, LocalPageFixtures, userRoles } from "./fixtures";
+import {
+  test as baseTest,
+  AccountPageFixtures,
+  userRoles,
+  LocalTestFixtures,
+} from "./fixtures";
 import { Insight, Link } from "../app/types";
 import {
   addReactionFromFeedbackInputElement,
@@ -14,14 +19,9 @@ import {
   verifyNewInsightExists,
 } from "./functions";
 
-type RoleTestFixtures = {
-  userPage: Page;
-  roleName: string;
-};
-
 const test = baseTest.extend<
-  LocalPageFixtures &
-    RoleTestFixtures & { insight: Insight; insertEvidence: void }
+  AccountPageFixtures &
+    LocalTestFixtures & { insight: Insight; insertEvidence: void }
 >({
   insight: [
     async ({ pool }, use) => {

@@ -15,17 +15,20 @@ type WorkerFixtures = {
   pool: Pool;
 };
 
-export type LocalPageFixtures = {
+export type AccountPageFixtures = {
   myAccountPage: Page;
   testAccountPage: Page;
   anonymousPage: Page;
 };
 
-export type TestFixtures = keyof LocalPageFixtures;
+export type LocalTestFixtures = {
+  userPage: Page;
+  roleName: string;
+};
 
 type UserRole = {
   name: string;
-  pageFixture: TestFixtures;
+  pageFixture: keyof AccountPageFixtures;
 };
 
 export const userRoles: UserRole[] = [

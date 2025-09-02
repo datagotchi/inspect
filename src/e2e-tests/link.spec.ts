@@ -3,14 +3,14 @@ import pg from "pg";
 
 import {
   test as baseTest,
-  LocalPageFixtures,
-  MetaPageFixture,
+  AccountPageFixtures,
   userRoles,
+  LocalTestFixtures,
 } from "./fixtures";
 import { Link } from "../app/types";
 
 const test = baseTest.extend<
-  { link: Link } & LocalPageFixtures & MetaPageFixture
+  { link: Link } & AccountPageFixtures & LocalTestFixtures
 >({
   link: [
     async ({ pool }, use) => {
