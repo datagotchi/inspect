@@ -73,7 +73,7 @@ const test = baseTest.extend<
     },
     { scope: "test" },
   ],
-  roleName: ["My Account", { option: true }],
+  roleName: ["Anonymous", { option: true }], // Anonymous is the default without test.use()
   userPage: async (
     {
       myAccountContext,
@@ -102,6 +102,7 @@ const test = baseTest.extend<
 
 for (const role of userRoles) {
   test.describe(`Insight page as ${role.name}`, () => {
+    test.use({ roleName: role.name });
     const newInsightName = "Test Child Insight";
     test.describe("At the top of the insight", () => {
       test("user should see all of the content", async ({

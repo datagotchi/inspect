@@ -12,13 +12,24 @@ import { Insight, User } from "../app/types";
 const test = baseTest.extend<
   AccountPageFixtures & LocalTestFixtures & { user: User }
 >({
-  userPage: [
-    async ({}, use) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await use(null as any);
-    },
-    { scope: "test" },
-  ],
+  userPage: async (
+    { myAccountContext, testAccountContext, anonymousContext, roleName },
+    use,
+  ) => {
+    let context;
+    if (roleName === "My Account") context = myAccountContext;
+    else if (roleName === "Test User") context = testAccountContext;
+    else context = anonymousContext;
+
+    const page = await context.newPage();
+    await page.goto(`http://localhost:3000/insights/`);
+    await expect(
+      page.getByRole("heading", { name: "My Insights" }),
+    ).toBeVisible();
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    await use(page);
+    await page.close();
+  },
   user: [
     async ({}, use) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -32,36 +43,7 @@ userRoles
   .filter((r) => r.name !== "Anonymous")
   .forEach((role) => {
     test.describe(`Insights page as ${role.name}`, () => {
-      test.use({
-        userPage: async (
-          { myAccountPage, testAccountPage, anonymousPage },
-          use,
-        ) => {
-          let page;
-          if (role.name === "My Account") {
-            page = myAccountPage;
-          } else if (role.name === "Test User") {
-            page = testAccountPage;
-          } else {
-            page = anonymousPage;
-          }
-          // eslint-disable-next-line react-hooks/rules-of-hooks
-          await use(page);
-        },
-        user: async ({ myUser, testUser }, use) => {
-          let user;
-          if (role.name === "My Account") {
-            user = myUser;
-          } else if (role.name === "Test User") {
-            user = testUser;
-          }
-
-          if (user) {
-            // eslint-disable-next-line react-hooks/rules-of-hooks
-            await use(user);
-          }
-        },
-      });
+      test.use({ roleName: role.name });
       test.describe("Unselected actions", () => {
         test.describe("Save Link in Insight(s) button", () => {
           let dialog: Locator;

@@ -40,76 +40,29 @@ const test = baseTest.extend<
     },
     { scope: "test" },
   ],
-  myAccountPage: [
-    async ({ myAccountContext, link }, use) => {
-      const page = await myAccountContext.newPage();
-      await page.goto(`http://localhost:3000/links/${link.uid}`);
-      await page.waitForURL(`http://localhost:3000/links/${link.uid}`);
+  userPage: async (
+    { myAccountContext, testAccountContext, anonymousContext, roleName },
+    use,
+  ) => {
+    let context;
+    if (roleName === "My Account") context = myAccountContext;
+    else if (roleName === "Test User") context = testAccountContext;
+    else context = anonymousContext;
 
-      await expect(
-        page.getByRole("heading", { name: link.title }),
-      ).toBeVisible();
-
-      await use(page);
-    },
-    { scope: "test" },
-  ],
-  testAccountPage: [
-    async ({ testAccountContext, link }, use) => {
-      const page = await testAccountContext.newPage();
-      await page.goto(`http://localhost:3000/links/${link.uid}`);
-      await page.waitForURL(`http://localhost:3000/links/${link.uid}`);
-
-      await expect(
-        page.getByRole("heading", { name: link.title }),
-      ).toBeVisible();
-
-      await use(page);
-    },
-    { scope: "test" },
-  ],
-  anonymousPage: [
-    async ({ anonymousContext, link }, use) => {
-      const page = await anonymousContext.newPage();
-      await page.goto(`http://localhost:3000/links/${link.uid}`);
-      await page.waitForURL(`http://localhost:3000/links/${link.uid}`);
-
-      await expect(
-        page.getByRole("heading", { name: link.title }),
-      ).toBeVisible();
-
-      await use(page);
-    },
-    { scope: "test" },
-  ],
-  userPage: [
-    async ({}, use) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await use(null as any);
-    },
-    { scope: "test" },
-  ],
+    const page = await context.newPage();
+    await page.goto(`http://localhost:3000/insights/`);
+    await expect(
+      page.getByRole("heading", { name: "My Insights" }),
+    ).toBeVisible();
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    await use(page);
+    await page.close();
+  },
 });
 
 userRoles.forEach((role) => {
   test.describe(`Link page as ${role.name}`, () => {
-    test.use({
-      userPage: async (
-        { myAccountPage, testAccountPage, anonymousPage },
-        use,
-      ) => {
-        let page;
-        if (role.name === "My Account") {
-          page = myAccountPage;
-        } else if (role.name === "Test User") {
-          page = testAccountPage;
-        } else {
-          page = anonymousPage;
-        }
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        await use(page);
-      },
-    });
+    test.use({ roleName: role.name });
     test("should navigate to a valid url", async ({ userPage, link }) => {
       const heading = userPage.getByRole("heading", { name: link.title });
       await expect(heading).toBeVisible();
