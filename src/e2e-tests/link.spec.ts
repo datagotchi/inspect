@@ -40,6 +40,7 @@ const test = baseTest.extend<
     },
     { scope: "test" },
   ],
+  roleName: ["Anonymous", { option: true }], // Anonymous is the default without test.use()
   userPage: async (
     { myAccountContext, testAccountContext, anonymousContext, roleName },
     use,

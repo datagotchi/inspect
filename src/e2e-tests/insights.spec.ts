@@ -12,6 +12,7 @@ import { Insight, User } from "../app/types";
 const test = baseTest.extend<
   AccountPageFixtures & LocalTestFixtures & { user: User }
 >({
+  roleName: ["Anonymous", { option: true }], // Anonymous is the default without test.use()
   userPage: async (
     { myAccountContext, testAccountContext, anonymousContext, roleName },
     use,
