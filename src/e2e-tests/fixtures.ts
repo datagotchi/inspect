@@ -1,4 +1,4 @@
-import { test as baseTest, BrowserContext } from "@playwright/test";
+import { test as baseTest, BrowserContext, Page } from "@playwright/test";
 import { Pool } from "pg";
 
 import { myAccount, testAccount } from "./constants";
@@ -10,9 +10,29 @@ type ContextFixtures = {
   testAccountContext: BrowserContext;
   anonymousContext: BrowserContext;
 };
+
 type WorkerFixtures = {
   pool: Pool;
 };
+
+export type LocalPageFixtures = {
+  myAccountPage: Page;
+  testAccountPage: Page;
+  anonymousPage: Page;
+};
+
+export type TestFixtures = keyof LocalPageFixtures;
+
+type UserRole = {
+  name: string;
+  pageFixture: TestFixtures;
+};
+
+export const userRoles: UserRole[] = [
+  { name: "My Account", pageFixture: "myAccountPage" },
+  { name: "Test User", pageFixture: "testAccountPage" },
+  { name: "Anonymous", pageFixture: "anonymousPage" },
+];
 
 export const test = baseTest.extend<
   { myUser: User; testUser: User } & ContextFixtures,
@@ -21,6 +41,7 @@ export const test = baseTest.extend<
   pool: [
     // eslint-disable-next-line no-empty-pattern
     async ({}, use) => {
+      // FIXME: Error: SASL: SCRAM-SERVER-FIRST-MESSAGE: client password must be a string
       const pool = new Pool({
         user: process.env.DATABASE_USER,
         password: process.env.DATABASE_PASSWORD,

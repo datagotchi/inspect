@@ -36,6 +36,8 @@ export async function POST(
         try {
           const insertedLinks = await InsightLinkModel.query()
             .insert(childrenToInsert)
+            .onConflict()
+            .ignore()
             .withGraphFetched("childInsight.evidence")
             .withGraphFetched("parentInsight");
           return NextResponse.json(insertedLinks);

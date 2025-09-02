@@ -1,7 +1,7 @@
-import { expect, Locator } from "@playwright/test";
+import { expect, Locator, Page } from "@playwright/test";
 import pg from "pg";
 
-import { test as baseTest } from "./fixtures";
+import { test as baseTest, LocalPageFixtures, userRoles } from "./fixtures";
 import { Insight, Link } from "../app/types";
 import {
   addReactionFromFeedbackInputElement,
@@ -13,11 +13,15 @@ import {
   selectTableRow,
   verifyNewInsightExists,
 } from "./functions";
-import { LocalPageFixtures, MetaPageFixture, userRoles } from "./user-contexts";
+
+type RoleTestFixtures = {
+  userPage: Page;
+  roleName: string;
+};
 
 const test = baseTest.extend<
   LocalPageFixtures &
-    MetaPageFixture & { insight: Insight; insertEvidence: void }
+    RoleTestFixtures & { insight: Insight; insertEvidence: void }
 >({
   insight: [
     async ({ pool }, use) => {
@@ -69,83 +73,42 @@ const test = baseTest.extend<
     },
     { scope: "test" },
   ],
-  myAccountPage: [
-    async ({ myAccountContext, insight }, use) => {
-      const page = await myAccountContext.newPage();
-      await page.goto(`http://localhost:3000/insights/${insight.uid}`);
-      await page.waitForURL(`http://localhost:3000/insights/${insight.uid}`);
-
-      await expect(
-        page.getByRole("heading", { name: insight.title }),
-      ).toBeVisible();
-
-      await use(page);
+  roleName: ["My Account", { option: true }],
+  userPage: async (
+    {
+      myAccountContext,
+      testAccountContext,
+      anonymousContext,
+      roleName,
+      insight,
     },
-    { scope: "test" },
-  ],
-  testAccountPage: [
-    async ({ testAccountContext, insight }, use) => {
-      const page = await testAccountContext.newPage();
-      await page.goto(`http://localhost:3000/insights/${insight.uid}`);
-      await page.waitForURL(`http://localhost:3000/insights/${insight.uid}`);
+    use,
+  ) => {
+    let context;
+    if (roleName === "My Account") context = myAccountContext;
+    else if (roleName === "Test User") context = testAccountContext;
+    else context = anonymousContext;
 
-      await expect(
-        page.getByRole("heading", { name: insight.title }),
-      ).toBeVisible();
-
-      await use(page);
-    },
-    { scope: "test" },
-  ],
-  anonymousPage: [
-    async ({ anonymousContext, insight }, use) => {
-      const page = await anonymousContext.newPage();
-      await page.goto(`http://localhost:3000/insights/${insight.uid}`);
-      await page.waitForURL(`http://localhost:3000/insights/${insight.uid}`);
-
-      await expect(
-        page.getByRole("heading", { name: insight.title }),
-      ).toBeVisible();
-
-      await use(page);
-    },
-    { scope: "test" },
-  ],
-  userPage: [
-    async ({}, use) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await use(null as any);
-    },
-    { scope: "test" },
-  ],
+    const page = await context.newPage();
+    await page.goto(`http://localhost:3000/insights/${insight.uid}`);
+    await expect(
+      page.getByRole("heading", { name: insight.title }),
+    ).toBeVisible();
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    await use(page);
+    await page.close();
+  },
 });
 
-userRoles.forEach((role) => {
+for (const role of userRoles) {
   test.describe(`Insight page as ${role.name}`, () => {
-    test.use({
-      userPage: async (
-        { myAccountPage, testAccountPage, anonymousPage },
-        use,
-      ) => {
-        let page;
-        if (role.name === "My Account") {
-          page = myAccountPage;
-        } else if (role.name === "Test User") {
-          page = testAccountPage;
-        } else {
-          page = anonymousPage;
-        }
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        await use(page);
-      },
-    });
     const newInsightName = "Test Child Insight";
     test.describe("At the top of the insight", () => {
       test("user should see all of the content", async ({
         userPage,
         insight,
       }) => {
-        // alert
+        // parent insights alert
         const alert = userPage.locator(".alert").first();
         await expect(alert).toBeVisible();
         const possibleTextValuesRegex = /This insight is important because:/;
@@ -155,7 +118,7 @@ userRoles.forEach((role) => {
         });
         await expect(addParentButton).toBeVisible();
 
-        // emoji && created ___ && insight 💭
+        // emoji && Created|Updated && "Insight 💭"
         const sourceDiv = userPage.locator("#source");
         const emojiDiv = sourceDiv.locator("div").nth(0);
         await expect(emojiDiv).toBeVisible();
@@ -374,13 +337,24 @@ userRoles.forEach((role) => {
         await newInsightInput.fill(newInsightName);
 
         await expect(dialogSubmitButton).toBeEnabled();
+        // const publishResponsePromise = userPage.waitForResponse((response) =>
+        //   response.url().includes(`/api/children`),
+        // );
+
         await dialogSubmitButton.click();
         await expect(dialog).toBeHidden();
+
+        // await publishResponsePromise;
 
         const childrenSection = userPage.locator("#childInsights");
         await expect(childrenSection).toBeVisible();
         const childrenTable = childrenSection.locator("table");
         await expect(childrenTable).toBeVisible();
+
+        // FIXME: react state update is not happening when this test is run with others
+        // eslint-disable-next-line playwright/no-wait-for-selector
+        await userPage.waitForSelector("table > tbody > tr");
+        await expect(childrenTable.locator("tbody > tr")).toHaveCount(2);
 
         const foundSelectedListItem =
           childrenTable.getByText(selectedInsightTitle);
@@ -996,4 +970,4 @@ userRoles.forEach((role) => {
       });
     });
   });
-});
+}

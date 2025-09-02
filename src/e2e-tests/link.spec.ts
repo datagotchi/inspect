@@ -1,9 +1,13 @@
 import { expect } from "@playwright/test";
 import pg from "pg";
 
-import { test as baseTest } from "./fixtures";
+import {
+  test as baseTest,
+  LocalPageFixtures,
+  MetaPageFixture,
+  userRoles,
+} from "./fixtures";
 import { Link } from "../app/types";
-import { LocalPageFixtures, MetaPageFixture, userRoles } from "./user-contexts";
 
 const test = baseTest.extend<
   { link: Link } & LocalPageFixtures & MetaPageFixture
@@ -264,8 +268,6 @@ userRoles.forEach((role) => {
         await dialogSubmitButton.click();
         await expect(dialog).toBeHidden();
 
-        // FIXME: original commentInput is overwritten
-        // const commentText = /Check this out: Insight: .+/;
         const commentText = /Insight: .+/;
         await expect(commentInput).toHaveText(commentText);
         await userPage.getByRole("button", { name: "Submit Comment" }).click();
@@ -306,8 +308,6 @@ userRoles.forEach((role) => {
         await dialogSubmitButton.click();
         await expect(dialog).toBeHidden();
 
-        // FIXME: original commentInput is overwritten
-        // const commentText = /Check this out: Link: .+/;
         const commentText = /Link: .+/;
         await expect(commentInput).toHaveText(commentText);
         await userPage.getByRole("button", { name: "Submit Comment" }).click();

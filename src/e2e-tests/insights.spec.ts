@@ -1,9 +1,13 @@
 import { expect, Locator } from "@playwright/test";
 
-import { test as baseTest } from "./fixtures";
+import {
+  test as baseTest,
+  LocalPageFixtures,
+  MetaPageFixture,
+  userRoles,
+} from "./fixtures";
 import { getInsightUid } from "./functions";
 import { Insight, User } from "../app/types";
-import { LocalPageFixtures, MetaPageFixture, userRoles } from "./user-contexts";
 
 const test = baseTest.extend<
   LocalPageFixtures & MetaPageFixture & { user: User }

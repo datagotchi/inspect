@@ -34,8 +34,10 @@ export async function GET(req: NextRequest): Promise<GetInsightsRouteResponse> {
       .limit(limit);
 
     const finalQuery = InsightModel.query()
+      // FIXME: verify the reactions are shown next to the titles
       .withGraphJoined(
         `[
+        reactions, 
       ${includeParents ? "parents.parentInsight," : ""}
       ${includeChildren ? "children.childInsight.evidence," : ""}
       ${includeEvidence ? "evidence" : ""}
