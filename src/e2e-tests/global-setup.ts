@@ -1,22 +1,12 @@
-// const dotenv = require("dotenv");
-// const { Client } = require("pg");
-// const bcrypt = require("bcryptjs");
+import { join } from "path";
+import dotenv from "dotenv";
 
-module.exports = async () => {
-  // dotenv.config({ path: "./.env", quiet: true });
-  // const client = new Client({
-  //   user: process.env.DATABASE_USER,
-  //   password: process.env.DATABASE_PASSWORD,
-  //   host: process.env.DATABASE_HOST,
-  //   port: process.env.DATABASE_PORT,
-  //   database: "inspect",
-  // });
-  // await client.connect();
-  // await client.query({
-  //   text: `insert into users (email, username, password)
-  //         values ('test@test.com', 'Test2', $1::text)`,
-  //   // on conflict (email) do update set id=excluded.id`,
-  //   values: [await bcrypt.hash("asdf", 10)],
-  // });
-  // await client.end();
-};
+async function globalSetup() {
+  // Use process.cwd() to get the path to the project root
+  const envPath = join(process.cwd(), ".env");
+
+  // Configure dotenv with the absolute path
+  dotenv.config({ path: envPath, quiet: true });
+}
+
+export default globalSetup;

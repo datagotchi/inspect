@@ -22,7 +22,7 @@ export async function generateMetadata({
   const currentUrl = (await headers()).get("x-url");
   const uid = (await params).uid;
   const insight = await getInsightFromServer(origin ?? "", { uid }, token);
-  if (insight) {
+  if (insight && typeof insight === "object" && "uid" in insight) {
     return {
       openGraph: {
         url: currentUrl!,
@@ -57,10 +57,12 @@ const InsightPage = async ({
   const origin = (await headers()).get("x-origin");
   const token = (await cookies()).get("token")?.value;
   const uid = (await params).uid;
+
   const insight = await getInsightFromServer(origin ?? "", { uid }, token);
-  if (insight) {
+
+  if (insight && typeof insight === "object" && "uid" in insight) {
     const authUser = await getAuthUser(headers);
-    // FIXME: include a .user in the insight via ojs join?
+
     const currentUser = authUser
       ? await getUserFromServer(
           origin ?? "",

@@ -1,3 +1,5 @@
+"use server";
+
 import { NextRequest, NextResponse } from "next/server";
 import { NextURL } from "next/dist/server/web/next-url";
 import { raw } from "objection";

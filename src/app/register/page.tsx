@@ -17,10 +17,35 @@ const RegisterPage = (): React.JSX.Element => {
   }, []);
   const { setLoggedIn, setToken } = useUser();
 
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault(); // Stop the default browser submission
+    try {
+      const newUser = await handleRegister();
+      if (newUser) {
+        if (newUser.token) {
+          setToken(newUser.token);
+          setLoggedIn(true);
+        }
+        if (newUser.enable_email_notifications) {
+          open(
+            `${window.location.origin}/follow?return=${returnParam}`,
+            "_self",
+          );
+        } else if (returnParam) {
+          open(`${window.location.origin}${returnParam}`, "_self");
+        } else {
+          open(`${window.location.origin}/confirm`, "_self");
+        }
+      }
+    } catch (err) {
+      alert(err);
+    }
+  };
+
   return (
     <div id="body">
       <h2>Register for Inspect by Datagotchi Labs</h2>
-      <form name="registerInfo">
+      <form name="registerInfo" onSubmit={handleSubmit}>
         <label>
           Email:{" "}
           <input
@@ -48,33 +73,7 @@ const RegisterPage = (): React.JSX.Element => {
             onChange={(event) => setPassword(event.target.value)}
           />
         </label>
-        <button
-          type="submit"
-          disabled={!(email && username && password)}
-          onClick={async () => {
-            try {
-              const newUser = await handleRegister();
-              if (newUser) {
-                if (newUser.token) {
-                  setToken(newUser.token);
-                  setLoggedIn(true);
-                }
-                if (newUser.enable_email_notifications) {
-                  open(
-                    `${window.location.origin}/follow?return=${returnParam}`,
-                    "_self",
-                  );
-                } else if (returnParam) {
-                  open(`${window.location.origin}${returnParam}`, "_self");
-                } else {
-                  open(`${window.location.origin}/confirm`, "_self");
-                }
-              }
-            } catch (err) {
-              alert(err);
-            }
-          }}
-        >
+        <button type="submit" disabled={!(email && username && password)}>
           Register
         </button>
       </form>

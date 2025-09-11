@@ -18,10 +18,31 @@ const LoginPage = (): React.JSX.Element => {
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
 
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault(); // Stop the default browser submission
+    try {
+      const user = await handleLogin();
+      if (user?.token) {
+        setToken(user.token);
+        setLoggedIn(true);
+
+        if (window) {
+          window.open(`${window.location.origin}${returnParam}`, "_self");
+        }
+      }
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred.");
+      }
+    }
+  };
+
   return (
     <div id="body">
       <h2>Login to Inspect</h2>
-      <form name="loginInfo">
+      <form name="loginInfo" onSubmit={handleSubmit}>
         <label>
           Email:{" "}
           <input
@@ -40,32 +61,7 @@ const LoginPage = (): React.JSX.Element => {
             onChange={(event) => setPassword(event.target.value)}
           />
         </label>
-        <button
-          type="submit"
-          onClick={async () => {
-            try {
-              const user = await handleLogin();
-              if (user?.token) {
-                setToken(user.token);
-                setLoggedIn(true);
-
-                if (window) {
-                  window.open(
-                    `${window.location.origin}${returnParam}`,
-                    "_self",
-                  );
-                }
-              }
-            } catch (err) {
-              if (err instanceof Error) {
-                setError(err.message);
-              } else {
-                setError("An unknown error occurred.");
-              }
-            }
-          }}
-          disabled={!(email && password)}
-        >
+        <button type="submit" disabled={!(email && password)}>
           Login
         </button>
         <div style={{ color: "red" }}>{error}</div>

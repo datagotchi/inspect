@@ -230,6 +230,14 @@ const ClientSidePage = ({
                   <span>{insight.is_public ? "✅" : ""}</span>
                 ),
               },
+              // FIXME: add is_complete to table and route
+              // {
+              //   name: "⚠️",
+              //   dataColumn: "is_incomplete",
+              //   display: (insight: Fact | Insight) => (
+              //     <span>{insight.is_incomplete ? "⚠️" : ""}</span>
+              //   ),
+              // },
             ]}
           />
         </InfiniteScrollLoader>

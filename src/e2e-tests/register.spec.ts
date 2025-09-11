@@ -1,58 +1,60 @@
-import { test, expect } from "@playwright/test";
-import dotenv from "dotenv";
+import { expect, Page } from "@playwright/test";
 import pg from "pg";
-const Client = pg.Client;
 
-let client: pg.Client;
+import { test as testBase } from "./fixtures";
 
-test.beforeAll(async () => {
-  dotenv.config({ path: "./.env", quiet: true });
-  client = new Client({
-    user: process.env.DATABASE_USER,
-    password: process.env.DATABASE_PASSWORD,
-    host: process.env.DATABASE_HOST,
-    port: Number(process.env.DATABASE_PORT),
-    database: "inspect",
-  });
-  await client.connect();
+const test = testBase.extend<{ anonymousPage: Page }>({
+  anonymousPage: [
+    async ({ anonymousContext }, use) => {
+      const page = await anonymousContext.newPage();
+      await use(page);
+    },
+    { scope: "test" },
+  ],
 });
 
-test.afterAll(async () => {
-  await client.query("delete from users where username = 'Test3'");
-  await client.end();
+test.afterAll(async ({ pool }) => {
+  const client = await pool.connect();
+  try {
+    await client.query("delete from users where username = 'Test3'");
+  } finally {
+    client.release();
+  }
 });
 
-test("click on register link", async ({ page }) => {
-  await page.goto("http://localhost:3000");
+test("click on register link", async ({ anonymousPage }) => {
+  await anonymousPage.goto("http://localhost:3000");
 
-  await expect(page).toHaveURL("http://localhost:3000/insights");
+  await expect(anonymousPage).toHaveURL("http://localhost:3000/insights");
+
   await expect(
-    page.getByRole("heading", { name: /My Insights \([0-9]+\)/ }),
+    anonymousPage.getByRole("link", { name: "Register" }),
   ).toBeVisible();
+  await anonymousPage.getByRole("link", { name: "Register" }).click();
 
-  await expect(page.getByRole("link", { name: "Register" })).toBeVisible();
-  await page.getByRole("link", { name: "Register" }).click();
-
-  await expect(page).toHaveURL(
+  await expect(anonymousPage).toHaveURL(
     "http://localhost:3000/register?return=/insights",
   );
 });
 
-test("do registration", async ({ page }) => {
-  await page.goto("http://localhost:3000/register?return=/insights");
+test("do registration", async ({ anonymousPage }) => {
+  await anonymousPage.goto("http://localhost:3000/register?return=/insights");
 
   await expect(
-    page.getByRole("heading", {
+    anonymousPage.getByRole("heading", {
       name: "Register for Inspect by Datagotchi Labs",
     }),
   ).toBeVisible();
 
-  const registerButton = page.getByRole("button", { name: "Register" });
+  const registerButton = anonymousPage.getByRole("button", {
+    name: "Register",
+  });
   await expect(registerButton).toBeVisible();
   await expect(registerButton).toBeDisabled();
 
-  // const emailField = page.getByRole("textbox", { name: "Email:" });
-  const emailLabel = page.locator("label").filter({ hasText: "Email:" });
+  const emailLabel = anonymousPage
+    .locator("label")
+    .filter({ hasText: "Email:" });
   await expect(emailLabel).toHaveText("Email:");
   const emailField = emailLabel.locator("input");
   await expect(emailField).toBeEmpty();
@@ -61,8 +63,9 @@ test("do registration", async ({ page }) => {
 
   await expect(registerButton).toBeDisabled();
 
-  // const usernameField = page.getByRole("textbox", { name: "Username:" });
-  const usernameLabel = page.locator("label").filter({ hasText: "Username:" });
+  const usernameLabel = anonymousPage
+    .locator("label")
+    .filter({ hasText: "Username:" });
   await expect(usernameLabel).toHaveText("Username:");
   const usernameField = usernameLabel.locator("input");
   await expect(usernameField).toBeEmpty();
@@ -71,8 +74,9 @@ test("do registration", async ({ page }) => {
 
   await expect(registerButton).toBeDisabled();
 
-  // const passwordField = page.getByRole("textbox", { name: "Password:" });
-  const passwordLabel = page.locator("label").filter({ hasText: "Password:" });
+  const passwordLabel = anonymousPage
+    .locator("label")
+    .filter({ hasText: "Password:" });
   await expect(passwordLabel).toHaveText("Password:");
   const passwordField = passwordLabel.locator("input");
   await expect(passwordField).toBeEmpty();
@@ -82,18 +86,7 @@ test("do registration", async ({ page }) => {
   await expect(registerButton).toBeEnabled();
   await registerButton.click();
 
-  await expect(page).toHaveURL("http://localhost:3000/insights", {
+  await expect(anonymousPage).toHaveURL("http://localhost:3000/insights", {
     timeout: 30000,
   });
 });
-
-// uncomment this test after enabling the follow page
-// test("follow top authors", async ({ page }) => {
-//   // await page.goto("http://localhost:3000/follow");
-
-//   await expect(
-//     page.getByRole("heading", { name: "Follow Summary Authors" }),
-//   ).toBeVisible();
-
-//   // ...
-// });

@@ -49,7 +49,10 @@ export const middleware = async (req: NextRequest): Promise<NextResponse> => {
   let origin = req.nextUrl.origin;
   let url = req.nextUrl.href;
 
-  if (process.env.NODE_ENV === "production") {
+  const isProduction = process.env.NODE_ENV === "production";
+  const isLocalProdBuild = process.env.IS_LOCAL_PRODUCTION === "true";
+
+  if (isProduction && !isLocalProdBuild) {
     origin = origin.replace(
       /http:\/\/localhost:3000/,
       "https://inspect.datagotchi.net",

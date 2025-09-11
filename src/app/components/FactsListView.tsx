@@ -229,22 +229,20 @@ const FactsListView = ({
           </div>
         )}
       </div>
-      {data && data.length > 0 && (
-        <FactsTable
-          factName={factName}
-          data={data}
-          setData={setData}
-          selectedFacts={selectedFacts}
-          setSelectedFacts={setSelectedFacts}
-          columns={columns}
-          dataFilter={dataFilter}
-          setDataFilter={setDataFilter}
-          allowFeedback={true}
-          theadTopCSS="100px"
-          hideHead={hideHead}
-          enableFeedback={enableFeedback}
-        />
-      )}
+      <FactsTable
+        factName={factName}
+        data={data}
+        setData={setData}
+        selectedFacts={selectedFacts}
+        setSelectedFacts={setSelectedFacts}
+        columns={columns}
+        dataFilter={dataFilter}
+        setDataFilter={setDataFilter}
+        allowFeedback={true}
+        theadTopCSS="100px"
+        hideHead={hideHead}
+        enableFeedback={enableFeedback}
+      />
     </>
   );
 };
