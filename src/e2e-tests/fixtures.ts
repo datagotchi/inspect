@@ -22,19 +22,18 @@ export type AccountPageFixtures = {
 };
 
 export type LocalTestFixtures = {
-  userPage: Page;
+  page: Page;
   roleName: string;
 };
 
 type UserRole = {
   name: string;
-  pageFixture: keyof AccountPageFixtures;
 };
 
 export const userRoles: UserRole[] = [
-  { name: "My Account", pageFixture: "myAccountPage" },
-  { name: "Test User", pageFixture: "testAccountPage" },
-  { name: "Anonymous", pageFixture: "anonymousPage" },
+  { name: "My Account" },
+  { name: "Test User" },
+  { name: "Anonymous" },
 ];
 
 export const test = baseTest.extend<
