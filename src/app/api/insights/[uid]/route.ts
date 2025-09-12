@@ -49,37 +49,54 @@ export async function GET(
 
   let query = InsightModel.query().findOne("insights.uid", uid);
 
-  query = query.withGraphFetched({
-    reactions: true,
-    parents: { parentInsight: { reactions: true } },
-    children: {
-      childInsight: includeNestedEvidenceTotals
-        ? {
-            // FIXME: separate the CTE modifier into its own API to, e.g., enable users to request aggegate counts after seeing direct counts
-            $modify: ["selectTotalEvidenceCount"],
-            // title: true,
-            // children: { childInsight: true },
-            reactions: true,
-          }
-        : {
-            $modify: ["selectDirectEvidenceCount"],
-            children: { $modify: ["selectDirectChildrenCount"] },
-            reactions: true,
-          },
-    },
-    comments: {
-      $modify: ["selectDisplayAndUserJoinColumn"],
-      user: { $modify: ["selectUsername"] },
-    },
-    evidence: {
-      $modify: [
-        "selectDisplayAndSummaryJoinColumn",
-        // FIXME: pagination of evidence does not work because of modifier formatting:
-        // ["selectPagedEvidence", evidenceOffset, evidenceLimit],
-      ],
-      summary: { source: true, comments: { user: true }, reactions: true },
-    },
-  });
+  query = query
+    .withGraphFetched({
+      reactions: true,
+      parents: { parentInsight: { reactions: true } },
+      children: {
+        childInsight: includeNestedEvidenceTotals
+          ? {
+              // FIXME: separate the CTE modifier into its own API to, e.g., enable users to request aggegate counts after seeing direct counts
+              $modify: ["selectTotalEvidenceCount"],
+              // title: true,
+              // children: { childInsight: true },
+              reactions: true,
+            }
+          : {
+              $modify: ["selectDirectEvidenceCount"],
+              children: { $modify: ["selectDirectChildrenCount"] },
+              reactions: true,
+            },
+      },
+      comments: {
+        $modify: ["selectDisplayAndUserJoinColumn"],
+        user: { $modify: ["selectUsername"] },
+      },
+      evidence: {
+        $modify: [
+          "selectDisplayAndSummaryJoinColumn",
+          // FIXME: pagination of evidence does not work because of modifier formatting:
+          // ["selectPagedEvidence", evidenceOffset, evidenceLimit],
+        ],
+        summary: { source: true, comments: { user: true }, reactions: true },
+      },
+    })
+    .modifyGraph("reactions", (builder) => {
+      builder.whereNull("summary_id");
+    })
+    .modifyGraph("children.childInsight.reactions", (builder) => {
+      builder.whereNull("summary_id");
+    })
+    .modifyGraph("evidence.summary.reactions", (builder) => {
+      builder
+        .whereNotNull("summary_id") // FIXME: is this needed? given summaries are linked to reactions via summary_id already
+        .andWhere(
+          "insight_id",
+          InsightModel.relatedQuery<EvidenceModel>("evidence")
+            .select("insight_id")
+            .where("uid", uid),
+        );
+    });
 
   const insight = await query;
 
