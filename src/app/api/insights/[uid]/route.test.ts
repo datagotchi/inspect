@@ -31,6 +31,7 @@ jest.mock("../../models/insights", () => {
     merge: jest.fn().mockReturnThis(),
     withGraphJoined: jest.fn().mockReturnThis(),
     withGraphFetched: jest.fn().mockReturnThis(),
+    modifyGraph: jest.fn().mockReturnThis(),
     whereInComposite: jest.fn().mockReturnThis(),
     then: jest.fn(),
   };
@@ -66,6 +67,7 @@ describe("GET /api/insights/[uid]", () => {
     (InsightModel.query().merge as jest.Mock).mockReturnThis();
     (InsightModel.query().withGraphJoined as jest.Mock).mockReturnThis();
     (InsightModel.query().withGraphFetched as jest.Mock).mockReturnThis();
+    (InsightModel.query().modifyGraph as jest.Mock).mockReturnThis();
     (InsightModel.query().whereInComposite as jest.Mock).mockReturnThis();
     (InsightModel.query().then as jest.Mock).mockImplementation((callback) =>
       Promise.resolve(callback(mockInsightData)),
