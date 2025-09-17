@@ -15,13 +15,28 @@ import {
 import { getAuthUser } from "../../../functions";
 import { InsightModel } from "../../models/insights";
 
-// jest.mock("../../functions", () => ({
-//   getUserData: jest.fn(),
-// }));
 jest.mock("../../../functions");
+// const mockFullInsightData = {
+//   uid: "test-uid",
+//   id: 1,
+//   // ... all other fully-populated insight data, including nested relations
+// };
+const createMockInsightInstance = () => ({
+  $fetchGraph: jest.fn(),
+  // Add other instance methods if needed
+});
 jest.mock("../../models/insights", () => {
+  // const mockInsightInstance = {
+  //   uid: "test-uid",
+  //   id: 1,
+  //   $fetchGraph: jest.fn().mockResolvedValue(mockFullInsightData),
+  //   modifyGraph: jest.fn().mockReturnThis(),
+  // };
+
+  const instance = createMockInsightInstance();
+
   const mockQueryBuilder = {
-    findOne: jest.fn().mockReturnThis(),
+    findOne: jest.fn().mockResolvedValue(instance),
     for: jest.fn().mockReturnThis(),
     patch: jest.fn().mockReturnThis(),
     delete: jest.fn().mockReturnThis(),
@@ -30,10 +45,10 @@ jest.mock("../../models/insights", () => {
     onConflict: jest.fn().mockReturnThis(),
     merge: jest.fn().mockReturnThis(),
     withGraphJoined: jest.fn().mockReturnThis(),
-    withGraphFetched: jest.fn().mockReturnThis(),
     modifyGraph: jest.fn().mockReturnThis(),
     whereInComposite: jest.fn().mockReturnThis(),
-    then: jest.fn(),
+    // then: jest.fn(),
+    then: jest.fn((callback) => Promise.resolve(callback())),
   };
 
   const MockInsightModelConstructor = jest.fn();
@@ -57,21 +72,20 @@ describe("GET /api/insights/[uid]", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (InsightModel.query().findOne as jest.Mock).mockReturnThis();
-    (InsightModel.query().for as jest.Mock).mockReturnThis();
-    (InsightModel.query().patch as jest.Mock).mockReturnThis();
-    (InsightModel.query().delete as jest.Mock).mockReturnThis();
-    (InsightModel.query().insert as jest.Mock).mockReturnThis();
-    (InsightModel.query().where as jest.Mock).mockReturnThis();
-    (InsightModel.query().onConflict as jest.Mock).mockReturnThis();
-    (InsightModel.query().merge as jest.Mock).mockReturnThis();
-    (InsightModel.query().withGraphJoined as jest.Mock).mockReturnThis();
-    (InsightModel.query().withGraphFetched as jest.Mock).mockReturnThis();
-    (InsightModel.query().modifyGraph as jest.Mock).mockReturnThis();
-    (InsightModel.query().whereInComposite as jest.Mock).mockReturnThis();
-    (InsightModel.query().then as jest.Mock).mockImplementation((callback) =>
-      Promise.resolve(callback(mockInsightData)),
-    );
+    // (InsightModel.query().findOne as jest.Mock).mockReturnThis();
+    // (InsightModel.query().for as jest.Mock).mockReturnThis();
+    // (InsightModel.query().patch as jest.Mock).mockReturnThis();
+    // (InsightModel.query().delete as jest.Mock).mockReturnThis();
+    // (InsightModel.query().insert as jest.Mock).mockReturnThis();
+    // (InsightModel.query().where as jest.Mock).mockReturnThis();
+    // (InsightModel.query().onConflict as jest.Mock).mockReturnThis();
+    // (InsightModel.query().merge as jest.Mock).mockReturnThis();
+    // (InsightModel.query().withGraphJoined as jest.Mock).mockReturnThis();
+    // (InsightModel.query().modifyGraph as jest.Mock).mockReturnThis();
+    // (InsightModel.query().whereInComposite as jest.Mock).mockReturnThis();
+    // (InsightModel.query().then as jest.Mock).mockImplementation((callback) =>
+    //   Promise.resolve(callback(mockInsightData)),
+    // );
     props = {
       params: Promise.resolve({ uid: "123" }),
     };
@@ -356,6 +370,21 @@ describe("GET /api/insights/[uid]", () => {
       });
     });
 
+    it("throws error for other database errors", async () => {
+      (InsightModel.query().then as jest.Mock).mockReset();
+      (InsightModel.query().then as jest.Mock).mockImplementationOnce(() => {
+        throw new Error("DB error");
+      });
+      const req = {
+        nextUrl: {
+          searchParams: new URLSearchParams({
+            offset: "0",
+          }),
+        },
+      } as GetInsightRouteRequest;
+      await expect(GET(req, props)).rejects.toThrow("DB error");
+    });
+
     it("should return 200/work if offset or limit are missing", async () => {
       const req = {
         nextUrl: {
@@ -433,7 +462,6 @@ describe("PATCH /api/insights/[uid]", () => {
     (InsightModel.query().onConflict as jest.Mock).mockReturnThis();
     (InsightModel.query().merge as jest.Mock).mockReturnThis();
     (InsightModel.query().withGraphJoined as jest.Mock).mockReturnThis();
-    (InsightModel.query().withGraphFetched as jest.Mock).mockReturnThis();
     (InsightModel.query().whereInComposite as jest.Mock).mockReturnThis();
     (InsightModel.query().then as jest.Mock).mockImplementation((callback) =>
       Promise.resolve(callback(mockInsightData)),
