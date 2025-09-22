@@ -138,6 +138,7 @@ export const Modal: React.FC<ModalProps> = ({
       aria-modal="true"
       aria-labelledby={`${id}-title`}
       tabIndex={-1}
+      id={id}
     >
       <div className={`${styles.modalDialog} ${sizeClass}`}>
         <ModalHeader>
@@ -291,6 +292,7 @@ export const ModalButton: React.FC<{
   disabled?: boolean;
   type?: "button" | "submit" | "reset";
   className?: string;
+  ariaLabel?: string;
 }> = ({
   children,
   variant = "primary",
@@ -298,6 +300,7 @@ export const ModalButton: React.FC<{
   disabled = false,
   type = "button",
   className = "",
+  ariaLabel = "",
 }) => {
   const variantClass = {
     primary: styles.modalButtonPrimary,
@@ -311,6 +314,7 @@ export const ModalButton: React.FC<{
       className={`${styles.modalButton} ${variantClass} ${className}`}
       onClick={onClick}
       disabled={disabled}
+      aria-label={ariaLabel}
     >
       {children}
     </button>

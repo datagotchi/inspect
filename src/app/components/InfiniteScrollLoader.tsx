@@ -27,7 +27,7 @@ const InfiniteScrollLoader = ({
   limit?: number;
 }): React.JSX.Element => {
   const [loading, setLoading] = useState(false);
-  const [offset, setOffset] = useState(limit);
+  const [offset, setOffset] = useState(0);
   const [origin, setOrigin] = useState<string>();
   useEffect(() => {
     setOrigin(window.location.origin);

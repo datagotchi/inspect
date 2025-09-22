@@ -111,15 +111,12 @@ const ClientSidePage = ({
         await Promise.all(
           selectedInsights.map(async (insight) => {
             try {
-              await addCitationsToInsight(
-                {
-                  insight,
-                  evidence: [{ summary_id: link.id } as InsightEvidence],
-                },
-                token,
-              );
-              // FIXME: does not update the insight in prod
-              responses.push({ action: 0, facts: [insight] });
+              const insightWithEvidence = {
+                insight,
+                evidence: [{ summary_id: link.id } as InsightEvidence],
+              };
+              await addCitationsToInsight(insightWithEvidence, token);
+              responses.push({ action: 0, facts: [insightWithEvidence] });
             } catch (error) {
               console.error(
                 `Failed to add citation to insight ${insight.uid}:`,
@@ -197,8 +194,7 @@ const ClientSidePage = ({
                           },
                         },
                       );
-                      const json = (await response.json()) as Insight[];
-                      return json;
+                      return (await response.json()) as Insight[];
                     }}
                   >
                     <FactsListView
@@ -240,7 +236,23 @@ const ClientSidePage = ({
                           handleOnClick: () => {
                             setIsSaveLinkDialogOpen(true);
                           },
-                          serverFunction: createLinkAndAddToInsights,
+                          serverFunction: ({
+                            url,
+                            selectedInsights,
+                            newInsightName,
+                          }) => {
+                            if (token) {
+                              return createLinkAndAddToInsights(
+                                {
+                                  url,
+                                  selectedInsights,
+                                  newInsightName,
+                                },
+                                token,
+                              );
+                            }
+                            return Promise.resolve([]);
+                          },
                         },
                       ]}
                       selectedActions={[
@@ -253,7 +265,7 @@ const ClientSidePage = ({
                           serverFunction: publishInsights,
                         },
                         {
-                          className: cardStyles.addButton,
+                          className: cardStyles.removeButton,
                           text: "Delete",
                           icon: "🗑️",
                           enabled: !!currentUser,
@@ -310,52 +322,8 @@ const ClientSidePage = ({
                 potentialInsightsFromServer={liveData.filter(
                   (insight) => insight.user_id == currentUser?.id,
                 )}
-                setServerFunctionInput={(input) => {
-                  if (input && token) {
-                    console.log("Creating link and adding to insights:", input);
-                    // When SaveLinkDialog submits, trigger createLinkAndAddToInsights
-                    createLinkAndAddToInsights(input, token)
-                      .then((responses) => {
-                        console.log(
-                          "Successfully created link and added to insights:",
-                          responses,
-                        );
-                        // Update the live data with the responses
-                        responses.forEach((response) => {
-                          if (response.action === 1) {
-                            setLiveData([
-                              ...(response.facts as Insight[]),
-                              ...liveData,
-                            ]);
-                          } else if (response.action === 0) {
-                            // Update existing insights
-                            const updatedData = liveData.map((insight) => {
-                              const updatedInsight = response.facts.find(
-                                (f) => f.uid === insight.uid,
-                              ) as Insight;
-                              return updatedInsight
-                                ? { ...insight, ...updatedInsight }
-                                : insight;
-                            });
-                            setLiveData(updatedData);
-                          }
-                        });
-                        // Show success message
-                        alert("Link saved successfully!");
-                      })
-                      .catch((error) => {
-                        console.error(
-                          "Error creating link and adding to insights:",
-                          error,
-                        );
-                        // Show user-friendly error message
-                        alert(
-                          `Failed to save link: ${error.message || "Unknown error"}`,
-                        );
-                      });
-                  }
-                }}
-                setActiveServerFunction={() => {}} // Not needed since we handle it above
+                setServerFunctionInput={setServerFunctionInputForInsightsList}
+                setActiveServerFunction={setActiveServerFunctionForInsightsList}
               />
             </CurrentUserContext.Provider>
           </div>

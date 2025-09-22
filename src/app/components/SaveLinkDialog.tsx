@@ -16,6 +16,7 @@ import {
   ModalContentSection,
   ModalLoadingState,
 } from "./Modal";
+import { debounce } from "../functions";
 
 // need to create a schema here
 // because processing of it to get the insights is necessary before createInsights() is called
@@ -123,37 +124,41 @@ const SaveLinkDialog = ({
   useEffect(() => {
     if (linkUrl && !pageTitle && !loading && !linkUrlError) {
       // Only fetch if URL looks valid and complete
-      const isValidCompleteUrl =
-        linkUrl.match(/^https?:\/\/[^\s]+$/) && linkUrl.length > 10;
+      const isValidUrl = linkUrl.match(/^https?:\/\/[^\s]+$/);
 
-      if (isValidCompleteUrl) {
+      if (isValidUrl) {
         setLoading(true);
         setLinkUrlError("");
 
-        getPageTitle(linkUrl)
-          .then((title) => {
-            setPageTitle(title);
-            setLoading(false);
-          })
-          .catch((error) => {
-            console.error("Error fetching page title:", error);
-            setLoading(false);
+        debounce({
+          func: () =>
+            getPageTitle(linkUrl)
+              .then((title) => {
+                setPageTitle(title);
+                setLoading(false);
+              })
+              .catch((error) => {
+                console.error("Error fetching page title:", error);
+                setLoading(false);
 
-            // Check if it's a blocking error (403, 429, etc.)
-            if (
-              error.message.includes("403") ||
-              error.message.includes("blocked") ||
-              error.message.includes("Forbidden")
-            ) {
-              setLinkUrlError(
-                "Website blocks automated access - you can still save the link",
-              );
-            } else {
-              setLinkUrlError(
-                "Could not get page title - you can still save the link",
-              );
-            }
-          });
+                // Check if it's a blocking error (403, 429, etc.)
+                if (
+                  error.message.includes("403") ||
+                  error.message.includes("blocked") ||
+                  error.message.includes("Forbidden")
+                ) {
+                  setLinkUrlError(
+                    "Website blocks automated access - you can still save the link",
+                  );
+                } else {
+                  setLinkUrlError(
+                    "Could not get page title - you can still save the link",
+                  );
+                }
+              }),
+          key: "saveLinkDialog",
+          wait: 500, // Longer debounce for better UX
+        });
       }
     }
   }, [linkUrl, pageTitle, loading, linkUrlError]);
@@ -289,6 +294,7 @@ const SaveLinkDialog = ({
           disabled={
             !linkUrl || !(selectedInsights.length > 0 || newInsightName)
           }
+          ariaLabel="Submit Dialog"
         >
           Submit
         </ModalButton>

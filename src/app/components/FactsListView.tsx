@@ -91,9 +91,9 @@ const FactsListView = ({
 
   /* executing server functions when input is specified */
   useEffect(() => {
-    if (serverFunctionInput && activeServerFunction) {
+    if (serverFunctionInput && activeServerFunction && token) {
       activeServerFunction
-        .function(serverFunctionInput, token ?? "")
+        .function(serverFunctionInput, token)
         .then((response: FLVResponse | FLVResponse[] | void) => {
           if (Array.isArray(response)) {
             setFLVResponses([...flvResponses, ...response]);
