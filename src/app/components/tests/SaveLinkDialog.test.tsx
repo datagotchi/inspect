@@ -245,6 +245,7 @@ describe("SaveLinkDialog", () => {
   });
 
   describe("Disabled because of saveLinksDialogUrlError", () => {
+    // eslint-disable-next-line jest/no-disabled-tests
     it.skip("shows warning & submit is disabled when link already exists", async () => {
       // TODO: This test is complex due to debouncing and multiple useEffect hooks
       // The component logic involves:

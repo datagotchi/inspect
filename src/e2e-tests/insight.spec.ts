@@ -1,5 +1,5 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import { expect, Locator, Page } from "@playwright/test";
-import { INSERT_LINK_DIALOG_ID } from "../app/constants";
 import pg from "pg";
 
 import { test as baseTest, userRoles, LocalTestFixtures } from "./fixtures";

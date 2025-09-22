@@ -49,7 +49,7 @@ const RegisterPage = (): React.JSX.Element => {
           <h2 className="text-3xl font-bold text-center mb-8">
             Register for Inspect by Datagotchi Labs
           </h2>
-          <form name="registerInfo" onSubmit={(e) => e.preventDefault()}>
+          <form name="registerInfo" onSubmit={handleSubmit}>
             <div className="mb-4">
               <label className="form-label">Email:</label>
               <input

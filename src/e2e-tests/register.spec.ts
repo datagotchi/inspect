@@ -1,5 +1,4 @@
 import { expect, Page } from "@playwright/test";
-import pg from "pg";
 
 import { test as testBase } from "./fixtures";
 
