@@ -70,7 +70,7 @@ const FactsListView = ({
   const [unselectedActionsContainer, setUnselectedActionsContainer] =
     useState<HTMLElement | null>(null);
 
-  const { token, loggedIn } = useUser();
+  const { token } = useUser();
 
   const updateExistingFact = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -203,6 +203,13 @@ const FactsListView = ({
       if (containerElement) {
         setUnselectedActionsContainer(containerElement);
       }
+    } else {
+      const containerElement = document.getElementById(
+        "flvUnselectedActionsContainer",
+      );
+      if (containerElement) {
+        setUnselectedActionsContainer(containerElement);
+      }
     }
   }, [unselectedActionsContainerId]);
 
@@ -211,38 +218,43 @@ const FactsListView = ({
       {unselectedActionsContainer &&
         createPortal(unselectedActionsButtons, unselectedActionsContainer)}
       <div id={HEADER_ELEMENT_ID} className="content-card space-main">
-        {selectedFacts &&
-          selectedFacts.length > 0 &&
-          selectedActions &&
-          selectedActions.length > 0 && (
-            <div className="content-card-header">
-              <div className="flex gap-4">
-                {loggedIn &&
-                  selectedActions &&
-                  selectedActions
-                    .filter((a) => a.enabled)
-                    .map((selectedAction, i) => (
-                      <div key={`${factName} selectedAction #${i}`}>
-                        <SelectedFactsButton
-                          classNames={cardStyles.addButton}
-                          text={selectedAction.text}
-                          icon={selectedAction.icon}
-                          handleOnClick={() => {
-                            selectedAction.handleOnClick(selectedFacts);
-                            if (selectedAction.serverFunction) {
-                              // saving the function directly calls it, so wrapping it in an object
-                              setActiveServerFunction({
-                                function: selectedAction.serverFunction,
-                              });
-                            }
-                            setSelectedFacts([]);
-                          }}
-                        />
-                      </div>
-                    ))}
-              </div>
-            </div>
-          )}
+        <div id="flvUnselectedActionsContainer"></div>
+        <div className="content-card-header">
+          <div
+            className="flex gap-4"
+            style={{
+              justifyContent: "center",
+              height: "31px",
+              marginBottom: "15px",
+            }}
+          >
+            {selectedActions &&
+              selectedActions.length > 0 &&
+              selectedFacts &&
+              selectedFacts.length > 0 &&
+              selectedActions
+                .filter((a) => a.enabled)
+                .map((selectedAction, i) => (
+                  <div key={`${factName} selectedAction #${i}`}>
+                    <SelectedFactsButton
+                      classNames={cardStyles.addButton}
+                      text={selectedAction.text}
+                      icon={selectedAction.icon}
+                      handleOnClick={() => {
+                        selectedAction.handleOnClick(selectedFacts);
+                        if (selectedAction.serverFunction) {
+                          // saving the function directly calls it, so wrapping it in an object
+                          setActiveServerFunction({
+                            function: selectedAction.serverFunction,
+                          });
+                        }
+                        setSelectedFacts([]);
+                      }}
+                    />
+                  </div>
+                ))}
+          </div>
+        </div>
         {data && data.length > 0 && (
           <div className="content-card-body">
             <FactsTable

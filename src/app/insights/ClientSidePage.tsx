@@ -44,8 +44,8 @@ const ClientSidePage = ({
   const [liveData, setLiveData] = useState(insights);
   const [selectedInsights, setSelectedInsights] = useState<Insight[]>([]);
   const [isSaveLinkDialogOpen, setIsSaveLinkDialogOpen] = useState(false);
-  const LIMIT = 20;
-  const loggedIn = !!currentUser;
+
+  const PAGE_SIZE = 20;
 
   const [
     serverFunctionInputForInsightsList,
@@ -181,10 +181,10 @@ const ClientSidePage = ({
                         React.SetStateAction<Fact[] | undefined>
                       >
                     }
-                    limit={LIMIT}
+                    limit={PAGE_SIZE}
                     getDataFunction={async (offset, token) => {
                       const queryParams = new URLSearchParams(
-                        `offset=${offset}&limit=${LIMIT}&parents=true&children=true&evidence=true`,
+                        `offset=${offset}&limit=${PAGE_SIZE}&parents=true&children=true&evidence=true`,
                       );
                       queryParams.sort();
                       const response = await fetch(
@@ -238,9 +238,7 @@ const ClientSidePage = ({
                           icon: "🔗",
                           enabled: !!currentUser,
                           handleOnClick: () => {
-                            const dialog =
-                              document.getElementById(SAVE_LINK_DIALOG_ID);
-                            (dialog as HTMLDialogElement).showModal();
+                            setIsSaveLinkDialogOpen(true);
                           },
                           serverFunction: createLinkAndAddToInsights,
                         },
@@ -355,12 +353,6 @@ const ClientSidePage = ({
                           `Failed to save link: ${error.message || "Unknown error"}`,
                         );
                       });
-                  } else {
-                    console.error("Missing input or token:", {
-                      input,
-                      token: !!token,
-                    });
-                    alert("Authentication required to save links");
                   }
                 }}
                 setActiveServerFunction={() => {}} // Not needed since we handle it above

@@ -92,6 +92,35 @@ describe("FactsListView", () => {
     );
   });
 
+  it("renders unselected actions in a separate container when its ID is specified", async () => {
+    const CONTAINER_ID = "custom-unselected-actions";
+    render(
+      <FactsDataContext.Provider
+        value={{ data: mockFacts, setData: jest.fn() }}
+      >
+        <div id={CONTAINER_ID}></div>
+        <FactsListView
+          factName="testFact"
+          setServerFunctionInput={jest.fn()}
+          selectedFacts={[]}
+          setSelectedFacts={jest.fn()}
+          unselectedActions={mockUnselectedActions}
+          selectedActions={mockSelectedActions}
+          columns={mockColumns}
+          setActiveServerFunction={jest.fn()}
+          activeServerFunction={{ function: jest.fn() }}
+          unselectedActionsContainerId={CONTAINER_ID}
+        />
+      </FactsDataContext.Provider>,
+    );
+
+    const unselectedActionsContainer = document.getElementById(CONTAINER_ID);
+    expect(unselectedActionsContainer).toBeInTheDocument();
+    mockUnselectedActions.forEach((a) =>
+      expect(unselectedActionsContainer).toHaveTextContent(a.text),
+    );
+  });
+
   it("calls handleOnClick and activeServerFunction for unselected action", async () => {
     mockServerFunction.mockResolvedValue([{ action: 0, facts: [] }]);
     let activeServerFunction;

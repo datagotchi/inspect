@@ -11,9 +11,8 @@ export const createInsights = (
   token: string,
 ): Promise<FLVResponse[]> =>
   Promise.all(
-    insights.map((insight) =>
-      // TODO: verify insight matches Awaited<PostInsightsRouteRequestBody>
-      fetch("/api/insights", {
+    insights.map((insight) => {
+      return fetch("/api/insights", {
         method: "POST",
         body: JSON.stringify(insight),
         headers: {
@@ -33,8 +32,8 @@ export const createInsights = (
               action: 1,
               facts: [insight],
             }) as FLVResponse,
-        ),
-    ),
+        );
+    }),
   );
 
 type PartialInsightProperties = WithPartial<

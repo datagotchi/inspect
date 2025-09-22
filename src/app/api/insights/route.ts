@@ -88,12 +88,15 @@ export async function POST(
     }
 
     // First create the insight without evidence
+    const nowDate = new Date();
     const newInsight = await InsightModel.query()
       .insert({
         user_id: authUser.user_id,
         uid,
         title,
-      })
+        created_at: nowDate,
+        updated_at: nowDate,
+      } as Partial<InsightModel>)
       .withGraphFetched("evidence");
 
     // Then add evidence if provided
