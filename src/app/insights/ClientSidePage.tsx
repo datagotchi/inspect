@@ -159,290 +159,215 @@ const ClientSidePage = ({
                     : "No insights yet"}
                 </p>
               </div>
-              {loggedIn && (
-                <div style={{ display: "flex", gap: "var(--spacing-2)" }}>
-                  <button
-                    onClick={promptForNewInsightName}
-                    className={cardStyles.addButton}
-                    aria-label="Create New Insight"
-                    title="Create New Insight"
-                  >
-                    <span className={cardStyles.addButtonIcon}>+</span>
-                    <span className={cardStyles.addButtonText}>
-                      Create New Insight
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => setIsSaveLinkDialogOpen(true)}
-                    className={cardStyles.addButton}
-                    aria-label="Save Link"
-                    title="Save Link"
-                  >
-                    <span className={cardStyles.addButtonIcon}>🔗</span>
-                    <span className={cardStyles.addButtonText}>Save Link</span>
-                  </button>
-                </div>
-              )}
             </div>
-          </div>
-        </div>
 
-        {/* Main Content - Main Level */}
-        <CurrentUserContext.Provider value={currentUser}>
-          <div className={cardStyles.contentCard}>
-            <div className={cardStyles.contentCardHeader}>
-              <div className={cardStyles.hierarchyIndicator}>
-                <span className={cardStyles.hierarchyIcon}>📋</span>
-                Insights List
-              </div>
-              {loggedIn && selectedInsights.length > 0 && (
-                <div className={cardStyles.sectionActions}>
-                  <button
-                    onClick={() => {
-                      setServerFunctionInputForInsightsList({
-                        insights: selectedInsights,
-                      });
-                      setActiveServerFunctionForInsightsList({
-                        function: async (
-                          input: InsightsAPISchema,
-                          token: string,
-                        ) => {
-                          if (token) {
-                            return publishInsights(input, token);
-                          }
-                          return Promise.resolve([]);
+            {/* Main Content - Main Level */}
+            <CurrentUserContext.Provider value={currentUser}>
+              <div className={cardStyles.contentCard}>
+                <div className={cardStyles.contentCardHeader}>
+                  <div className={cardStyles.hierarchyIndicator}>
+                    <div>
+                      <span className={cardStyles.hierarchyIcon}>📋</span>
+                      Insights List
+                    </div>
+                    <div id="unselectedActions_container"></div>
+                  </div>
+                </div>
+                <div className={cardStyles.contentCardBody}>
+                  <InfiniteScrollLoader
+                    data={liveData}
+                    setData={
+                      setLiveData as React.Dispatch<
+                        React.SetStateAction<Fact[] | undefined>
+                      >
+                    }
+                    limit={LIMIT}
+                    getDataFunction={async (offset, token) => {
+                      const queryParams = new URLSearchParams(
+                        `offset=${offset}&limit=${LIMIT}&parents=true&children=true&evidence=true`,
+                      );
+                      queryParams.sort();
+                      const response = await fetch(
+                        `/api/insights?${queryParams.toString()}`,
+                        {
+                          method: "GET",
+                          headers: {
+                            "Content-Type": "application/json",
+                            "x-access-token": token,
+                          },
                         },
-                      });
+                      );
+                      const json = (await response.json()) as Insight[];
+                      return json;
                     }}
-                    className={cardStyles.addButton}
-                    aria-label="Publish Selected"
-                    title="Publish Selected"
                   >
-                    <span className={cardStyles.addButtonIcon}>📢</span>
-                    <span className={cardStyles.addButtonText}>Publish</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (
-                        selectedInsights &&
-                        selectedInsights.length > 0 &&
-                        confirm("Are you sure?")
-                      ) {
-                        setServerFunctionInputForInsightsList({
-                          insights: selectedInsights,
-                        });
-                        setActiveServerFunctionForInsightsList({
-                          function: async (
-                            input: InsightsAPISchema,
-                            token: string,
-                          ) => {
+                    <FactsListView
+                      factName="insight"
+                      serverFunctionInput={serverFunctionInputForInsightsList}
+                      setServerFunctionInput={
+                        setServerFunctionInputForInsightsList
+                      }
+                      activeServerFunction={activeServerFunctionForInsightsList}
+                      setActiveServerFunction={
+                        setActiveServerFunctionForInsightsList
+                      }
+                      selectedFacts={selectedInsights}
+                      setSelectedFacts={
+                        setSelectedInsights as React.Dispatch<
+                          React.SetStateAction<Fact[]>
+                        >
+                      }
+                      unselectedActionsContainerId="unselectedActions_container"
+                      unselectedActions={[
+                        {
+                          className: cardStyles.addButton,
+                          text: "Create New Insight",
+                          icon: "+",
+                          enabled: !!currentUser,
+                          handleOnClick: promptForNewInsightName,
+                          serverFunction: ({ insights }: InsightsAPISchema) => {
                             if (token) {
-                              return deleteInsights(input, token);
+                              return createInsights({ insights }, token);
                             }
                             return Promise.resolve([]);
                           },
-                        });
-                      }
-                    }}
-                    className={cardStyles.addButton}
-                    aria-label="Delete Selected"
-                    title="Delete Selected"
-                  >
-                    <span className={cardStyles.addButtonIcon}>🗑️</span>
-                    <span className={cardStyles.addButtonText}>Delete</span>
-                  </button>
+                        },
+                        {
+                          className: cardStyles.addButton,
+                          text: "Save Link",
+                          icon: "🔗",
+                          enabled: !!currentUser,
+                          handleOnClick: () => {
+                            const dialog =
+                              document.getElementById(SAVE_LINK_DIALOG_ID);
+                            (dialog as HTMLDialogElement).showModal();
+                          },
+                          serverFunction: createLinkAndAddToInsights,
+                        },
+                      ]}
+                      selectedActions={[
+                        {
+                          className: cardStyles.addButton,
+                          text: "Publish",
+                          icon: "📢",
+                          enabled: !!currentUser,
+                          handleOnClick: showConfirmation,
+                          serverFunction: publishInsights,
+                        },
+                        {
+                          className: cardStyles.addButton,
+                          text: "Delete",
+                          icon: "🗑️",
+                          enabled: !!currentUser,
+                          handleOnClick: showConfirmation,
+                          serverFunction: deleteInsights,
+                        },
+                      ]}
+                      columns={[
+                        {
+                          name: "💭↑",
+                          dataColumn: "parents",
+                          display: (insight: Fact | Insight) => (
+                            <span className="badge text-bg-danger">
+                              {insight.parents?.length ?? 0}
+                            </span>
+                          ),
+                        },
+                        {
+                          name: "💭↓",
+                          dataColumn: "children",
+                          display: (insight: Fact | Insight) => (
+                            <span className="badge text-bg-danger">
+                              {insight.children?.length ?? 0}
+                            </span>
+                          ),
+                        },
+                        {
+                          name: "📄",
+                          dataColumn: "evidence",
+                          display: (insight: Fact | Insight) => (
+                            <span className="badge text-bg-danger">
+                              {insight.evidence?.length ?? 0}
+                            </span>
+                          ),
+                        },
+                        {
+                          name: "🌎",
+                          dataColumn: "is_public",
+                          display: (insight: Fact | Insight) => (
+                            <span>{insight.is_public ? "✅" : ""}</span>
+                          ),
+                        },
+                      ]}
+                    />
+                  </InfiniteScrollLoader>
                 </div>
-              )}
-            </div>
-            <div className={cardStyles.contentCardBody}>
-              <InfiniteScrollLoader
-                data={liveData}
-                setData={
-                  setLiveData as React.Dispatch<
-                    React.SetStateAction<Fact[] | undefined>
-                  >
-                }
-                limit={LIMIT}
-                getDataFunction={async (offset, token) => {
-                  const queryParams = new URLSearchParams(
-                    `offset=${offset}&limit=${LIMIT}&parents=true&children=true&evidence=true`,
-                  );
-                  queryParams.sort();
-                  const response = await fetch(
-                    `/api/insights?${queryParams.toString()}`,
-                    {
-                      method: "GET",
-                      headers: {
-                        "Content-Type": "application/json",
-                        "x-access-token": token,
-                      },
-                    },
-                  );
-                  const json = (await response.json()) as Insight[];
-                  return json;
-                }}
-              >
-                {/* FIXME: create selectedActions to /insights table to add parent/children to selected insights  */}
-                {/* FIXME: be a landing page for anonymous users with top insights */}
-                {/* FIXME: sort by citation count desc by default (here & the route) */}
-                <FactsListView
-                  factName="insight"
-                  serverFunctionInput={serverFunctionInputForInsightsList}
-                  setServerFunctionInput={setServerFunctionInputForInsightsList}
-                  activeServerFunction={activeServerFunctionForInsightsList}
-                  setActiveServerFunction={
-                    setActiveServerFunctionForInsightsList
-                  }
-                  selectedFacts={selectedInsights}
-                  setSelectedFacts={
-                    setSelectedInsights as React.Dispatch<
-                      React.SetStateAction<Fact[]>
-                    >
-                  }
-                  unselectedActions={[
-                    {
-                      className: "btn btn-primary",
-                      text: "Save Link in Insight(s)",
-                      enabled: !!currentUser,
-                      handleOnClick: () => {
-                        const dialog =
-                          document.getElementById(SAVE_LINK_DIALOG_ID);
-                        (dialog as HTMLDialogElement).showModal();
-                      },
-                      serverFunction: createLinkAndAddToInsights,
-                    },
-                    {
-                      className: "btn btn-primary",
-                      text: "Create Insight",
-                      enabled: !!currentUser,
-                      handleOnClick: promptForNewInsightName,
-                      serverFunction: ({ insights }: InsightsAPISchema) => {
-                        if (token) {
-                          return createInsights({ insights }, token);
-                        }
-                        return Promise.resolve([]);
-                      },
-                    },
-                  ]}
-                  selectedActions={[
-                    {
-                      className: "btn btn-primary",
-                      text: "Publish Insights",
-                      enabled: !!currentUser,
-                      handleOnClick: showConfirmation,
-                      serverFunction: publishInsights,
-                    },
-                    {
-                      className: "btn bg-danger",
-                      text: "Delete Insights",
-                      enabled: !!currentUser,
-                      handleOnClick: showConfirmation,
-                      serverFunction: deleteInsights,
-                    },
-                  ]}
-                  columns={[
-                    {
-                      name: "💭↑",
-                      dataColumn: "parents",
-                      display: (insight: Fact | Insight) => (
-                        <span className="badge text-bg-danger">
-                          {insight.parents?.length ?? 0}
-                        </span>
-                      ),
-                    },
-                    {
-                      name: "💭↓",
-                      dataColumn: "children",
-                      display: (insight: Fact | Insight) => (
-                        <span className="badge text-bg-danger">
-                          {insight.children?.length ?? 0}
-                        </span>
-                      ),
-                    },
-                    {
-                      name: "📄",
-                      dataColumn: "evidence",
-                      display: (insight: Fact | Insight) => (
-                        <span className="badge text-bg-danger">
-                          {insight.evidence?.length ?? 0}
-                        </span>
-                      ),
-                    },
-                    {
-                      name: "🌎",
-                      dataColumn: "is_public",
-                      display: (insight: Fact | Insight) => (
-                        <span>{insight.is_public ? "✅" : ""}</span>
-                      ),
-                    },
-                  ]}
-                />
-              </InfiniteScrollLoader>
-            </div>
-          </div>
+              </div>
 
-          {/* Child Level - Dialogs */}
-          <SaveLinkDialog
-            id={SAVE_LINK_DIALOG_ID}
-            isOpen={isSaveLinkDialogOpen}
-            onClose={() => setIsSaveLinkDialogOpen(false)}
-            potentialInsightsFromServer={liveData.filter(
-              (insight) => insight.user_id == currentUser?.id,
-            )}
-            setServerFunctionInput={(input) => {
-              if (input && token) {
-                console.log("Creating link and adding to insights:", input);
-                // When SaveLinkDialog submits, trigger createLinkAndAddToInsights
-                createLinkAndAddToInsights(input, token)
-                  .then((responses) => {
-                    console.log(
-                      "Successfully created link and added to insights:",
-                      responses,
-                    );
-                    // Update the live data with the responses
-                    responses.forEach((response) => {
-                      if (response.action === 1) {
-                        setLiveData([
-                          ...(response.facts as Insight[]),
-                          ...liveData,
-                        ]);
-                      } else if (response.action === 0) {
-                        // Update existing insights
-                        const updatedData = liveData.map((insight) => {
-                          const updatedInsight = response.facts.find(
-                            (f) => f.uid === insight.uid,
-                          ) as Insight;
-                          return updatedInsight
-                            ? { ...insight, ...updatedInsight }
-                            : insight;
+              {/* Child Level - Dialogs */}
+              <SaveLinkDialog
+                id={SAVE_LINK_DIALOG_ID}
+                isOpen={isSaveLinkDialogOpen}
+                onClose={() => setIsSaveLinkDialogOpen(false)}
+                potentialInsightsFromServer={liveData.filter(
+                  (insight) => insight.user_id == currentUser?.id,
+                )}
+                setServerFunctionInput={(input) => {
+                  if (input && token) {
+                    console.log("Creating link and adding to insights:", input);
+                    // When SaveLinkDialog submits, trigger createLinkAndAddToInsights
+                    createLinkAndAddToInsights(input, token)
+                      .then((responses) => {
+                        console.log(
+                          "Successfully created link and added to insights:",
+                          responses,
+                        );
+                        // Update the live data with the responses
+                        responses.forEach((response) => {
+                          if (response.action === 1) {
+                            setLiveData([
+                              ...(response.facts as Insight[]),
+                              ...liveData,
+                            ]);
+                          } else if (response.action === 0) {
+                            // Update existing insights
+                            const updatedData = liveData.map((insight) => {
+                              const updatedInsight = response.facts.find(
+                                (f) => f.uid === insight.uid,
+                              ) as Insight;
+                              return updatedInsight
+                                ? { ...insight, ...updatedInsight }
+                                : insight;
+                            });
+                            setLiveData(updatedData);
+                          }
                         });
-                        setLiveData(updatedData);
-                      }
+                        // Show success message
+                        alert("Link saved successfully!");
+                      })
+                      .catch((error) => {
+                        console.error(
+                          "Error creating link and adding to insights:",
+                          error,
+                        );
+                        // Show user-friendly error message
+                        alert(
+                          `Failed to save link: ${error.message || "Unknown error"}`,
+                        );
+                      });
+                  } else {
+                    console.error("Missing input or token:", {
+                      input,
+                      token: !!token,
                     });
-                    // Show success message
-                    alert("Link saved successfully!");
-                  })
-                  .catch((error) => {
-                    console.error(
-                      "Error creating link and adding to insights:",
-                      error,
-                    );
-                    // Show user-friendly error message
-                    alert(
-                      `Failed to save link: ${error.message || "Unknown error"}`,
-                    );
-                  });
-              } else {
-                console.error("Missing input or token:", {
-                  input,
-                  token: !!token,
-                });
-                alert("Authentication required to save links");
-              }
-            }}
-            setActiveServerFunction={() => {}} // Not needed since we handle it above
-          />
-        </CurrentUserContext.Provider>
+                    alert("Authentication required to save links");
+                  }
+                }}
+                setActiveServerFunction={() => {}} // Not needed since we handle it above
+              />
+            </CurrentUserContext.Provider>
+          </div>
+        </div>
       </div>
     </div>
   );

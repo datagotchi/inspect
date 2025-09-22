@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useCallback, useContext, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+
+import cardStyles from "../../styles/components/card.module.css";
 
 import {
   FLVResponse,
@@ -13,6 +16,8 @@ import FactsDataContext from "../contexts/FactsDataContext";
 import FactsTable from "./FactsTable";
 import useUser from "../hooks/useUser";
 
+const HEADER_ELEMENT_ID = "factsLisActionstHeader";
+
 const FactsListView = ({
   factName,
   serverFunctionInput,
@@ -20,6 +25,7 @@ const FactsListView = ({
   selectedFacts,
   setSelectedFacts,
   unselectedActions,
+  unselectedActionsContainerId,
   selectedActions,
   columns,
   setActiveServerFunction,
@@ -36,6 +42,7 @@ const FactsListView = ({
   selectedFacts: Fact[];
   setSelectedFacts: React.Dispatch<React.SetStateAction<Fact[]>>;
   unselectedActions?: FactsListViewAction[];
+  unselectedActionsContainerId?: string;
   selectedActions?: FactsListViewAction[];
   columns?: {
     name: string;
@@ -60,6 +67,8 @@ const FactsListView = ({
   const { data, setData } = useContext(FactsDataContext);
   const [flvResponses, setFLVResponses] = useState<FLVResponse[]>([]);
   const [dataFilter, setDataFilter] = useState<string>("");
+  const [unselectedActionsContainer, setUnselectedActionsContainer] =
+    useState<HTMLElement | null>(null);
 
   const { token, loggedIn } = useUser();
 
@@ -80,6 +89,7 @@ const FactsListView = ({
     [data],
   );
 
+  /* executing server functions when input is specified */
   useEffect(() => {
     if (serverFunctionInput && activeServerFunction) {
       activeServerFunction
@@ -104,6 +114,7 @@ const FactsListView = ({
     setServerFunctionInput,
   ]);
 
+  /* updating the flv container from responses */
   useEffect(() => {
     while (flvResponses && flvResponses.length > 0) {
       const response = flvResponses.pop();
@@ -156,39 +167,50 @@ const FactsListView = ({
     updateExistingFact,
   ]);
 
-  const HEADER_ELEMENT_ID = "factsLisActionstHeader";
+  const unselectedActionsButtons = unselectedActions &&
+    unselectedActions.length > 0 && (
+      <div className="content-card-header">
+        <div className="flex gap-4">
+          {unselectedActions
+            .filter((a) => a.enabled)
+            .map((unselectedAction, i) => (
+              <div key={`${factName} unselectedAction #${i}`}>
+                <SelectedFactsButton
+                  classNames={cardStyles.addButton}
+                  text={unselectedAction.text}
+                  icon={unselectedAction.icon}
+                  handleOnClick={() => {
+                    unselectedAction.handleOnClick();
+                    if (unselectedAction.serverFunction) {
+                      // saving the function directly calls it, so wrapping it in an object
+                      setActiveServerFunction({
+                        function: unselectedAction.serverFunction,
+                      });
+                    }
+                  }}
+                />
+              </div>
+            ))}
+        </div>
+      </div>
+    );
+
+  useEffect(() => {
+    if (unselectedActionsContainerId) {
+      const containerElement = document.getElementById(
+        unselectedActionsContainerId,
+      );
+      if (containerElement) {
+        setUnselectedActionsContainer(containerElement);
+      }
+    }
+  }, [unselectedActionsContainerId]);
+
   return (
     <>
+      {unselectedActionsContainer &&
+        createPortal(unselectedActionsButtons, unselectedActionsContainer)}
       <div id={HEADER_ELEMENT_ID} className="content-card space-main">
-        {(!selectedFacts || selectedFacts.length == 0) &&
-          unselectedActions &&
-          unselectedActions.length > 0 && (
-            <div className="content-card-header">
-              <div className="flex gap-4">
-                {loggedIn &&
-                  unselectedActions &&
-                  unselectedActions
-                    .filter((a) => a.enabled)
-                    .map((unselectedAction, i) => (
-                      <div key={`${factName} unselectedAction #${i}`}>
-                        <SelectedFactsButton
-                          classNames="btn btn-primary"
-                          text={unselectedAction.text}
-                          handleOnClick={() => {
-                            unselectedAction.handleOnClick();
-                            if (unselectedAction.serverFunction) {
-                              // saving the function directly calls it, so wrapping it in an object
-                              setActiveServerFunction({
-                                function: unselectedAction.serverFunction,
-                              });
-                            }
-                          }}
-                        />
-                      </div>
-                    ))}
-              </div>
-            </div>
-          )}
         {selectedFacts &&
           selectedFacts.length > 0 &&
           selectedActions &&
@@ -202,12 +224,9 @@ const FactsListView = ({
                     .map((selectedAction, i) => (
                       <div key={`${factName} selectedAction #${i}`}>
                         <SelectedFactsButton
-                          classNames={
-                            selectedAction.className === "btn bg-danger"
-                              ? "btn btn-danger"
-                              : "btn btn-primary"
-                          }
+                          classNames={cardStyles.addButton}
                           text={selectedAction.text}
+                          icon={selectedAction.icon}
                           handleOnClick={() => {
                             selectedAction.handleOnClick(selectedFacts);
                             if (selectedAction.serverFunction) {

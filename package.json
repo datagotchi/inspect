@@ -13,7 +13,6 @@
     "db:migrate": "PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} -d inspect < inspect-dump.sql",
     "db:reload": "PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} -c 'DROP DATABASE IF EXISTS inspect' && PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} -c 'CREATE DATABASE inspect' && PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} -d inspect < inspect-dump.sql",
     "db:schema": "PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} -d inspect < schema.sql",
-    "start": "next start",
     "export": "next export",
     "jest:watch": "jest --watch",
     "e2e": "yarn playwright test --reporter=list --workers=5"
@@ -42,6 +41,7 @@
   },
   "dependencies": {
     "@types/bcryptjs": "^3.0.0",
+    "@types/react-dom": "^19.1.9",
     "bcryptjs": "^3.0.2",
     "bootstrap": "^5.3.3",
     "dotenv": "^17.2.0",
@@ -63,7 +63,7 @@
     "react": "^19.0.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
-    "react-dom": "^19.0.0",
+    "react-dom": "^19.1.1",
     "reflect-metadata": "^0.2.0",
     "typescript-eslint": "^8.36.0",
     "webpack": "^5.94.0"

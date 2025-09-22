@@ -140,10 +140,8 @@ for (const role of userRoles) {
     test.describe("At the top of the insight", () => {
       test("user should see all of the content", async ({ page, insight }) => {
         // parent insights alert
-        const alert = page.locator(".alert").first();
-        await expect(alert).toBeVisible();
         const possibleTextValuesRegex = /This insight is important because:/;
-        await expect(alert).toContainText(possibleTextValuesRegex);
+        await expect(page.getByText(possibleTextValuesRegex)).toBeVisible();
         const addParentButton = page.getByRole("button", {
           name: "Add a Parent Insight",
         });

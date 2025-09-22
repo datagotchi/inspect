@@ -27,13 +27,17 @@
 }
 
 .cardHeader::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--color-base-500), var(--color-base-600));
+  background: linear-gradient(
+    90deg,
+    var(--color-base-500),
+    var(--color-base-600)
+  );
 }
 
 .cardHeaderTitle {
@@ -68,13 +72,17 @@
 }
 
 .pageHeaderCard::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, var(--color-base-500), var(--color-base-600));
+  background: linear-gradient(
+    90deg,
+    var(--color-base-500),
+    var(--color-base-600)
+  );
 }
 
 .pageHeaderCardContent {
@@ -108,13 +116,17 @@
 }
 
 .contentCardHeader::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--color-base-500), var(--color-base-600));
+  background: linear-gradient(
+    90deg,
+    var(--color-base-500),
+    var(--color-base-600)
+  );
 }
 
 .contentCardBody {
@@ -160,6 +172,7 @@
 .hierarchyIndicator {
   display: flex;
   align-items: center;
+  justify-content: space-between; /* FIXME: make sure this doesn't break on other views */
   gap: var(--spacing-2);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
@@ -326,22 +339,22 @@
     align-items: flex-start;
     gap: var(--spacing-3);
   }
-  
+
   .sectionActions {
     align-self: flex-end;
   }
-  
+
   .actionsSection {
     flex-wrap: wrap;
     justify-content: center;
   }
-  
+
   .cardHeader,
   .contentCardHeader,
   .pageHeaderCardContent {
     padding: var(--spacing-4);
   }
-  
+
   .cardBody,
   .contentCardBody {
     padding: var(--spacing-4);

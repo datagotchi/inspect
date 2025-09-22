@@ -10,7 +10,6 @@ import "bootstrap/dist/css/bootstrap.css";
 import "../styles/index.css";
 import LoginRegisterLinks from "./components/LoginRegisterLinks";
 import ThemeSwitcher from "./components/ThemeSwitcher";
-// import { getUserFromServer } from "./api/functions";
 
 interface Props {
   children: React.ReactNode;
@@ -19,15 +18,6 @@ interface Props {
 const Dashboard = async ({ children }: Props): Promise<React.JSX.Element> => {
   const tokenCookie = (await cookies()).get("token");
   const loggedIn = !!tokenCookie;
-  // const authUser = await getAuthUser(headers);
-  // const origin = (await headers()).get("x-origin");
-  // const user = authUser
-  //   ? await getUserFromServer(
-  //       origin,
-  //       { id: authUser.user_id },
-  //       tokenCookie?.value,
-  //     )
-  //   : null;
 
   return (
     <html>

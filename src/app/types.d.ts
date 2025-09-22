@@ -92,6 +92,7 @@ export type ServerFunction<T> = (
 export type FactsListViewAction = {
   className: string;
   text: string;
+  icon?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handleOnClick: (input?: any) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
