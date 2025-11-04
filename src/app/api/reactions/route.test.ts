@@ -22,6 +22,8 @@ jest.mock("../models/reactions", () => {
     insert: jest.fn().mockReturnThis(),
     onConflict: jest.fn().mockReturnThis(),
     merge: jest.fn().mockReturnThis(),
+    delete: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
     then: jest.fn(),
   };
 
@@ -46,9 +48,17 @@ describe("POST /api/reactions", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Create a chainable mock that properly handles delete().where()
+    const mockDeleteBuilder = {
+      where: jest.fn().mockResolvedValue(undefined),
+    };
+    (ReactionModel.query().delete as jest.Mock).mockReturnValue(
+      mockDeleteBuilder,
+    );
     (ReactionModel.query().insert as jest.Mock).mockReturnThis();
     (ReactionModel.query().onConflict as jest.Mock).mockReturnThis();
     (ReactionModel.query().merge as jest.Mock).mockReturnThis();
+    (ReactionModel.query().where as jest.Mock).mockReturnThis();
     (ReactionModel.query().then as jest.Mock).mockImplementation((callback) =>
       Promise.resolve(callback(mockReaction)),
     );
@@ -60,6 +70,12 @@ describe("POST /api/reactions", () => {
       ...mockReaction,
       summary_id: undefined,
     };
+    const mockDeleteBuilder = {
+      where: jest.fn().mockResolvedValue(undefined),
+    };
+    (ReactionModel.query().delete as jest.Mock).mockReturnValue(
+      mockDeleteBuilder,
+    );
     (ReactionModel.query().then as jest.Mock).mockImplementationOnce(
       (callback) => Promise.resolve(callback(localMockReaction)),
     );
@@ -83,6 +99,12 @@ describe("POST /api/reactions", () => {
       ...mockReaction,
       insight_id: undefined,
     };
+    const mockDeleteBuilder = {
+      where: jest.fn().mockResolvedValue(undefined),
+    };
+    (ReactionModel.query().delete as jest.Mock).mockReturnValue(
+      mockDeleteBuilder,
+    );
     (ReactionModel.query().then as jest.Mock).mockImplementationOnce(
       (callback) => Promise.resolve(callback(localMockReaction)),
     );
@@ -114,7 +136,7 @@ describe("POST /api/reactions", () => {
 
     const json = await response.json();
     expect(json.statusText).toEqual(
-      "Request must include a valid reaction and either insight_id or summary_id",
+      "Request must include a valid reaction and either insight_id, summary_id, or comment_id",
     );
   });
 
@@ -145,7 +167,13 @@ describe("POST /api/reactions", () => {
     const errorMessage =
       "23503: insert or update on table reactions violates foreign key constraint fk_i_id";
     const error = new Error(errorMessage);
-    (ReactionModel.query().then as jest.Mock).mockImplementationOnce(() => {
+    const mockDeleteBuilder = {
+      where: jest.fn().mockResolvedValue(undefined),
+    };
+    (ReactionModel.query().delete as jest.Mock).mockReturnValue(
+      mockDeleteBuilder,
+    );
+    (ReactionModel.query().insert as jest.Mock).mockImplementationOnce(() => {
       throw error;
     });
 
@@ -169,7 +197,13 @@ describe("POST /api/reactions", () => {
     const errorMessage =
       "23503: insert or update on table reactions violates foreign key constraint fk_s_id";
     const error = new Error(errorMessage);
-    (ReactionModel.query().then as jest.Mock).mockImplementationOnce(() => {
+    const mockDeleteBuilder = {
+      where: jest.fn().mockResolvedValue(undefined),
+    };
+    (ReactionModel.query().delete as jest.Mock).mockReturnValue(
+      mockDeleteBuilder,
+    );
+    (ReactionModel.query().insert as jest.Mock).mockImplementationOnce(() => {
       throw error;
     });
 
@@ -194,7 +228,13 @@ describe("POST /api/reactions", () => {
     const errorMessage =
       "23503: insert or update on table reactions violates foreign key constraint fk_u_id";
     const error = new Error(errorMessage);
-    (ReactionModel.query().then as jest.Mock).mockImplementationOnce(() => {
+    const mockDeleteBuilder = {
+      where: jest.fn().mockResolvedValue(undefined),
+    };
+    (ReactionModel.query().delete as jest.Mock).mockReturnValue(
+      mockDeleteBuilder,
+    );
+    (ReactionModel.query().insert as jest.Mock).mockImplementationOnce(() => {
       throw error;
     });
 

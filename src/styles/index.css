@@ -16,9 +16,52 @@
 @import "./components/card.module.css";
 @import "./components/main-insights-page.module.css";
 @import "./components/modal.module.css";
+@import "./components/reaction-components.css";
+@import "./components/flat-page-design.css";
+@import "./components/sidebar.module.css";
 
 /* Import theme variations */
 @import "./themes/theme-variations.css";
 
 /* Import legacy styles (to be migrated) */
 @import "./legacy/legacy-styles.css";
+
+/* Base HTML and Body Background - Ensure Consistent Background */
+html {
+  background-color: var(--color-background-secondary);
+}
+
+body {
+  background-color: var(--color-background-secondary);
+  margin: 0;
+  padding: 0;
+}
+
+/* Main Layout Adjustments for Sidebar */
+main {
+  margin-left: 80px;
+  padding: var(--spacing-6);
+  background-color: var(--color-background-secondary);
+  min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+  main {
+    margin-left: 60px;
+    padding: var(--spacing-4);
+  }
+}
+
+/* Dark theme improvements - Ensure all elements have consistent background */
+.theme-dark html {
+  background-color: var(--color-background-primary);
+}
+
+.theme-dark body {
+  background-color: var(--color-background-primary);
+  color: var(--color-text-primary);
+}
+
+.theme-dark main {
+  background-color: var(--color-background-primary);
+}

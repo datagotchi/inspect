@@ -27,6 +27,10 @@ const FactsListView = ({
   hideHead,
   enableFeedback,
   cellActions,
+  enableReactionIcons = false,
+  reactionDisplayOnly = false,
+  dataFilter,
+  setDataFilter,
 }: {
   factName: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,10 +60,13 @@ const FactsListView = ({
     onClick: (fact: Fact) => void;
     enabled?: (fact: Fact) => boolean;
   }[];
+  enableReactionIcons?: boolean;
+  reactionDisplayOnly?: boolean;
+  dataFilter?: string;
+  setDataFilter?: React.Dispatch<React.SetStateAction<string>>;
 }): React.JSX.Element => {
   const { data, setData } = useContext(FactsDataContext);
   const [flvResponses, setFLVResponses] = useState<FLVResponse[]>([]);
-  const [dataFilter, setDataFilter] = useState<string>("");
 
   const { token, loggedIn } = useUser();
 
@@ -121,7 +128,7 @@ const FactsListView = ({
                 setData(data.filter((item) => !ids.includes(item.id)));
               }
             }
-            setDataFilter("");
+            setDataFilter?.("");
           } else if (response.action == 0) {
             response.facts.forEach((f) => {
               if (f.uid) {
@@ -153,13 +160,17 @@ const FactsListView = ({
     setData,
     setSelectedFacts,
     setServerFunctionInput,
+    setDataFilter,
     updateExistingFact,
   ]);
 
   const HEADER_ELEMENT_ID = "factsLisActionstHeader";
   return (
     <>
-      <div id={HEADER_ELEMENT_ID} className="content-card space-main">
+      <div
+        id={HEADER_ELEMENT_ID}
+        className="content-card space-main reaction-card-container"
+      >
         {(!selectedFacts || selectedFacts.length == 0) &&
           unselectedActions &&
           unselectedActions.length > 0 && (
@@ -225,7 +236,7 @@ const FactsListView = ({
             </div>
           )}
         {data && data.length > 0 && (
-          <div className="content-card-body">
+          <div className="content-card-body reaction-card-container">
             <FactsTable
               factName={factName}
               data={data}
@@ -240,6 +251,8 @@ const FactsListView = ({
               hideHead={hideHead}
               enableFeedback={enableFeedback}
               cellActions={cellActions}
+              enableReactionIcons={enableReactionIcons}
+              reactionDisplayOnly={reactionDisplayOnly}
             />
           </div>
         )}

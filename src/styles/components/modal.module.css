@@ -20,7 +20,7 @@
   background-color: var(--color-background-primary);
   border: 1px solid var(--color-border-primary);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-2xl);
+  box-shadow: var(--shadow-elevated);
   width: 100%;
   max-width: 48rem; /* 768px */
   height: 70vh; /* Fixed height */
@@ -55,13 +55,17 @@
 }
 
 .modalHeader::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--color-base-500), var(--color-base-600));
+  background: linear-gradient(
+    90deg,
+    var(--color-base-500),
+    var(--color-base-600)
+  );
 }
 
 .modalTitle {
@@ -77,6 +81,8 @@
   overflow-y: auto;
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .modalFooter {
@@ -106,7 +112,8 @@
   display: flex;
   border-bottom: 1px solid var(--color-border-primary);
   background-color: var(--color-background-secondary);
-  margin: calc(-1 * var(--spacing-6)) calc(-1 * var(--spacing-6)) var(--spacing-6);
+  margin: calc(-1 * var(--spacing-6)) calc(-1 * var(--spacing-6))
+    var(--spacing-6);
   padding: 0 var(--spacing-6);
 }
 
@@ -177,7 +184,7 @@
 .formInput:focus {
   outline: none;
   border-color: var(--color-base-500);
-  box-shadow: 0 0 0 3px rgba(var(--color-base-500-rgb), 0.1);
+  box-shadow: var(--shadow-focus);
 }
 
 .formInput::placeholder {
@@ -222,11 +229,11 @@
   text-decoration: none;
   white-space: nowrap;
   min-height: 2.5rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-xs);
 }
 
 .modalButton:hover:not(:disabled) {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }
 
@@ -294,10 +301,17 @@
 
 .modalContentSection {
   margin-bottom: var(--spacing-6);
+  display: flex;
+  flex-direction: column;
 }
 
 .modalContentSection:last-child {
   margin-bottom: 0;
+}
+
+.modalContentSection.flex-grow {
+  flex: 1;
+  min-height: 0;
 }
 
 .modalContentTitle {
@@ -335,8 +349,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* ===================================
@@ -347,32 +365,32 @@
   .modal {
     padding: var(--spacing-2);
   }
-  
+
   .modalDialog {
     max-height: 95vh;
   }
-  
+
   .modalHeader,
   .modalBody,
   .modalFooter {
     padding: var(--spacing-4);
   }
-  
+
   .modalTitle {
     font-size: var(--font-size-lg);
   }
-  
+
   .modalFooter {
     flex-direction: column;
     gap: var(--spacing-2);
   }
-  
+
   .modalButton {
     width: 100%;
   }
-  
+
   .tabNavButton {
-    padding: var(--spacing-2) var(--spacing-3);
+    padding: var(--spacing-2) var(--spacing-2);
     font-size: var(--font-size-xs);
   }
 }
@@ -381,13 +399,13 @@
   .modal {
     padding: var(--spacing-1);
   }
-  
+
   .modalHeader,
   .modalBody,
   .modalFooter {
     padding: var(--spacing-3);
   }
-  
+
   .modalTitle {
     font-size: var(--font-size-base);
   }
@@ -441,6 +459,93 @@
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+}
+
+/* ===================================
+   TABLE STYLES FOR MODALS
+   =================================== */
+
+.modalBody table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  table-layout: fixed;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalBody table thead th[style*="width: 120px"],
+.modalBody table tbody td[style*="width: 120px"] {
+  width: 120px !important;
+  min-width: 120px;
+  max-width: 120px;
+}
+
+.modalBody table thead th[style*="width: 1fr"],
+.modalBody table tbody td[style*="width: 1fr"] {
+  width: auto !important;
+  flex: 1;
+}
+
+.modalBody table tbody {
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.modalBody table thead,
+.modalBody table tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.modalBody table thead {
+  width: calc(100% - 1em);
+}
+
+.modalBody table thead {
+  background-color: var(--color-base-500);
+}
+
+.modalBody table thead th {
+  background-color: var(--color-base-500);
+  color: var(--color-text-inverse);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--color-base-600);
+  padding: var(--spacing-2) var(--spacing-2);
+  position: relative;
+}
+
+.modalBody table thead th.sortable {
+  cursor: pointer;
+  transition: background-color var(--transition-base);
+}
+
+.modalBody table thead th.sortable:hover {
+  background-color: var(--color-base-600);
+}
+
+.modalBody table thead th.sortable::after {
+  content: "↕";
+  position: absolute;
+  right: var(--spacing-2);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--font-size-xs);
+  opacity: 0.7;
+}
+
+.modalBody table tbody td {
+  padding: var(--spacing-2) var(--spacing-2);
+  border-bottom: 1px solid var(--color-border-primary);
+}
+
+.modalBody table tbody tr:hover {
+  background-color: var(--color-background-secondary);
 }
 
 /* ===================================

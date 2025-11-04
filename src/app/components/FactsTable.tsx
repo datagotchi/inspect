@@ -3,7 +3,13 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
-import { Fact, FactReaction, InsightEvidence } from "../types";
+import {
+  Fact,
+  FactReaction,
+  InsightEvidence,
+  Insight,
+  Link as LinkType,
+} from "../types";
 import { encodeStringURI } from "../hooks/functions";
 import {
   debounce,
@@ -15,6 +21,8 @@ import FeedbackLink from "./FeedbackLink";
 import useUser from "../hooks/useUser";
 import FeedbackInputElement from "./FeedbackInputElement";
 import Comment from "./Comment";
+import ReactionIcon from "./ReactionIcon";
+import ReactionDisplay from "./ReactionDisplay";
 
 export const REACTION_DIRECTIONS = "Select an emoji character";
 export const COMMENT_DIRECTIONS = "Enter a text comment";
@@ -33,13 +41,16 @@ const FactsTable = ({
   columns,
   queryFunction,
   dataFilter,
-  setDataFilter,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  setDataFilter: _setDataFilter,
   disabledIds,
   selectRows = false,
   hideHead = false,
   // theadTopCSS = "0px",
   enableFeedback = false,
   cellActions,
+  enableReactionIcons = false,
+  reactionDisplayOnly = false,
 }: {
   data?: Fact[];
   setData: React.Dispatch<React.SetStateAction<Fact[] | undefined>>;
@@ -53,7 +64,7 @@ const FactsTable = ({
   }[];
   queryFunction?: (query: string) => Promise<Fact[]>;
   dataFilter: string | undefined;
-  setDataFilter: React.Dispatch<React.SetStateAction<string>>;
+  setDataFilter?: React.Dispatch<React.SetStateAction<string>>;
   disabledIds?: number[];
   selectRows?: boolean;
   hideHead?: boolean;
@@ -67,10 +78,18 @@ const FactsTable = ({
     onClick: (fact: Fact) => void;
     enabled?: (fact: Fact) => boolean;
   }[];
+  enableReactionIcons?: boolean;
+  reactionDisplayOnly?: boolean;
 }): React.JSX.Element => {
-  const { token, loggedIn } = useUser();
+  const { token, loggedIn, user_id } = useUser();
   const [returnPath, setReturnPath] = useState<string>();
   useEffect(() => setReturnPath(window.location.pathname), []);
+
+  // Simple user ID getter - use the user_id from useUser hook
+  const getCurrentUserId = useCallback(() => {
+    console.log("getCurrentUserId: Using user_id from useUser hook:", user_id);
+    return user_id;
+  }, [user_id]);
 
   const [loading, setLoading] = useState(false);
   const [fetchedDataFilter, setFetchedDataFilter] = useState<string>();
@@ -151,10 +170,51 @@ const FactsTable = ({
   const [sortFunction, setSortFunction] = useState<
     (a: Fact, b: Fact) => number
   >(() => noSort);
+
+  // Custom reaction sorting function
+  const getReactionSortFunction = (
+    dir: "asc" | "desc",
+    reactionType?: string,
+  ) => {
+    return (a: Fact, b: Fact) => {
+      const aReactions = a.reactions || [];
+      const bReactions = b.reactions || [];
+
+      let aCount = aReactions.length;
+      let bCount = bReactions.length;
+
+      // If specific reaction type is specified, count only that type
+      if (reactionType) {
+        aCount = aReactions.filter((r) => r.reaction === reactionType).length;
+        bCount = bReactions.filter((r) => r.reaction === reactionType).length;
+      }
+
+      if (dir === "asc") {
+        return aCount - bCount;
+      } else {
+        return bCount - aCount;
+      }
+    };
+  };
+
   useEffect(() => {
     if (sortDir) {
-      const func = getSortFunction<Fact>(sortDir);
-      setSortFunction(() => func);
+      // Handle custom reaction sorting
+      if (sortDir.column === "reactions") {
+        const func = getReactionSortFunction(sortDir.dir as "asc" | "desc");
+        setSortFunction(() => func);
+      } else if (sortDir.column.startsWith("reaction_")) {
+        // Handle specific reaction type sorting (e.g., 'reaction_❤️')
+        const reactionType = sortDir.column.replace("reaction_", "");
+        const func = getReactionSortFunction(
+          sortDir.dir as "asc" | "desc",
+          reactionType,
+        );
+        setSortFunction(() => func);
+      } else {
+        const func = getSortFunction<Fact>(sortDir);
+        setSortFunction(() => func);
+      }
     } else {
       setSortFunction(() => noSort);
     }
@@ -177,10 +237,7 @@ const FactsTable = ({
   }, [returnPath]);
 
   return (
-    <div className="card">
-      <div className="card-header p-6">
-        <h3 className="card-header-title text-lg">Data Table</h3>
-      </div>
+    <div className="card reaction-table-container">
       <table
         className="w-full"
         id={`factsTable-${factName}`}
@@ -222,9 +279,12 @@ const FactsTable = ({
         }}
       >
         {!hideHead && (
-          <thead className="bg-base-500 border-b border-base-600">
+          <thead>
             <tr>
-              <th className="px-8 py-5 text-left text-xs font-medium text-inverse uppercase tracking-wider">
+              <th
+                className="px-4 py-3 text-left text-xs font-semibold text-inverse uppercase tracking-wider"
+                style={{ width: "40px" }}
+              >
                 <input
                   type="checkbox"
                   name="selectAllFacts"
@@ -239,112 +299,136 @@ const FactsTable = ({
                       return toggleSelectedFacts(...filteredData);
                     }
                   }}
-                  className="rounded border-inverse text-inverse focus:ring-inverse"
+                  className="rounded border-primary text-primary focus:ring-primary"
                 />
               </th>
-              <th className="px-8 py-5 text-left text-xs font-medium text-inverse uppercase tracking-wider sortable cursor-pointer hover:text-secondary transition-colors duration-200">
-                Updated
-              </th>
-              <th className="px-8 py-5 text-left text-xs font-medium text-inverse uppercase tracking-wider">
-                {/* search */}
-                {setDataFilter && (
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder={
-                        loading ? "Searching..." : "Search the titles..."
+              {columns &&
+                columns.map((column) => {
+                  // Set specific widths for common columns
+                  let columnWidth = "auto";
+                  if (column.name === "Updated") {
+                    columnWidth = "120px";
+                  } else if (column.name === "Title") {
+                    columnWidth = "1fr";
+                  } else if (column.name === "🌍") {
+                    columnWidth = "80px";
+                  } else if (
+                    column.name === "👨‍👩‍👧‍👦" ||
+                    column.name === "👶" ||
+                    column.name === "📄" ||
+                    column.name === "💬" ||
+                    column.name === "❤️"
+                  ) {
+                    columnWidth = "80px";
+                  }
+
+                  return (
+                    <th
+                      className="px-4 py-3 text-left text-xs font-semibold text-inverse uppercase tracking-wider sortable cursor-pointer hover:text-secondary transition-colors duration-200"
+                      key={`Column: ${column.name}`}
+                      data-column={column.dataColumn}
+                      style={{ width: columnWidth }}
+                    >
+                      {column.name}
+                    </th>
+                  );
+                })}
+              {/* Add reaction icons header when custom columns are used */}
+              {columns && enableReactionIcons && (
+                <th
+                  className="px-4 py-3 text-left text-xs font-semibold text-inverse uppercase tracking-wider"
+                  style={{ width: "60px" }}
+                >
+                  {/* Empty header - reaction icons are self-explanatory */}
+                </th>
+              )}
+
+              {/* Reaction Sorting Buttons */}
+              {enableReactionIcons && (
+                <>
+                  <th
+                    className="px-2 py-3 text-left text-xs font-semibold text-inverse uppercase tracking-wider cursor-pointer hover:bg-gray-700"
+                    style={{ width: "80px" }}
+                    onClick={(event) => {
+                      const targetElement = event.target as HTMLElement;
+                      if (
+                        targetElement.textContent?.slice(-1) !== "▼" &&
+                        targetElement.textContent?.slice(-1) !== "▲"
+                      ) {
+                        targetElement.textContent =
+                          targetElement.textContent + "▼";
+                        setSortDir({
+                          column: "reactions",
+                          dir: "desc",
+                        });
+                      } else if (targetElement.textContent.slice(-1) == "▼") {
+                        const columnText = targetElement.textContent.slice(
+                          0,
+                          -1,
+                        );
+                        targetElement.textContent = columnText + "▲";
+                        setSortDir({
+                          column: "reactions",
+                          dir: "asc",
+                        });
+                      } else if (targetElement.textContent.slice(-1) == "▲") {
+                        const columnText = targetElement.textContent.slice(
+                          0,
+                          -1,
+                        );
+                        targetElement.textContent = columnText;
+                        setSortDir(undefined);
                       }
-                      style={{
-                        backgroundColor: "var(--color-background-primary)",
-                        borderColor: "var(--color-border-primary)",
-                        color: "var(--color-text-primary)",
-                      }}
-                      onFocus={(event) => {
-                        const target = event.target as HTMLInputElement;
-                        target.style.borderColor = "var(--color-border-focus)";
-                        target.style.boxShadow =
-                          "0 0 0 2px rgba(24, 119, 242, 0.2)";
-                        // TODO: can I get the ClientSidePage itself or something other than the button title?
+                    }}
+                    title="Sort by total reactions"
+                  >
+                    Reactions
+                  </th>
+
+                  {/* Popular reaction type sorting buttons */}
+                  {["❤️", "😮", "🤔", "😟"].map((emoji) => (
+                    <th
+                      key={`reaction_${emoji}`}
+                      className="px-2 py-3 text-left text-xs font-semibold text-inverse uppercase tracking-wider cursor-pointer hover:bg-gray-700"
+                      style={{ width: "40px" }}
+                      onClick={(event) => {
+                        const targetElement = event.target as HTMLElement;
                         if (
-                          event.relatedTarget &&
-                          (event.relatedTarget as HTMLElement).textContent ==
-                            "Add Evidence"
+                          targetElement.textContent?.slice(-1) !== "▼" &&
+                          targetElement.textContent?.slice(-1) !== "▲"
                         ) {
-                          target.blur();
+                          targetElement.textContent =
+                            targetElement.textContent + "▼";
+                          setSortDir({
+                            column: `reaction_${emoji}`,
+                            dir: "desc",
+                          });
+                        } else if (targetElement.textContent.slice(-1) == "▼") {
+                          const columnText = targetElement.textContent.slice(
+                            0,
+                            -1,
+                          );
+                          targetElement.textContent = columnText + "▲";
+                          setSortDir({
+                            column: `reaction_${emoji}`,
+                            dir: "asc",
+                          });
+                        } else if (targetElement.textContent.slice(-1) == "▲") {
+                          const columnText = targetElement.textContent.slice(
+                            0,
+                            -1,
+                          );
+                          targetElement.textContent = columnText;
+                          setSortDir(undefined);
                         }
                       }}
-                      onBlur={(event) => {
-                        const target = event.target as HTMLInputElement;
-                        target.style.borderColor =
-                          "var(--color-border-primary)";
-                        target.style.boxShadow = "none";
-                      }}
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-sm transition-all duration-200 ${loading ? "pr-16 opacity-75" : dataFilter ? "pr-8" : ""}`}
-                      value={dataFilter || ""}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        setDataFilter(value);
-                      }}
-                      disabled={loading}
-                    />
-                    {dataFilter && !loading && (
-                      <button
-                        type="button"
-                        onClick={() => setDataFilter("")}
-                        className="absolute right-3 top-half transform-center w-6 h-6 flex items-center justify-center rounded-full transition-all duration-200"
-                        style={{
-                          color: "var(--color-text-tertiary)",
-                          backgroundColor: "transparent",
-                        }}
-                        onMouseEnter={(e) => {
-                          const target = e.target as HTMLElement;
-                          target.style.backgroundColor =
-                            "var(--color-background-secondary)";
-                          target.style.color = "var(--color-text-primary)";
-                        }}
-                        onMouseLeave={(e) => {
-                          const target = e.target as HTMLElement;
-                          target.style.backgroundColor = "transparent";
-                          target.style.color = "var(--color-text-tertiary)";
-                        }}
-                        aria-label="Clear search"
-                        title="Clear search"
-                      >
-                        <span
-                          style={{
-                            fontSize: "16px",
-                            fontWeight: "normal",
-                            lineHeight: "1",
-                          }}
-                        >
-                          ×
-                        </span>
-                      </button>
-                    )}
-                    {loading && (
-                      <div className="absolute right-3 top-half transform-center">
-                        <div
-                          className="animate-spin h-4 w-4 border-2 border-t-transparent rounded-full"
-                          style={{
-                            borderColor: "var(--color-base-500)",
-                            borderTopColor: "transparent",
-                          }}
-                        ></div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </th>
-              {columns &&
-                columns.map((column) => (
-                  <th
-                    className="px-8 py-5 text-left text-xs font-medium text-inverse uppercase tracking-wider sortable cursor-pointer hover:text-secondary transition-colors duration-200"
-                    key={`Column: ${column.name}`}
-                    data-column={column.dataColumn}
-                  >
-                    {column.name}
-                  </th>
-                ))}
+                      title={`Sort by ${emoji} reactions`}
+                    >
+                      {emoji}
+                    </th>
+                  ))}
+                </>
+              )}
             </tr>
           </thead>
         )}
@@ -383,10 +467,13 @@ const FactsTable = ({
               return (
                 <React.Fragment key={`${factName} #${fact.id}`}>
                   <tr
-                    className={`${trClassName} border-b border-secondary last:border-b-0 hover:bg-secondary transition-colors duration-200`}
+                    className={`${trClassName} border-b border-secondary last:border-b-0 hover:bg-secondary transition-colors duration-200 reaction-table-row overflow-visible`}
                     onClick={trOnClick}
                   >
-                    <td className="px-8 py-5 whitespace-nowrap">
+                    <td
+                      className="px-4 py-3 whitespace-nowrap"
+                      style={{ width: "40px" }}
+                    >
                       <input
                         type="checkbox"
                         name="selectedFact"
@@ -407,107 +494,454 @@ const FactsTable = ({
                         className="rounded border-primary text-primary focus:ring-primary"
                       />
                     </td>
-                    <td className="px-8 py-5 whitespace-nowrap text-sm text-secondary font-mono">
-                      {fact.updated_at &&
-                        new Date(fact.updated_at).toLocaleDateString("en-US", {
-                          month: "2-digit",
-                          day: "2-digit",
-                          year: "numeric",
-                        })}
-                      {!fact.updated_at && "---"}
-                    </td>
-                    <td className="px-8 py-5 text-sm text-primary font-medium relative">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          {!selectRows &&
-                            (factName == "snippet" ? (
-                              <Link
-                                href={`/links/${fact.uid}`}
-                                className="text-primary hover:text-primary-600 transition-colors duration-200"
-                              >
-                                {fact.title}
-                              </Link>
-                            ) : (
-                              <Link
-                                href={`/insights/${fact.uid}`}
-                                className="text-primary hover:text-primary-600 transition-colors duration-200"
-                              >
-                                {fact.title}
-                              </Link>
-                            ))}
-                          {selectRows && fact.title}
-                          {/* FIXME: updates several times until reactions is an empty array */}
-                          <span className="ml-2 text-muted">
-                            {fact.reactions &&
-                              fact.reactions.map((r) => r.reaction).join("")}
-                          </span>
-                        </div>
-                        {cellActions && (
-                          <div className="flex items-center space-x-1 ml-2">
-                            {cellActions.map((action, index) => {
-                              const isEnabled = action.enabled
-                                ? action.enabled(fact)
-                                : true;
-                              return (
-                                <button
-                                  key={`${action.label}-${fact.id}-${index}`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (isEnabled) {
-                                      action.onClick(fact);
+                    {/* Only show hardcoded columns if no columns prop is provided */}
+                    {!columns && (
+                      <>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-secondary font-mono">
+                          {(() => {
+                            // Handle different data structures for different fact types
+                            let dateToShow = null;
+
+                            if (fact.updated_at) {
+                              dateToShow = fact.updated_at;
+                            } else if (
+                              (fact as Insight).childInsight?.updated_at
+                            ) {
+                              dateToShow = (fact as Insight).childInsight
+                                .updated_at;
+                            } else if (
+                              (fact as Insight).parentInsight?.updated_at
+                            ) {
+                              dateToShow = (fact as Insight).parentInsight
+                                .updated_at;
+                            } else if ((fact as LinkType).snippet?.updated_at) {
+                              dateToShow = (fact as LinkType).snippet
+                                .updated_at;
+                            }
+
+                            return dateToShow
+                              ? new Date(dateToShow).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    month: "2-digit",
+                                    day: "2-digit",
+                                    year: "numeric",
+                                  },
+                                )
+                              : "---";
+                          })()}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-primary font-medium relative reaction-cell-container">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              {!selectRows &&
+                                (() => {
+                                  // Handle different data structures for different fact types
+                                  let titleToShow = null;
+                                  let uidToUse = null;
+
+                                  if (fact.title && fact.uid) {
+                                    titleToShow = fact.title;
+                                    uidToUse = fact.uid;
+                                  } else if (
+                                    (fact as Insight).childInsight?.title &&
+                                    (fact as Insight).childInsight?.uid
+                                  ) {
+                                    titleToShow = (fact as Insight).childInsight
+                                      .title;
+                                    uidToUse = (fact as Insight).childInsight
+                                      .uid;
+                                  } else if (
+                                    (fact as Insight).parentInsight?.title &&
+                                    (fact as Insight).parentInsight?.uid
+                                  ) {
+                                    titleToShow = (fact as Insight)
+                                      .parentInsight.title;
+                                    uidToUse = (fact as Insight).parentInsight
+                                      .uid;
+                                  } else if (
+                                    (fact as LinkType).snippet?.title &&
+                                    (fact as LinkType).snippet?.uid
+                                  ) {
+                                    titleToShow = (fact as LinkType).snippet
+                                      .title;
+                                    uidToUse = (fact as LinkType).snippet.uid;
+                                  }
+
+                                  if (titleToShow && uidToUse) {
+                                    return factName === "snippet" ? (
+                                      <Link
+                                        href={`/links/${uidToUse}`}
+                                        className="text-primary hover:text-primary-600 transition-colors duration-200"
+                                      >
+                                        {titleToShow}
+                                      </Link>
+                                    ) : (
+                                      <Link
+                                        href={`/insights/${uidToUse}`}
+                                        className="text-primary hover:text-primary-600 transition-colors duration-200"
+                                      >
+                                        {titleToShow}
+                                      </Link>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                              {selectRows &&
+                                (() => {
+                                  // Handle different data structures for selectRows
+                                  if (fact.title) return fact.title;
+                                  if ((fact as Insight).childInsight?.title)
+                                    return (fact as Insight).childInsight.title;
+                                  if ((fact as Insight).parentInsight?.title)
+                                    return (fact as Insight).parentInsight
+                                      .title;
+                                  if ((fact as LinkType).snippet?.title)
+                                    return (fact as LinkType).snippet.title;
+                                  return null;
+                                })()}
+                              {/* FIXME: updates several times until reactions is an empty array */}
+                              <span className="ml-2 text-muted">
+                                {fact.reactions &&
+                                  fact.reactions
+                                    .map((r) => r.reaction)
+                                    .join("")}
+                              </span>
+                            </div>
+                            {cellActions && (
+                              <div className="flex items-center space-x-1 ml-2">
+                                {cellActions.map((action, index) => {
+                                  const isEnabled = action.enabled
+                                    ? action.enabled(fact)
+                                    : true;
+                                  return (
+                                    <button
+                                      key={`${action.label}-${fact.id}-${index}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (isEnabled) {
+                                          action.onClick(fact);
+                                        }
+                                      }}
+                                      className={`btn btn-icon btn-sm ${
+                                        isEnabled
+                                          ? "btn-ghost text-text-secondary hover:text-text-primary hover:bg-background-secondary"
+                                          : "btn-ghost text-text-tertiary opacity-50 cursor-not-allowed"
+                                      }`}
+                                      disabled={!isEnabled}
+                                      aria-label={action.label}
+                                      title={action.label}
+                                    >
+                                      {action.icon}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {enableReactionIcons &&
+                              loggedIn &&
+                              (reactionDisplayOnly ? (
+                                <ReactionDisplay
+                                  reactions={fact.reactions || []}
+                                  currentUserId={getCurrentUserId()}
+                                  className="reaction-display-table"
+                                />
+                              ) : (
+                                <ReactionIcon
+                                  reactions={fact.reactions || []}
+                                  currentUserId={getCurrentUserId()}
+                                  onReactionSubmit={async (reaction) => {
+                                    if (token) {
+                                      // Handle different data structures
+                                      let insightId: number | undefined;
+                                      let summaryId: number | undefined;
+
+                                      if (
+                                        factName === "childInsights" &&
+                                        (fact as Insight).childInsight
+                                      ) {
+                                        // For child insights, use the childInsight.id
+                                        insightId = (fact as Insight)
+                                          .childInsight.id;
+                                        summaryId = undefined; // Child insights don't have summary_id
+                                      } else if (
+                                        factName === "parentInsights" &&
+                                        (fact as Insight).parentInsight
+                                      ) {
+                                        // For parent insights, use the parentInsight.id
+                                        insightId = (fact as Insight)
+                                          .parentInsight.id;
+                                        summaryId = undefined; // Parent insights don't have summary_id
+                                      } else if (factName === "insight") {
+                                        // For main page insights, use fact.id as insight_id
+                                        insightId = fact.id;
+                                        summaryId = undefined; // Main insights don't have summary_id
+                                      } else {
+                                        // For regular insights and evidence
+                                        insightId = fact.insight_id;
+                                        summaryId = fact.summary_id;
+                                      }
+
+                                      const result = await submitReaction(
+                                        {
+                                          reaction,
+                                          summary_id: summaryId,
+                                          insight_id: insightId,
+                                        },
+                                        token,
+                                      );
+                                      if (result) {
+                                        // Remove any existing reaction from this user for this fact
+                                        const existingReactions =
+                                          fact.reactions?.filter(
+                                            (r) => r.user_id !== result.user_id,
+                                          ) || [];
+                                        fact.reactions = [
+                                          ...existingReactions,
+                                          result as FactReaction,
+                                        ];
+                                        setData([...data!]);
+                                      }
                                     }
                                   }}
-                                  className={`btn btn-icon btn-sm ${
-                                    isEnabled
-                                      ? "btn-ghost text-text-secondary hover:text-text-primary hover:bg-background-secondary"
-                                      : "btn-ghost text-text-tertiary opacity-50 cursor-not-allowed"
-                                  }`}
-                                  disabled={!isEnabled}
-                                  aria-label={action.label}
-                                  title={action.label}
-                                >
-                                  {action.icon}
-                                </button>
-                              );
-                            })}
+                                  className="reaction-icon-cell"
+                                />
+                              ))}
                           </div>
-                        )}
-                      </div>
-                    </td>
-                    {columns &&
-                      columns.map((column) => (
-                        <td
-                          className="px-8 py-5 whitespace-nowrap text-sm text-secondary text-center"
-                          key={`Table column: ${column.name}`}
-                        >
-                          {column.display && column.display(fact)}
                         </td>
-                      ))}
+                      </>
+                    )}
+                    {columns &&
+                      columns.map((column) => {
+                        // Set specific widths for common columns to match headers
+                        let columnWidth = "auto";
+                        if (column.name === "Updated") {
+                          columnWidth = "120px";
+                        } else if (column.name === "Title") {
+                          columnWidth = "1fr";
+                        } else if (column.name === "🌍") {
+                          columnWidth = "80px";
+                        } else if (
+                          column.name === "👨‍👩‍👧‍👦" ||
+                          column.name === "👶" ||
+                          column.name === "📄" ||
+                          column.name === "💬" ||
+                          column.name === "❤️"
+                        ) {
+                          columnWidth = "80px";
+                        }
+
+                        return (
+                          <td
+                            className={`px-4 py-3 whitespace-nowrap text-sm text-secondary ${
+                              column.name === "Title"
+                                ? "text-left"
+                                : "text-center"
+                            }`}
+                            key={`Table column: ${column.name}`}
+                            style={{ width: columnWidth }}
+                          >
+                            {column.display && column.display(fact)}
+                          </td>
+                        );
+                      })}
+                    {/* Add reaction icons column when custom columns are used */}
+                    {columns && enableReactionIcons && loggedIn && (
+                      <td
+                        className="px-4 py-3 whitespace-nowrap text-sm text-secondary text-center reaction-cell-container"
+                        style={{ width: "60px" }}
+                      >
+                        {(() => {
+                          console.log("Rendering reaction column for fact:", {
+                            factId: fact.id,
+                            factTitle: fact.title,
+                            hasReactions: !!fact.reactions,
+                            reactionsCount: fact.reactions?.length || 0,
+                            reactions: fact.reactions,
+                            fullFact: fact,
+                          });
+                          return null;
+                        })()}
+                        {reactionDisplayOnly ? (
+                          <ReactionDisplay
+                            reactions={fact.reactions || []}
+                            currentUserId={getCurrentUserId()}
+                            className="reaction-display-table"
+                          />
+                        ) : (
+                          <ReactionIcon
+                            reactions={fact.reactions || []}
+                            currentUserId={(() => {
+                              const userId = getCurrentUserId();
+                              console.log("getCurrentUserId result:", {
+                                userId,
+                                userIdType: typeof userId,
+                                token: token ? "present" : "missing",
+                                loggedIn,
+                              });
+                              return userId;
+                            })()}
+                            onReactionSubmit={async (reaction) => {
+                              if (token) {
+                                // Handle different data structures
+                                let insightId: number | undefined;
+                                let summaryId: number | undefined;
+
+                                if (
+                                  factName === "childInsights" &&
+                                  (fact as Insight).childInsight
+                                ) {
+                                  // For child insights, use the childInsight.id
+                                  insightId = (fact as Insight).childInsight.id;
+                                  summaryId = undefined; // Child insights don't have summary_id
+                                } else if (
+                                  factName === "parentInsights" &&
+                                  (fact as Insight).parentInsight
+                                ) {
+                                  // For parent insights, use the parentInsight.id
+                                  insightId = (fact as Insight).parentInsight
+                                    .id;
+                                  summaryId = undefined; // Parent insights don't have summary_id
+                                } else if (
+                                  factName === "snippet" &&
+                                  (fact as Fact).summary_id
+                                ) {
+                                  // For snippets/evidence, use the summary_id
+                                  insightId = undefined;
+                                  summaryId = (fact as Fact).summary_id;
+                                } else {
+                                  // For regular insights, use the fact.id
+                                  insightId = fact.id;
+                                  summaryId = undefined;
+                                  console.log(
+                                    "Main page insight reaction submission:",
+                                    {
+                                      factName,
+                                      factId: fact.id,
+                                      insightId,
+                                      summaryId,
+                                      factTitle: fact.title,
+                                    },
+                                  );
+                                }
+
+                                try {
+                                  const response = await fetch(
+                                    "/api/reactions",
+                                    {
+                                      method: "POST",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                        "x-access-token": token,
+                                      },
+                                      body: JSON.stringify({
+                                        insight_id: insightId,
+                                        summary_id: summaryId,
+                                        reaction: reaction,
+                                      }),
+                                    },
+                                  );
+
+                                  if (response.ok) {
+                                    // Refresh the data to show the new reaction
+                                    const currentUserId = getCurrentUserId();
+                                    if (!currentUserId) return; // Don't update if no user ID
+
+                                    console.log(
+                                      "Reaction submitted successfully, updating data:",
+                                      {
+                                        factId: fact.id,
+                                        currentUserId,
+                                        reaction,
+                                        dataLength: data?.length,
+                                      },
+                                    );
+
+                                    const updatedData = data?.map((f) => {
+                                      console.log("Checking fact for update:", {
+                                        factId: f.id,
+                                        targetFactId: fact.id,
+                                        matches: f.id === fact.id,
+                                        factTitle: f.title,
+                                        targetFactTitle: fact.title,
+                                      });
+
+                                      if (f.id === fact.id) {
+                                        // Remove any existing reaction from this user
+                                        const existingReactions = (
+                                          f.reactions || []
+                                        ).filter(
+                                          (r) => r.user_id !== currentUserId,
+                                        );
+
+                                        const newFact = {
+                                          ...f,
+                                          reactions: [
+                                            ...existingReactions,
+                                            {
+                                              id: Date.now(), // Temporary ID
+                                              reaction: reaction,
+                                              user_id: currentUserId,
+                                            },
+                                          ],
+                                        };
+
+                                        console.log("Updated fact:", {
+                                          id: newFact.id,
+                                          title: newFact.title,
+                                          reactions: newFact.reactions,
+                                        });
+
+                                        return newFact;
+                                      }
+                                      return f;
+                                    });
+                                    setData(updatedData);
+                                    console.log(
+                                      "Data updated, new length:",
+                                      updatedData?.length,
+                                    );
+                                  }
+                                } catch (error) {
+                                  console.error(
+                                    "Error submitting reaction:",
+                                    error,
+                                  );
+                                }
+                              }
+                            }}
+                            className="reaction-icon-cell"
+                          />
+                        )}
+                      </td>
+                    )}
                   </tr>
                   {enableFeedback && (
                     <>
                       <tr>
                         <td
-                          colSpan={columns ? columns.length + 3 : 4}
+                          colSpan={columns ? columns.length + 1 : 3}
                           className="bg-secondary text-sm p-2"
                         >
                           <div className="flex justify-around w-full m-4">
-                            <FeedbackLink
-                              actionVerb="React"
-                              icon="😲"
-                              setOnClickFunction={() => {
-                                if (loggedIn) {
-                                  const newIsEditing = {} as EditingForFact;
-                                  newIsEditing[fact.id!] = true;
-                                  setIsEditingReactionForFact({
-                                    ...isEditingReactionForFact,
-                                    ...newIsEditing,
-                                  });
-                                } else {
-                                  confirmAndRegister();
-                                }
-                              }}
-                            />
+                            {!enableReactionIcons && (
+                              <FeedbackLink
+                                actionVerb="React"
+                                icon="😲"
+                                setOnClickFunction={() => {
+                                  if (loggedIn) {
+                                    const newIsEditing = {} as EditingForFact;
+                                    newIsEditing[fact.id!] = true;
+                                    setIsEditingReactionForFact({
+                                      ...isEditingReactionForFact,
+                                      ...newIsEditing,
+                                    });
+                                  } else {
+                                    confirmAndRegister();
+                                  }
+                                }}
+                              />
+                            )}
                             <FeedbackLink
                               actionVerb="Comment"
                               icon="💬"
@@ -526,48 +960,49 @@ const FactsTable = ({
                             />
                           </div>
                           <div>
-                            {loggedIn && isEditingReactionForFact[fact.id!] && (
-                              <FeedbackInputElement
-                                actionType="reaction"
-                                submitFunc={(reaction) => {
-                                  if (token) {
-                                    return submitReaction(
-                                      {
-                                        reaction,
-                                        // FIXME: update this submitReaction logic
-                                        summary_id: fact.summary_id,
-                                        insight_id: fact.insight_id,
-                                      },
-                                      token,
-                                    );
-                                  }
-                                  return Promise.resolve();
-                                }}
-                                directions="Select an emoji character"
-                                afterSubmit={(newObject) => {
-                                  if (newObject) {
-                                    if (!fact.reactions) {
-                                      fact.reactions = [];
+                            {!enableReactionIcons &&
+                              loggedIn &&
+                              isEditingReactionForFact[fact.id!] && (
+                                <FeedbackInputElement
+                                  actionType="reaction"
+                                  submitFunc={(reaction) => {
+                                    if (token) {
+                                      return submitReaction(
+                                        {
+                                          reaction,
+                                          // FIXME: update this submitReaction logic
+                                          summary_id: fact.summary_id,
+                                          insight_id: fact.insight_id,
+                                        },
+                                        token,
+                                      );
                                     }
-                                    fact.reactions = [
-                                      ...fact.reactions.filter(
-                                        (r) => r.user_id != newObject.user_id,
-                                      ),
-                                      newObject as FactReaction,
-                                    ];
-                                    setData([...data!]);
-                                  }
-                                }}
-                                closeFunc={() => {
-                                  const newIsEditing = {} as EditingForFact;
-                                  newIsEditing[fact.id!] = false;
-                                  setIsEditingReactionForFact({
-                                    ...isEditingReactionForFact,
-                                    ...newIsEditing,
-                                  });
-                                }}
-                              />
-                            )}
+                                    return Promise.resolve();
+                                  }}
+                                  afterSubmit={(newObject) => {
+                                    if (newObject) {
+                                      if (!fact.reactions) {
+                                        fact.reactions = [];
+                                      }
+                                      fact.reactions = [
+                                        ...fact.reactions.filter(
+                                          (r) => r.user_id != newObject.user_id,
+                                        ),
+                                        newObject as FactReaction,
+                                      ];
+                                      setData([...data!]);
+                                    }
+                                  }}
+                                  closeFunc={() => {
+                                    const newIsEditing = {} as EditingForFact;
+                                    newIsEditing[fact.id!] = false;
+                                    setIsEditingReactionForFact({
+                                      ...isEditingReactionForFact,
+                                      ...newIsEditing,
+                                    });
+                                  }}
+                                />
+                              )}
                             {loggedIn && isEditingCommentForFact[fact.id!] && (
                               <FeedbackInputElement
                                 actionType="comment"
@@ -584,7 +1019,6 @@ const FactsTable = ({
                                   }
                                   return Promise.resolve();
                                 }}
-                                directions="Enter a text comment"
                                 afterSubmit={(newObject) => {
                                   if (newObject) {
                                     if (!fact.comments) {
@@ -613,7 +1047,7 @@ const FactsTable = ({
                       <tr>
                         {fact.comments && fact.comments.length > 0 && (
                           <td
-                            colSpan={columns ? columns.length + 3 : 4}
+                            colSpan={columns ? columns.length + 1 : 3}
                             className="bg-secondary text-sm"
                           >
                             <div className="p-2">
@@ -651,8 +1085,8 @@ const FactsTable = ({
           <tbody>
             <tr>
               <td
-                colSpan={columns ? columns.length + 3 : 4}
-                className="px-8 py-12 text-center text-text-tertiary"
+                colSpan={columns ? columns.length + 1 : 3}
+                className="px-4 py-12 text-center text-tertiary"
               >
                 <strong>Loading data...</strong>
               </td>
@@ -666,8 +1100,8 @@ const FactsTable = ({
             <tbody>
               <tr>
                 <td
-                  colSpan={columns ? columns.length + 3 : 4}
-                  className="px-8 py-12 text-center text-text-tertiary"
+                  colSpan={columns ? columns.length + 1 : 3}
+                  className="px-4 py-12 text-center text-tertiary"
                 >
                   <div>
                     <div className="text-lg mb-2">🔍</div>
@@ -690,8 +1124,8 @@ const FactsTable = ({
             <tbody>
               <tr>
                 <td
-                  colSpan={columns ? columns.length + 3 : 4}
-                  className="px-8 py-12 text-center text-text-tertiary"
+                  colSpan={columns ? columns.length + 1 : 3}
+                  className="px-4 py-12 text-center text-tertiary"
                 >
                   <div>
                     <div className="text-lg mb-2">📝</div>

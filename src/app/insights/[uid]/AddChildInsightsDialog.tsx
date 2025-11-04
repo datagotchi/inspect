@@ -139,11 +139,29 @@ const AddChildInsightsDialog = ({
             selectRows={true}
             columns={[
               {
-                name: "📄",
-                dataColumn: "evidence",
+                name: "Updated",
+                dataColumn: "updated_at",
                 display: (insight: Fact | Insight): React.JSX.Element => (
-                  <span className="badge text-bg-danger">
-                    {insight.evidence?.length ?? 0}
+                  <span className="text-sm text-secondary font-mono">
+                    {insight.updated_at
+                      ? new Date(insight.updated_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "2-digit",
+                            day: "2-digit",
+                            year: "numeric",
+                          },
+                        )
+                      : "---"}
+                  </span>
+                ),
+              },
+              {
+                name: "Title",
+                dataColumn: "title",
+                display: (insight: Fact | Insight): React.JSX.Element => (
+                  <span className="text-sm text-primary font-medium">
+                    {insight.title || "Untitled"}
                   </span>
                 ),
               },
@@ -154,7 +172,7 @@ const AddChildInsightsDialog = ({
     },
     {
       id: "new",
-      label: "New insight",
+      label: "Create new",
       content: (
         <ModalContentSection>
           <FormGroup>
@@ -193,9 +211,7 @@ const AddChildInsightsDialog = ({
         <ModalButton
           variant="primary"
           onClick={handleSubmit}
-          disabled={
-            selectedChildInsights.length === 0 && !newInsightName.trim()
-          }
+          disabled={selectedChildInsights.length === 0 && !newInsightName}
         >
           Add
         </ModalButton>

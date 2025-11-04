@@ -1,0 +1,723 @@
+/* ===================================
+   SIMPLIFIED REACTION ICON SYSTEM
+   =================================== */
+
+/* Single Reaction Icon Design - EDGE POSITIONING */
+.reaction-icon {
+  position: absolute !important;
+  top: 50% !important;
+  right: calc(
+    -1 * var(--spacing-4)
+  ) !important; /* Further out to reach card edge */
+  transform: translateY(-50%) !important;
+  width: var(--size-lg);
+  height: var(--size-lg);
+  padding: var(--spacing-1);
+  background-color: var(--color-background-primary);
+  border: 2px solid var(--color-border-primary);
+  border-radius: var(--radius-lg); /* Better rounded corners */
+  cursor: pointer;
+  transition: all var(--transition-base);
+  z-index: 30 !important; /* Higher z-index to ensure visibility */
+  opacity: 0.3; /* Base transparency - will be overridden by state classes */
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reaction-icon-emoji {
+  font-size: var(--font-size-sm);
+  line-height: 1;
+}
+
+.reaction-loading {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+/* Reaction icon opacity states */
+.reaction-icon.reaction-icon-transparent {
+  opacity: 0.5 !important; /* Half transparent for default emoji */
+}
+
+.reaction-icon.reaction-icon-solid {
+  opacity: 1 !important; /* Solid for user's selected emoji */
+  background-color: var(--color-background-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ===================================
+   REACTION PICKER
+   =================================== */
+
+.reaction-picker {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.reaction-picker-content {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-1);
+  padding: var(--spacing-2) var(--spacing-2);
+  background-color: var(--color-background-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  animation: reactionPickerSlideIn 0.1s ease-out;
+  max-width: 200px; /* Limit width to prevent it from being too wide */
+}
+
+@keyframes reactionPickerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(var(--spacing-1));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reaction-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-xl);
+  height: var(--size-xl);
+  font-size: var(--font-size-base);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.reaction-option:hover {
+  background-color: var(--color-background-secondary);
+  transform: scale(1.1);
+}
+
+.reaction-emoji {
+  font-size: var(--font-size-sm);
+}
+
+/* ===================================
+   POSITIONING HELPERS
+   =================================== */
+
+/* Cell positioning helpers - EDGE OVERFLOW DESIGN */
+.reaction-cell-container {
+  position: relative !important;
+  overflow: visible !important; /* Allow icons to extend beyond cell boundaries */
+  margin-right: 16px !important; /* Add space for half-on/half-off icons */
+  padding-right: 0 !important; /* Remove default padding to make room */
+}
+
+/* Table row adjustments for edge icons */
+.reaction-table-row {
+  position: relative;
+  overflow: visible !important;
+}
+
+/* Table container adjustments */
+.reaction-table-container {
+  overflow: visible !important; /* Ensure table doesn't clip edge icons */
+  position: relative; /* Make it a positioning context */
+}
+
+/* Position reaction icons at the edge of the table container */
+.reaction-table-container .reaction-icon {
+  position: absolute !important;
+  right: -12px !important; /* Half on, half off the container */
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 20 !important; /* Higher z-index to ensure they appear above other elements */
+}
+
+/* Position reaction icons at the edge of table cells */
+.reaction-cell-container .reaction-icon {
+  position: absolute !important;
+  right: -12px !important; /* Half on, half off the cell */
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 20 !important;
+}
+
+/* Ensure all table cells with reaction icons are properly positioned */
+td.reaction-cell-container {
+  position: relative !important;
+  overflow: visible !important;
+  margin-right: 0 !important; /* More space for edge icons */
+  padding-right: 0 !important;
+}
+
+/* Force edge positioning for ALL reaction icons */
+.reaction-icon {
+  position: absolute !important;
+  right: -12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 20 !important;
+}
+
+/* Ensure table rows and cells allow overflow */
+.reaction-table-row {
+  overflow: visible !important;
+}
+
+td.overflow-visible {
+  overflow: visible !important;
+}
+
+/* Card container adjustments */
+.reaction-card-container {
+  overflow: visible !important; /* Ensure cards don't clip edge icons */
+  margin-right: 0px; /* More space for edge icons */
+  position: relative; /* Make it a positioning context */
+}
+
+/* Position reaction icons at the edge of the card container */
+.reaction-card-container .reaction-icon {
+  position: absolute !important;
+  right: -12px !important; /* Half on, half off the container */
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 20 !important; /* Higher z-index to ensure they appear above other elements */
+}
+
+/* Ensure FactsListView tables get proper positioning */
+.content-card-body.reaction-card-container .reaction-table-container {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+.content-card-body.reaction-card-container .reaction-table-row {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+/* Ensure the actual table allows overflow */
+.content-card-body.reaction-card-container table {
+  overflow: visible !important;
+}
+
+.content-card-body.reaction-card-container tbody {
+  overflow: visible !important;
+}
+
+.content-card-body.reaction-card-container tr {
+  overflow: visible !important;
+}
+
+.content-card-body.reaction-card-container td {
+  overflow: visible !important;
+}
+
+.content-card-body.reaction-card-container .reaction-icon {
+  position: absolute !important;
+  right: -16px !important; /* Further out to reach card edge */
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 30 !important;
+}
+
+/* ===================================
+   FEEDBACK ITEMS
+   =================================== */
+
+/* Feedback item edge icons */
+.feedback-item-container {
+  position: relative;
+  overflow: visible;
+  margin-right: 16px;
+  padding: var(--spacing-3);
+  background-color: var(--color-background-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-base);
+}
+
+.feedback-item-content {
+  padding-right: 8px; /* Space for edge icon */
+}
+
+.feedback-item-reaction-icon {
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  transform: translateY(-50%);
+  opacity: 0.3; /* Base transparency - will be overridden by state classes */
+  transition: all var(--transition-base);
+}
+
+.feedback-item-reaction-icon.reaction-icon-transparent {
+  opacity: 0.5 !important; /* Half transparent for default emoji */
+}
+
+.feedback-item-reaction-icon.reaction-icon-solid {
+  opacity: 1 !important; /* Solid for user's selected emoji */
+  background-color: var(--color-background-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ===================================
+   HEADER ITEMS
+   =================================== */
+
+/* Header item edge icons */
+.header-item-container {
+  position: relative;
+  overflow: visible;
+  margin-right: 16px;
+  padding: var(--spacing-4);
+  background-color: var(--color-background-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-base);
+}
+
+.header-item-content {
+  padding-right: 8px; /* Space for edge icon */
+}
+
+.header-item-reaction-icon {
+  position: absolute !important;
+  top: -12px !important;
+  right: -12px !important;
+  opacity: 0.3 !important; /* Base transparency - will be overridden by state classes */
+  transition: all var(--transition-base);
+  z-index: 10 !important;
+  transform: scale(1.3) !important;
+  border-radius: var(
+    --radius-lg
+  ) !important; /* Better border radius for scaled button */
+}
+
+.header-item-reaction-icon.reaction-icon-transparent {
+  opacity: 0.5 !important; /* Half transparent for default emoji */
+}
+
+.header-item-reaction-icon.reaction-icon-solid {
+  opacity: 1 !important; /* Solid for user's selected emoji */
+  background-color: var(--color-background-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ===================================
+   INSIGHT HEADER ACTIONS
+   =================================== */
+
+/* Insight header container */
+.insight-header-container {
+  position: relative;
+  overflow: visible;
+  z-index: 10;
+}
+
+/* Ensure the main card doesn't clip the action buttons */
+.insight-page-card {
+  overflow: visible !important;
+}
+
+/* Override margins for insight header to make it edge to edge */
+.insight-header-container .header-item-container {
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important; /* Top rounded corners only */
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important; /* Remove top border to blend with card */
+  overflow: visible !important;
+}
+
+/* Action buttons positioned at bottom edge */
+.insight-header-actions {
+  position: absolute;
+  bottom: -12px;
+  right: var(--spacing-4);
+  display: flex;
+  gap: var(--spacing-2);
+  z-index: 50;
+  overflow: visible;
+}
+
+/* Individual action button styling */
+.insight-action-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-2) var(--spacing-3);
+  background-color: var(--color-background-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.insight-action-button:hover {
+  background-color: var(--color-background-secondary);
+  border-color: var(--color-border-secondary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.insight-action-button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Publish button specific styling */
+.insight-action-button-publish {
+  color: var(--color-success);
+}
+
+.insight-action-button-publish:hover {
+  background-color: var(--color-success-light);
+  color: var(--color-success-dark);
+}
+
+/* Delete button specific styling */
+.insight-action-button-delete {
+  color: var(--color-danger);
+}
+
+.insight-action-button-delete:hover {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger-dark);
+}
+
+/* Action button icons and labels */
+.insight-action-icon {
+  font-size: var(--font-size-base);
+  line-height: 1;
+}
+
+.insight-action-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+/* ===================================
+   INSIGHT PAGE LAYOUT IMPROVEMENTS
+   =================================== */
+
+/* Improved spacing for insight page sections */
+.insight-page-card .cardBody {
+  padding: var(--spacing-5) var(--spacing-6);
+}
+
+/* Better spacing between sections */
+.insight-page-card .cardBody + .cardBody {
+  margin-top: var(--spacing-1);
+}
+
+/* Consistent section headers */
+.insight-page-card .contentCardHeader {
+  margin-bottom: var(--spacing-4);
+  padding-bottom: var(--spacing-2);
+}
+
+/* Better spacing for section content */
+.insight-page-card .sectionContent {
+  margin-top: var(--spacing-3);
+}
+
+/* Improved empty state spacing */
+.insight-page-card .emptyState {
+  padding: var(--spacing-6) 0;
+  text-align: center;
+}
+
+/* ===================================
+   INSIGHT FEEDBACK BUTTONS
+   =================================== */
+
+/* Feedback action buttons container */
+.insight-feedback-actions {
+  display: flex;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-3);
+}
+
+/* Individual feedback button styling */
+.insight-feedback-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: var(--color-background-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+  transition: all var(--transition-base);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  flex: 1;
+  justify-content: center;
+}
+
+.insight-feedback-button:hover {
+  background-color: var(--color-background-secondary);
+  border-color: var(--color-border-secondary);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.insight-feedback-button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Comment button specific styling */
+.insight-feedback-button-comment {
+  color: var(--color-base-600);
+}
+
+.insight-feedback-button-comment:hover {
+  background-color: var(--color-base-50);
+  color: var(--color-base-700);
+}
+
+/* React button specific styling */
+.insight-feedback-button-react {
+  color: var(--color-base-600);
+}
+
+.insight-feedback-button-react:hover {
+  background-color: var(--color-base-50);
+  color: var(--color-base-700);
+}
+
+/* Feedback button icons and labels */
+.insight-feedback-icon {
+  font-size: var(--font-size-lg);
+  line-height: 1;
+}
+
+.insight-feedback-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+/* ReactionButton styling for feedback section */
+.insight-feedback-reaction-button {
+  flex: 1;
+}
+
+.insight-feedback-reaction-button .reaction-button-container {
+  width: 100%;
+  height: 100%;
+}
+
+.insight-feedback-reaction-button .reaction-button {
+  width: 100% !important;
+  height: 100% !important;
+  padding: var(--spacing-3) var(--spacing-4) !important;
+  background-color: var(--color-background-primary) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-xs) !important;
+  transition: all var(--transition-base) !important;
+  cursor: pointer !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-base-600) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: var(--spacing-2) !important;
+}
+
+.insight-feedback-reaction-button .reaction-button:hover {
+  background-color: var(--color-base-50) !important;
+  color: var(--color-base-700) !important;
+  border-color: var(--color-border-secondary) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transform: translateY(-1px) !important;
+}
+
+.insight-feedback-reaction-button .reaction-button:active {
+  background-color: var(--color-base-100) !important;
+  color: var(--color-base-800) !important;
+  border-color: var(--color-border-secondary) !important;
+  box-shadow: var(--shadow-xs) !important;
+  transform: translateY(0) !important;
+}
+
+/* ===================================
+   REACTION DISPLAY (INLINE IN TABLES)
+   =================================== */
+
+/* Display-only reactions inside table cells */
+.reaction-display-table {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: var(--spacing-1) !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  float: left !important;
+  clear: both !important;
+}
+
+.reaction-display-table .reaction-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: var(--spacing-1) !important;
+  padding: var(--spacing-1) var(--spacing-2) !important;
+  background-color: var(--color-background-secondary) !important;
+  border: 1px solid var(--color-border-primary) !important;
+  border-radius: var(--radius-md) !important;
+  font-size: var(--font-size-sm) !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+.reaction-display-table .reaction-emoji {
+  font-size: var(--font-size-sm) !important;
+  line-height: 1 !important;
+}
+
+.reaction-display-table .reaction-count {
+  font-size: var(--font-size-xs) !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-secondary) !important;
+  margin-left: var(--spacing-1) !important;
+}
+
+/* Ensure table cells with reaction displays don't overflow */
+td.reaction-cell-container {
+  max-width: 200px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  padding: var(--spacing-2) !important;
+  vertical-align: middle !important;
+}
+
+/* Ensure reaction displays fit within their containers */
+.reaction-display-table {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: var(--spacing-1) !important;
+  max-width: 120px !important;
+  overflow: hidden !important;
+  vertical-align: middle !important;
+}
+
+.reaction-display-table .reaction-item {
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+/* ===================================
+   REACTION SUMMARY
+   =================================== */
+
+.reaction-summary {
+  display: inline-block;
+  margin-right: var(--spacing-2);
+  padding: var(--spacing-1) var(--spacing-2);
+  background-color: var(--color-background-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  cursor: help;
+  transition: all var(--transition-base);
+}
+
+.reaction-summary:hover {
+  background-color: var(--color-background-primary);
+  border-color: var(--color-border-secondary);
+  color: var(--color-text-primary);
+}
+
+.reaction-summary-text {
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+/* ===================================
+   SIZE-BASED REACTION COUNTING
+   =================================== */
+
+/* 5 levels of emoji sizes for reaction counts */
+.reaction-size-1 {
+  font-size: 12px !important;
+}
+.reaction-size-2 {
+  font-size: 16px !important;
+}
+.reaction-size-3 {
+  font-size: 20px !important;
+}
+.reaction-size-4 {
+  font-size: 24px !important;
+}
+.reaction-size-5 {
+  font-size: 28px !important;
+}
+
+/* Dot system for counts above 5 */
+.reaction-dot {
+  display: inline-block !important;
+  border-radius: 50% !important;
+  background-color: var(--color-text-secondary) !important;
+  margin-left: var(--spacing-1) !important;
+}
+
+.reaction-dot-size-1 {
+  width: 4px !important;
+  height: 4px !important;
+}
+.reaction-dot-size-2 {
+  width: 6px !important;
+  height: 6px !important;
+}
+.reaction-dot-size-3 {
+  width: 8px !important;
+  height: 8px !important;
+}
+.reaction-dot-size-4 {
+  width: 10px !important;
+  height: 10px !important;
+}
+.reaction-dot-size-5 {
+  width: 12px !important;
+  height: 12px !important;
+}
+
+/* ===================================
+   RESPONSIVE DESIGN
+   =================================== */
+
+@media (max-width: 768px) {
+  .reaction-picker-content {
+    padding: 4px 6px;
+    gap: 3px;
+  }
+
+  .reaction-option {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+
+  .reaction-emoji {
+    font-size: 12px;
+  }
+}

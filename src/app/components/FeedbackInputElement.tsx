@@ -2,35 +2,59 @@
 import React, { useCallback, useEffect, useState } from "react";
 import RichTextEditor from "./RichTextEditor";
 import { FactComment, FactReaction } from "../types";
+import cardStyles from "../../styles/components/card.module.css";
 
 const FeedbackInputElement = ({
   actionType,
   submitFunc,
   closeFunc,
-  directions,
   afterSubmit,
 }: {
   actionType: "reaction" | "comment";
   submitFunc?: (token: string) => Promise<FactComment | FactReaction | void>;
   closeFunc: () => void;
-  directions: string;
   afterSubmit: (response?: FactComment | FactReaction | void) => void;
 }): React.JSX.Element => {
   const [html, setHtml] = useState<string>("");
 
-  const firstEmojiCode = "😀".codePointAt(0);
-  const reactOptions = Array.from({ length: 80 }, (_, i) => i)
-    .map((i) => (firstEmojiCode ?? 0) + i)
-    .map((i) => String.fromCodePoint(i))
-    .map((char) => (
-      <option value={char} key={`ReactOptions: ${char}`}>
-        {char}
-      </option>
-    ));
+  // Use the same emoji set as ReactionPicker for consistency
+  const commonEmojis = [
+    "❤️",
+    "😮",
+    "🙌",
+    "😟",
+    "😡",
+    "😕",
+    "🎯",
+    "😊",
+    "😎",
+    "🤔",
+    "🌱",
+    "👏",
+    "👍",
+    "😂",
+    "😢",
+    "😤",
+    "💕",
+    "🤕",
+    "😦",
+    "😍",
+    "🤓",
+    "😖",
+    "😱",
+    "😯",
+    "🤭",
+  ];
+
+  const reactOptions = commonEmojis.map((char) => (
+    <option value={char} key={`ReactOptions: ${char}`}>
+      {char}
+    </option>
+  ));
 
   useEffect(() => {
     if (!html && actionType == "reaction") {
-      setHtml("😀");
+      setHtml("❤️");
     }
   }, [actionType, reactOptions, html]);
 
@@ -40,20 +64,11 @@ const FeedbackInputElement = ({
   }, [closeFunc]);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        textAlign: "center",
-        width: "100%",
-      }}
-    >
-      <p>{directions}</p>
-      <div>
+    <div className={cardStyles.feedbackInputContainer}>
+      <div className={cardStyles.feedbackInputContent}>
         {actionType == "reaction" && (
           <select
-            style={{ fontSize: 50 }}
+            className={cardStyles.feedbackReactionSelect}
             value={html}
             onChange={(event) => setHtml(event.target.value)}
             aria-label="Select Reaction"
@@ -65,8 +80,12 @@ const FeedbackInputElement = ({
           <RichTextEditor html={html} setHtml={setHtml} />
         )}
       </div>
-      <div>
-        <button type="button" onClick={closeFeedbackInputElement}>
+      <div className={cardStyles.feedbackInputActions}>
+        <button
+          type="button"
+          onClick={closeFeedbackInputElement}
+          className={cardStyles.feedbackInputButton}
+        >
           Cancel
         </button>
         <button
@@ -81,6 +100,7 @@ const FeedbackInputElement = ({
               }
             }
           }}
+          className={`${cardStyles.feedbackInputButton} ${cardStyles.feedbackInputButtonPrimary}`}
         >
           Submit
         </button>

@@ -12,13 +12,7 @@ const AppHeader = (): React.JSX.Element => {
         className="pointer"
         onClick={() => open(origin, "_self")}
       >
-        <Image
-          src="/images/icon.png"
-          width="60"
-          height="60"
-          alt="Inspect logo"
-        />{" "}
-        <br />
+        <span style={{ fontSize: "48px" }}>🔍</span> <br />
         <strong>INSPECT</strong>
       </div>
       <div>
@@ -62,7 +56,7 @@ const AppHeader = (): React.JSX.Element => {
               />
             </a>
           </p>
-          <p style={{ color: "#ccc" }}>
+          <p style={{ color: "var(--color-text-muted)" }}>
             {/* Download the app to receive mobile notifications and share
               articles with your connections! */}
             Help me incubate Inspect and other DG projects to empower people

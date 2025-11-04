@@ -226,46 +226,66 @@ const SaveLinkDialog = ({
           )}
         </ModalContentSection>
 
-        <ModalContentSection title="Then: choose one or more existing insight">
-          <div style={{ height: "200px", overflowY: "scroll" }}>
-            <FactsTable
-              factName="potentialInsight"
-              data={potentialInsights}
-              setData={
-                setPotentialInsights as React.Dispatch<
-                  React.SetStateAction<Fact[] | undefined>
-                >
+        <ModalContentSection
+          title="Then: choose one or more existing insight"
+          className="flex-grow"
+        >
+          <FactsTable
+            factName="potentialInsight"
+            data={potentialInsights}
+            setData={
+              setPotentialInsights as React.Dispatch<
+                React.SetStateAction<Fact[] | undefined>
+              >
+            }
+            selectedFacts={selectedInsights}
+            setSelectedFacts={
+              setSelectedInsights as React.Dispatch<
+                React.SetStateAction<Fact[]>
+              >
+            }
+            dataFilter={dataFilter}
+            setDataFilter={setDataFilter}
+            selectRows={true}
+            queryFunction={async (query) => {
+              const response = await fetch(
+                `/api/insights?query=${query}&limit=20`,
+              );
+              if (!response.ok) {
+                throw new Error(response.statusText);
               }
-              selectedFacts={selectedInsights}
-              setSelectedFacts={
-                setSelectedInsights as React.Dispatch<
-                  React.SetStateAction<Fact[]>
-                >
-              }
-              dataFilter={dataFilter}
-              setDataFilter={setDataFilter}
-              selectRows={true}
-              queryFunction={async (query) => {
-                const response = await fetch(
-                  `/api/insights?query=${query}&limit=20`,
-                );
-                if (!response.ok) {
-                  throw new Error(response.statusText);
-                }
-                return response.json();
-              }}
-              columns={[
-                {
-                  name: "Citations",
-                  display: (insight: Fact | Insight): React.JSX.Element => (
-                    <span className="badge text-bg-danger">
-                      {insight.evidence?.length || 0}
-                    </span>
-                  ),
-                },
-              ]}
-            />
-          </div>
+              return response.json();
+            }}
+            columns={[
+              {
+                name: "Updated",
+                dataColumn: "updated_at",
+                display: (insight: Fact | Insight): React.JSX.Element => (
+                  <span className="text-sm text-secondary font-mono">
+                    {insight.updated_at
+                      ? new Date(insight.updated_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "2-digit",
+                            day: "2-digit",
+                            year: "numeric",
+                          },
+                        )
+                      : "---"}
+                  </span>
+                ),
+              },
+              {
+                name: "Title",
+                dataColumn: "title",
+                display: (insight: Fact | Insight): React.JSX.Element => (
+                  <span className="text-sm text-primary font-medium">
+                    {insight.title || "Untitled"}
+                  </span>
+                ),
+              },
+            ]}
+          />
         </ModalContentSection>
 
         <ModalContentSection title="Or: create a new insight to contain them">

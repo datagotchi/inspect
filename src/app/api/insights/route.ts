@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
 import "../../api/db";
+import knex from "../../api/db";
 import { Insight, InsightEvidence } from "../../types";
 import { getAuthUser } from "../../functions";
 import { InsightModel } from "../models/insights";
@@ -18,6 +19,7 @@ export async function GET(req: NextRequest): Promise<GetInsightsRouteResponse> {
   const includeParents = Boolean(req.nextUrl.searchParams.get("parents"));
   const includeChildren = Boolean(req.nextUrl.searchParams.get("children"));
   const includeEvidence = Boolean(req.nextUrl.searchParams.get("evidence"));
+  const includeComments = Boolean(req.nextUrl.searchParams.get("comments"));
 
   if (authUser) {
     const baseQuery = InsightModel.query()
@@ -32,11 +34,14 @@ export async function GET(req: NextRequest): Promise<GetInsightsRouteResponse> {
       .limit(limit);
 
     const finalQuery = InsightModel.query()
+      .select("insights.*") // Explicitly select all insight fields including timestamps
       .withGraphJoined(
         `[
-      ${includeParents ? "parents.parentInsight," : ""}
-      ${includeChildren ? "children.childInsight.evidence," : ""}
-      ${includeEvidence ? "evidence" : ""}
+      reactions,
+      ${includeComments ? "comments.reactions," : ""}
+      ${includeParents ? "parents.parentInsight.reactions," : ""}
+      ${includeChildren ? "children.childInsight.reactions," : ""}
+      ${includeEvidence ? "evidence.summary.reactions" : ""}
     ]`,
         { joinOperation: "leftJoin" }, // Use leftJoin to preserve all root insights
       )
@@ -84,11 +89,13 @@ export async function POST(
     }
 
     // First create the insight without evidence
-    const newInsight = await InsightModel.query()
+    const newInsight = await (InsightModel.query() as any)
       .insert({
         user_id: authUser.user_id,
         uid,
         title,
+        created_at: knex.fn.now(),
+        updated_at: knex.fn.now(),
       })
       .withGraphFetched("evidence");
 

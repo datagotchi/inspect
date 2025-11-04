@@ -2,29 +2,45 @@
 
 import React, { useMemo, useState } from "react";
 import moment from "moment";
+import Image from "next/image";
+import NextLink from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import cardStyles from "../../../styles/components/card.module.css";
 
-import { FactComment, FactReaction, Link, User } from "../../types";
+import {
+  FactComment,
+  FactReaction,
+  InsightEvidence,
+  Link,
+  User,
+} from "../../types";
 
 import FeedbackInputElement from "../../components/FeedbackInputElement";
 import { submitComment, submitReaction } from "../../functions";
-import FeedbackLink from "../../components/FeedbackLink";
+import ReactionIcon from "../../components/ReactionIcon";
 import useUser from "../../hooks/useUser";
 import SourceLogo from "../../components/SourceLogo";
 import CurrentUserContext from "../../contexts/CurrentUserContext";
 import Comment from "../../components/Comment";
+import { createLinkSlug } from "../../utils/slug";
 
 const ClientSidePage = ({
   linkInput,
   currentUser,
+  requestedSlug,
+  uid,
 }: {
   linkInput: Link;
   currentUser?: User;
+  requestedSlug?: string;
+  uid?: string;
 }): React.JSX.Element => {
   const [link, setLink] = useState(linkInput);
-  const [isEditingReaction, setIsEditingReaction] = useState(false);
   const [isEditingComment, setIsEditingComment] = useState(false);
 
   const { token } = useUser();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   const createdOrUpdated = useMemo(() => {
     if (link.created_at == link.updated_at) {
@@ -33,194 +49,238 @@ const ClientSidePage = ({
     return `Updated ${moment(link.updated_at).fromNow()}`;
   }, [link.created_at, link.updated_at]);
 
+  // Get the associated insight for the back button
+  const associatedInsight = useMemo(() => {
+    // First check if we have a specific insight from query params
+    const fromInsight = searchParams.get("from");
+    const insightUid = searchParams.get("insight");
+
+    if (fromInsight === "insight" && insightUid) {
+      // If we came from a specific insight, try to find it in the evidence
+      if (link.evidence && link.evidence.length > 0) {
+        const matchingEvidence = (link.evidence as InsightEvidence[]).find(
+          (e) => e.insight?.uid === insightUid,
+        );
+        if (matchingEvidence?.insight) {
+          return matchingEvidence.insight;
+        }
+      }
+    }
+
+    // Fallback to the original logic
+    if (link.evidence && link.evidence.length > 0) {
+      // Get the first insight from the evidence
+      const firstEvidence = (link.evidence as InsightEvidence[])[0];
+      if (firstEvidence.insight) {
+        return firstEvidence.insight;
+      }
+    }
+    return null;
+  }, [link.evidence, searchParams]);
+
+  // Generate the canonical URL with the proper slug
+  const canonicalUrl = useMemo(() => {
+    const linkUid = uid || link.uid || "";
+    const slug = createLinkSlug(link.title || "Untitled", linkUid);
+    return `/links/${slug}`;
+  }, [link.title, link.uid, uid]);
+
+  // Redirect to canonical URL if the requested slug doesn't match
+  React.useEffect(() => {
+    if (
+      requestedSlug &&
+      requestedSlug !== canonicalUrl.replace("/links/", "")
+    ) {
+      router.replace(canonicalUrl + window.location.search);
+    }
+  }, [requestedSlug, canonicalUrl, router]);
+
   return (
-    <div id="body">
+    <div className={cardStyles.linkPagePaper}>
       <CurrentUserContext.Provider value={currentUser || null}>
-        <div id="source">
-          <div style={{ display: "flex" }}>
-            {(link.reactions &&
-              link.reactions.map((r) => r.reaction).join("")) || (
-              <span>😲 (no reactions)</span>
+        <div className={cardStyles.linkPageCard}>
+          {/* Back Button */}
+          <div className={cardStyles.linkBackButtonContainer}>
+            {associatedInsight ? (
+              <NextLink
+                href={`/insights/${associatedInsight.uid}`}
+                className={cardStyles.linkBackButton}
+                title={`Back to "${associatedInsight.title}"`}
+              >
+                <span className={cardStyles.linkBackButtonIcon}>←</span>
+                <span className={cardStyles.linkBackButtonText}>
+                  Back to Insight
+                </span>
+              </NextLink>
+            ) : (
+              <div className={cardStyles.linkBackButtonDisabled}>
+                <span className={cardStyles.linkBackButtonIcon}>⋯</span>
+                <span className={cardStyles.linkBackButtonText}>
+                  No associated insight
+                </span>
+              </div>
             )}
           </div>
-          <div id="created_at">
-            <p>{createdOrUpdated}</p>
+
+          {/* Link Header Section */}
+          <div className={cardStyles.linkHeaderSection}>
+            <div className={cardStyles.linkHeaderContainer}>
+              <div className={cardStyles.linkSourceLogoContainer}>
+                <SourceLogo fact={link} />
+                <ReactionIcon
+                  reactions={link.reactions || []}
+                  currentUserId={currentUser?.id}
+                  onReactionSubmit={async (reaction) => {
+                    if (token) {
+                      const result = await submitReaction(
+                        { reaction, summary_id: link.id },
+                        token,
+                      );
+                      if (result) {
+                        const existingReactions =
+                          link.reactions?.filter(
+                            (r) => r.user_id !== result.user_id,
+                          ) || [];
+                        setLink({
+                          ...link,
+                          reactions: [
+                            ...existingReactions,
+                            result as FactReaction,
+                          ],
+                        });
+                      }
+                    }
+                  }}
+                  className="header-item-reaction-icon reaction-icon-solid"
+                />
+              </div>
+              <div className={cardStyles.linkTitleContainer}>
+                <h1 className={cardStyles.linkMainTitle}>
+                  <span className={cardStyles.linkIcon}>🔗</span>
+                  {link.title}
+                </h1>
+                <div className={cardStyles.linkMetadata}>
+                  <span className={cardStyles.linkTimestamp}>
+                    {createdOrUpdated}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div style={{ height: "60px" }}>
-            <SourceLogo fact={link} />
+
+          {/* Link Visit Section */}
+          <div className={cardStyles.linkVisitSection}>
+            <div className={cardStyles.linkActions}>
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noreferrer"
+                className={cardStyles.linkVisitButton}
+              >
+                Visit Link →
+              </a>
+            </div>
           </div>
-        </div>
-        <div
-          style={{
-            marginBlockStart: "0.83em",
-            marginBlockEnd: "0.83em",
-          }}
-        >
-          <p
-            style={{
-              width: "100%",
-              position: "relative",
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element -- because of domain filtering */}
-            <img
-              src={link.imageUrl || undefined}
-              alt="link image"
-              style={{ maxWidth: "800px", width: "100%" }}
-              // fill={true}
-            />
-          </p>
-          <h2 id="title" style={{ margin: "0px" }}>
-            <a href={link.url} target="_blank" rel="noreferrer" id="titleLink">
-              {link.title}
-            </a>
-          </h2>
-        </div>
-        {currentUser && isEditingReaction && (
-          <FeedbackInputElement
-            actionType="reaction"
-            submitFunc={(reaction) => {
-              if (token) {
-                return submitReaction({ reaction, summary_id: link.id }, token);
-              }
-              return Promise.resolve();
-            }}
-            directions="Select an emoji character"
-            afterSubmit={(newObject) => {
-              if (newObject) {
-                if (!link.reactions) {
-                  link.reactions = [];
-                }
-                setLink({
-                  ...link,
-                  reactions: [...link.reactions, newObject as FactReaction],
-                });
-              }
-            }}
-            closeFunc={() => setIsEditingReaction(false)}
-          />
-        )}
-        {currentUser && isEditingComment && (
-          <FeedbackInputElement
-            actionType="comment"
-            submitFunc={(comment) => {
-              if (token) {
-                return submitComment({ comment, summary_id: link.id }, token);
-              }
-              return Promise.resolve();
-            }}
-            directions="Enter a text comment"
-            afterSubmit={(newObject) => {
-              if (newObject) {
-                if (!link.comments) {
-                  link.comments = [];
-                }
-                setLink({
-                  ...link,
-                  comments: [
-                    ...link.comments,
-                    {
-                      ...newObject,
-                      // avatar_uri: currentUser.avatar_uri,
-                    } as FactComment,
-                  ],
-                });
-              }
-            }}
-            closeFunc={() => setIsEditingComment(false)}
-          />
-        )}
-        {currentUser && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "space-around",
-              width: "100%",
-              margin: "10px",
-            }}
-          >
-            <FeedbackLink
-              actionVerb="React"
-              icon="😲"
-              setOnClickFunction={() => {
-                setIsEditingReaction(true);
-                setIsEditingComment(false);
-              }}
-            />
-            <FeedbackLink
-              actionVerb="Comment"
-              icon="💬"
-              setOnClickFunction={() => {
-                setIsEditingReaction(false);
-                setIsEditingComment(true);
-              }}
-            />
+
+          {/* Link Content Section */}
+          <div className={cardStyles.linkContentSection}>
+            {link.imageUrl && (
+              <div className={cardStyles.linkImageContainer}>
+                <Image
+                  src={link.imageUrl}
+                  alt="Link preview"
+                  className={cardStyles.linkImage}
+                  width={300}
+                  height={200}
+                />
+              </div>
+            )}
           </div>
-        )}
-        <div className="comments">
-          {link.comments &&
-            link.comments.map((comment) => (
-              // <div
-              //   className="comment"
-              //   key={`Comment #${comment.id}`}
-              //   data-id={comment.id}
-              // >
-              //   {comment.user?.username}
-              //   <div
-              //     style={{
-              //       float: "right",
-              //       display: "flex",
-              //       flexDirection: "column",
-              //     }}
-              //   >
-              //     {currentUser && (
-              //       <>
-              //         {currentUser.id == Number(comment.user_id) && (
-              //           <button
-              //             style={{ width: "32px", height: "30px" }}
-              //             aria-label="Delete Comment"
-              //             onClick={async () => {
-              //               if (token && confirm("Are you sure?")) {
-              //                 const worked = await deleteComment(
-              //                   { id: comment.id },
-              //                   token,
-              //                 );
-              //                 if (worked) {
-              //                   if (!link.comments) {
-              //                     link.comments = [];
-              //                   }
-              //                   setLink({
-              //                     ...link,
-              //                     comments: link.comments.filter(
-              //                       (c) => c.id !== comment.id,
-              //                     ),
-              //                   });
-              //                 }
-              //               }
-              //             }}
-              //           >
-              //             {TRASH_ICON}
-              //           </button>
-              //         )}
-              //       </>
-              //     )}
-              //   </div>
-              //   <div className="commenttext">
-              //     {comment.comment && parse(comment.comment)}
-              //   </div>
-              // </div>
-              <Comment
-                key={`Link Comment #${comment.id}`}
-                comment={comment}
-                removeCommentFunc={(id) => {
-                  setLink({
-                    ...link,
-                    comments: link.comments?.filter((c) => c.id !== id) ?? [],
-                  });
-                }}
-              />
-            ))}
+
+          {/* Feedback Section */}
+          <div className={cardStyles.linkFeedbackSection}>
+            <div className={cardStyles.linkFeedbackHeader}>
+              <div className={cardStyles.hierarchyIndicator}>
+                <span className={cardStyles.hierarchyIcon}>💬</span>
+                Feedback
+              </div>
+            </div>
+
+            <div className={cardStyles.linkFeedbackContent}>
+              {/* Comment Input */}
+              {currentUser && isEditingComment && (
+                <div className={cardStyles.linkCommentInput}>
+                  <FeedbackInputElement
+                    actionType="comment"
+                    submitFunc={(comment) => {
+                      if (token) {
+                        return submitComment(
+                          { comment, summary_id: link.id },
+                          token,
+                        );
+                      }
+                      return Promise.resolve();
+                    }}
+                    afterSubmit={(newObject) => {
+                      if (newObject) {
+                        if (!link.comments) {
+                          link.comments = [];
+                        }
+                        setLink({
+                          ...link,
+                          comments: [
+                            ...link.comments,
+                            {
+                              ...newObject,
+                            } as FactComment,
+                          ],
+                        });
+                      }
+                    }}
+                    closeFunc={() => setIsEditingComment(false)}
+                  />
+                </div>
+              )}
+
+              {/* Comments List */}
+              <div className={cardStyles.linkCommentsList}>
+                {link.comments && link.comments.length > 0 ? (
+                  link.comments.map((comment) => (
+                    <Comment
+                      key={`Link Comment #${comment.id}`}
+                      comment={comment}
+                      removeCommentFunc={(id) => {
+                        setLink({
+                          ...link,
+                          comments:
+                            link.comments?.filter((c) => c.id !== id) ?? [],
+                        });
+                      }}
+                    />
+                  ))
+                ) : (
+                  <div className={cardStyles.linkNoComments}>
+                    <p>No comments yet. Be the first to share your thoughts!</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Add Comment Button */}
+              {currentUser && !isEditingComment && (
+                <div className={cardStyles.linkAddCommentSection}>
+                  <button
+                    onClick={() => setIsEditingComment(true)}
+                    className={cardStyles.linkAddCommentButton}
+                  >
+                    <span className={cardStyles.addButtonIcon}>💬</span>
+                    <span className={cardStyles.addButtonText}>
+                      Add Comment
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </CurrentUserContext.Provider>
     </div>
