@@ -6,7 +6,7 @@ import { InsightLinkModel } from "../../models/insight_links";
 import { getAuthUser } from "../../../functions";
 
 export interface DeleteChildInsightRouteProps {
-  params: Promise<{ id: number }>;
+  params: Promise<{ id: string }>;
 }
 
 export type DeleteChildInsightRouteResponse = NextResponse<{

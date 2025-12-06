@@ -3,7 +3,7 @@
  */
 
 import { encodeStringURI } from "../../hooks/functions";
-import { GET, GetLinksRequest, POST } from "./route";
+import { GET, POST } from "./route";
 import { NextRequest } from "next/server";
 import { SummaryModel } from "../models/summaries";
 import { getAuthUser } from "../../functions";
@@ -62,7 +62,7 @@ describe("GET /api/links", () => {
       nextUrl: {
         searchParams: new URLSearchParams({ offset: "0", limit: "2" }),
       },
-    } as GetLinksRequest;
+    } as NextRequest;
 
     const res = await GET(req);
     expect(res.status).toBe(200);
@@ -89,7 +89,7 @@ describe("GET /api/links", () => {
           limit: "1",
         }),
       },
-    } as GetLinksRequest;
+    } as NextRequest;
 
     const res = await GET(req);
     expect(res.status).toBe(200);

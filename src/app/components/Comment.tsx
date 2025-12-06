@@ -46,7 +46,13 @@ const Comment = ({ comment, removeCommentFunc }: Props) => {
           className="delete-comment"
           onClick={() => {
             if (token && confirm("Are you sure?")) {
-              deleteComment(comment, token).then(() => {
+              deleteComment(
+                {
+                  ...comment,
+                  id: String(comment.id),
+                },
+                token,
+              ).then(() => {
                 removeCommentFunc(comment.id!);
               });
             }

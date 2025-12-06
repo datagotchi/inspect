@@ -1,5 +1,6 @@
 "use server";
 
+import { Override } from "../constants";
 import { Insight, User, Link } from "../types";
 import {
   InsightRouteProps,
@@ -9,7 +10,7 @@ import { GetUserRouteProps, GetUserRouteResponse } from "./users/[id]/route";
 
 export const getUserFromServer = async (
   origin: string,
-  params: Awaited<GetUserRouteProps["params"]>,
+  params: Override<Awaited<GetUserRouteProps["params"]>, "id", number>,
   token?: string,
 ): Promise<User | void> => {
   const response = (await fetch(`${origin}/api/users/${params.id}`, {

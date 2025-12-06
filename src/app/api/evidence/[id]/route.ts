@@ -6,7 +6,7 @@ import { EvidenceModel } from "../../models/evidence";
 import { getAuthUser } from "../../../functions";
 
 export interface DeleteEvidenceRouteProps {
-  params: Promise<{ id: number }>;
+  params: Promise<{ id: string }>;
 }
 
 export type DeleteEvidenceRouteResponse = NextResponse<{ statusText: string }>;

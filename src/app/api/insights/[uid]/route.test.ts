@@ -7,7 +7,6 @@ import {
   GET,
   PATCH,
   DELETE,
-  GetInsightRouteRequest,
   InsightRouteProps,
   PatchReq,
   PatchInsightRouteProps,
@@ -89,7 +88,7 @@ describe("GET /api/insights/[uid]", () => {
             limit: "20",
           }),
         },
-      } as GetInsightRouteRequest;
+      } as NextRequest;
 
       // Act
       const response = await GET(req, props);
@@ -113,7 +112,7 @@ describe("GET /api/insights/[uid]", () => {
             limit: "20",
           }),
         },
-      } as GetInsightRouteRequest;
+      } as NextRequest;
       (InsightModel.query().then as jest.Mock).mockReset();
       (InsightModel.query().then as jest.Mock).mockImplementationOnce(
         (callback) =>
@@ -181,7 +180,7 @@ describe("GET /api/insights/[uid]", () => {
             limit: "3",
           }),
         },
-      } as GetInsightRouteRequest;
+      } as NextRequest;
       (InsightModel.query().then as jest.Mock).mockReset();
       (InsightModel.query().then as jest.Mock).mockImplementationOnce(
         (callback) =>
@@ -286,7 +285,7 @@ describe("GET /api/insights/[uid]", () => {
             limit: "2",
           }),
         },
-      } as GetInsightRouteRequest;
+      } as NextRequest;
 
       const response = await GET(req, props);
       expect(response.status).toBe(200);
@@ -321,7 +320,7 @@ describe("GET /api/insights/[uid]", () => {
             limit: "2",
           }),
         },
-      } as GetInsightRouteRequest;
+      } as NextRequest;
       (InsightModel.query().then as jest.Mock).mockReset();
       (InsightModel.query().then as jest.Mock).mockImplementationOnce(
         (callback) => Promise.resolve(callback(null)),
@@ -342,7 +341,7 @@ describe("GET /api/insights/[uid]", () => {
             limit: "2",
           }),
         },
-      } as GetInsightRouteRequest;
+      } as NextRequest;
 
       props.params = Promise.resolve({});
       const response = await GET(req, props);
@@ -361,7 +360,7 @@ describe("GET /api/insights/[uid]", () => {
             offset: "0",
           }),
         },
-      } as GetInsightRouteRequest;
+      } as NextRequest;
 
       const response = await GET(req, props);
       expect(response.status).toBe(200);
@@ -384,7 +383,7 @@ describe("GET /api/insights/[uid]", () => {
             limit: "2",
           }),
         },
-      } as GetInsightRouteRequest;
+      } as NextRequest;
 
       const response = await GET(req, props);
       expect(response.status).toBe(200);
@@ -401,7 +400,7 @@ describe("GET /api/insights/[uid]", () => {
             limit: "2",
           }),
         },
-      } as GetInsightRouteRequest;
+      } as NextRequest;
       (InsightModel.query().then as jest.Mock).mockReset();
       (InsightModel.query().then as jest.Mock).mockImplementationOnce(
         (callback) => Promise.resolve(callback(null)),

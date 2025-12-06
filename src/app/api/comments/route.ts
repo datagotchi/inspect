@@ -32,7 +32,7 @@ export async function POST(
         insight_id: insight_id ? Number(insight_id) : insight_id,
         summary_id: summary_id ? Number(summary_id) : summary_id,
         comment,
-        user_id: Number(authUser.user_id),
+        user_id: authUser.user_id,
       };
       try {
         const newComment = await CommentModel.query()

@@ -624,6 +624,7 @@ const ClientSidePage = ({
                       <span className={cardStyles.addButtonIcon}>+</span>
                       <span className={cardStyles.addButtonText}>Add</span>
                     </button>
+                    {/* FIXME: move citations button should be a selected action
                     <button
                       onClick={() => {
                         setIsAddCitationsToOtherInsightsDialogOpen(true);
@@ -648,7 +649,7 @@ const ClientSidePage = ({
                     >
                       <span className={cardStyles.addButtonIcon}>🔄</span>
                       <span className={cardStyles.addButtonText}>Move</span>
-                    </button>
+                    </button> */}
                     {selectedCitations.length > 0 && (
                       <button
                         onClick={() => {

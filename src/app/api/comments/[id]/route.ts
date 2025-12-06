@@ -6,7 +6,7 @@ import { getAuthUser } from "../../../functions";
 import { CommentModel } from "../../models/comments";
 
 export interface DeleteCommentRouteProps {
-  params: Promise<{ id?: number }>;
+  params: Promise<{ id?: string }>;
 }
 
 export type DeleteCommentRouteResponse = NextResponse<{ statusText: string }>;

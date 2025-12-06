@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { NextURL } from "next/dist/server/web/next-url";
 
 import "../../../api/db";
 import { InsightModel } from "../../models/insights";
@@ -17,18 +16,12 @@ export interface GetLinksSearchParams {
   includeNestedEvidenceTotals: boolean;
 }
 
-export interface GetInsightRouteRequest extends NextRequest {
-  nextUrl: NextURL & {
-    searchParams: URLSearchParams & GetLinksSearchParams;
-  };
-}
-
 export type GetInsightRouteResponse = NextResponse<
   InsightModel | { statusText: string }
 >;
 
 export async function GET(
-  req: GetInsightRouteRequest,
+  req: NextRequest,
   props: InsightRouteProps,
 ): Promise<GetInsightRouteResponse> {
   const params = await props.params;

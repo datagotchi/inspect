@@ -7,7 +7,7 @@ import { getAuthUser } from "../../../functions";
 import { UserModel } from "../../models/users";
 
 export interface GetUserRouteProps {
-  params: Promise<{ id: number }>;
+  params: Promise<{ id: string }>;
 }
 
 export type GetUserRouteResponse = NextResponse<User | { message: string }>;
@@ -34,13 +34,13 @@ export async function GET(
 
 export async function DELETE(
   req: NextRequest,
-  props: { params: Promise<{ id: number }> },
+  props: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
   const params = await props.params;
-  const requestUserId = params.id;
+  const requestUserId = Number(params.id);
   const authUser = await getAuthUser(headers);
   if (authUser) {
-    if (authUser.user_id == requestUserId) {
+    if (authUser.user_id === requestUserId) {
       return (
         UserModel.query()
           .deleteById(authUser.user_id)

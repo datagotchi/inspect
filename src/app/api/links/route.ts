@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { NextURL } from "next/dist/server/web/next-url";
 import { raw } from "objection";
 
 import "../../api/db";
@@ -11,15 +10,9 @@ export interface GetLinksSearchParams {
   query: string | null;
 }
 
-export interface GetLinksRequest extends NextRequest {
-  nextUrl: NextURL & {
-    searchParams: URLSearchParams & GetLinksSearchParams;
-  };
-}
-
 export type GetLinksResponse = NextResponse<SummaryModel[]>;
 
-export async function GET(req: GetLinksRequest): Promise<GetLinksResponse> {
+export async function GET(req: NextRequest): Promise<GetLinksResponse> {
   const searchParams = req.nextUrl.searchParams;
   const offset = parseInt(searchParams.get("offset") || "0");
   const limit = parseInt(searchParams.get("limit") || "20");
