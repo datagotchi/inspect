@@ -39,49 +39,66 @@ export async function GET(
     req.nextUrl.searchParams.get("nestedEvidenceTotals"),
   );
 
-  let query = InsightModel.query().findOne("insights.uid", uid);
+  try {
+    const insight = await InsightModel.query().findOne("insights.uid", uid);
 
-  query = query.withGraphFetched({
-    reactions: true,
-    parents: { parentInsight: { reactions: true } },
-    children: {
-      childInsight: includeNestedEvidenceTotals
-        ? {
-            // FIXME: separate the CTE modifier into its own API to, e.g., enable users to request aggegate counts after seeing direct counts
-            $modify: ["selectTotalEvidenceCount"],
-            // title: true,
-            // children: { childInsight: true },
-            reactions: true,
-          }
-        : {
-            $modify: ["selectDirectEvidenceCount"],
-            children: { $modify: ["selectDirectChildrenCount"] },
-            reactions: true,
-          },
-    },
-    comments: {
-      $modify: ["selectDisplayAndUserJoinColumn"],
-      user: { $modify: ["selectUsername"] },
-    },
-    evidence: {
-      $modify: [
-        "selectDisplayAndSummaryJoinColumn",
-        // FIXME: pagination of evidence does not work because of modifier formatting:
-        // ["selectPagedEvidence", evidenceOffset, evidenceLimit],
-      ],
-      summary: { source: true, comments: { user: true }, reactions: true },
-    },
-  });
+    if (!insight) {
+      return NextResponse.json(
+        { statusText: "No insight found with that uid" },
+        { status: 404 },
+      );
+    }
 
-  const insight = await query;
+    await insight
+      .$fetchGraph({
+        reactions: true,
+        parents: { parentInsight: { reactions: true } },
+        children: {
+          childInsight: includeNestedEvidenceTotals
+            ? {
+                // FIXME: separate the CTE modifier into its own API to, e.g., enable users to request aggegate counts after seeing direct counts
+                $modify: ["selectTotalEvidenceCount"],
+                // title: true,
+                // children: { childInsight: true },
+                reactions: true,
+              }
+            : {
+                $modify: ["selectDirectEvidenceCount"],
+                children: { $modify: ["selectDirectChildrenCount"] },
+                reactions: true,
+              },
+        },
+        comments: {
+          $modify: ["selectDisplayAndUserJoinColumn"],
+          user: { $modify: ["selectUsername"] },
+        },
+        evidence: {
+          $modify: [
+            "selectDisplayAndSummaryJoinColumn",
+            // FIXME: pagination of evidence does not work because of modifier formatting:
+            // ["selectPagedEvidence", evidenceOffset, evidenceLimit],
+          ],
+          summary: { source: true, comments: { user: true }, reactions: true },
+        },
+      })
+      .modifyGraph("reactions", (builder) => {
+        builder.whereNull("summary_id");
+      })
+      .modifyGraph("children.childInsight.reactions", (builder) => {
+        builder.whereNull("summary_id");
+      })
+      .modifyGraph("evidence.summary.reactions", (builder) => {
+        builder.andWhere("insight_id", insight.id!);
+      });
 
-  if (insight) {
     return NextResponse.json(insight);
+  } catch (error) {
+    console.error("Error fetching insight:", error);
+    return NextResponse.json(
+      { statusText: "Internal Server Error" },
+      { status: 500 },
+    );
   }
-  return NextResponse.json(
-    { statusText: "No insight found with that uid" },
-    { status: 404 },
-  );
 }
 
 export interface PatchReq extends NextRequest {
