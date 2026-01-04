@@ -136,3 +136,6 @@ The database includes the following tables:
 
 - Clear node_modules and reinstall: `rm -rf node_modules && yarn install`
 - Clear Next.js cache: `rm -rf .next && yarn dev`
+
+### License
+Distributed under the **GNU General Public License v3.0**.
