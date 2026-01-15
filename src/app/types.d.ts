@@ -21,8 +21,8 @@ export type Follower = {
 
 export type User = {
   id?: number;
-  username?: string;
-  email?: string;
+  username: string;
+  email: string;
   avatar_uri?: string;
   token?: string;
   enable_email_notifications?: boolean;

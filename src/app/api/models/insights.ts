@@ -1,5 +1,5 @@
 import { Model, QueryBuilder, ref } from "objection";
-import knex from "../db";
+import knex from "../postgres";
 
 import { Insight, InsightEvidence, InsightLink } from "../../types";
 import { CommentModel } from "./comments";

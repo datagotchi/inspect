@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
-import "../../../api/db";
+import "../../postgres";
 import { InsightModel } from "../../models/insights";
 import { Insight, InsightEvidence } from "../../../types";
 import { getAuthUser } from "../../../functions";

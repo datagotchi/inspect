@@ -19,9 +19,14 @@ export default {
       }),
     );
 
+    config.performance = {
+      maxAssetSize: 512000,
+      maxEntrypointSize: 512000,
+    };
+
     return config;
   },
-  pageExtensions: ["ts", "tsx"],
+  pageExtensions: ["ts", "tsx", "js", "jsx"], // FIXME: finish converting js(x) files to ts(x)
   experimental: {
     forceSwcTransforms: true,
   },

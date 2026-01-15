@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 
-import "../../api/db";
+import "../postgres";
 import { User } from "../../types";
 import { getAuthUser } from "../../functions";
 import { UserModel } from "../models/users";

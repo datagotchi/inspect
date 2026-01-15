@@ -74,5 +74,7 @@ export const middleware = async (req: NextRequest): Promise<NextResponse> => {
     });
   }
 
+  // FIXME: include rr_token for api routes: rrToken: sessionAndUser.rr_token,
+
   return res;
 };

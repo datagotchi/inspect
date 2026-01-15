@@ -1,25 +1,26 @@
+import bcrypt from "bcryptjs";
+
 import { User } from "../app/types";
 
-export const getEncryptedToken = (user: User): string => {
-  // TODO: use a non-`crypto` encryption library OR nextauth (bc NextJS can't use Node.js here)
-  // for now, it's a manual hack
-  const valueToEncrypt = Buffer.from(
-    JSON.stringify({
-      user_id: user.id,
-      email: user.email,
-      username: user.username,
-    }),
-  ).toString("base64");
-  const keyIntegers = process.env
-    .TOKEN_KEY!.split("")
-    .map((char) => char.charCodeAt(0));
-  const valueIntegers = valueToEncrypt
-    .split("")
-    .map((char) => char.charCodeAt(0));
-  const newIntegers = valueIntegers.map(
-    (valueInt, i) => valueInt + keyIntegers[i % keyIntegers.length],
-  );
-  return newIntegers.map((int) => String.fromCharCode(int)).join("");
+export const getEncryptedToken = (user: User): Promise<string> => {
+  return bcrypt.hash(user.email + Date.now(), 10);
+  // const valueToEncrypt = Buffer.from(
+  //   JSON.stringify({
+  //     user_id: user.id,
+  //     email: user.email,
+  //     username: user.username,
+  //   }),
+  // ).toString("base64");
+  // const keyIntegers = process.env
+  //   .TOKEN_KEY!.split("")
+  //   .map((char) => char.charCodeAt(0));
+  // const valueIntegers = valueToEncrypt
+  //   .split("")
+  //   .map((char) => char.charCodeAt(0));
+  // const newIntegers = valueIntegers.map(
+  //   (valueInt, i) => valueInt + keyIntegers[i % keyIntegers.length],
+  // );
+  // return newIntegers.map((int) => String.fromCharCode(int)).join("");
 };
 
 export const decryptToken = (

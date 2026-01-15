@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
-import "../../../api/db";
+import "../../postgres";
 import { getAuthUser } from "../../../functions";
 import { CommentModel } from "../../models/comments";
 
