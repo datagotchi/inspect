@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { cookies, headers } from "next/headers";
-import { decryptToken } from "./middleware/functions";
+import { decryptToken } from "./proxy/functions";
 
 export const ANONYMOUS_REGEXES = [
   "^/_next",
@@ -22,7 +22,7 @@ export const ANONYMOUS_REGEXES = [
   "^/api/articles",
 ];
 
-export const middleware = async (req: NextRequest): Promise<NextResponse> => {
+export const proxy = async (req: NextRequest): Promise<NextResponse> => {
   const cookiesCollection = await cookies();
   const tokenCookie = cookiesCollection.has("token")
     ? cookiesCollection.get("token")?.value
@@ -49,6 +49,19 @@ export const middleware = async (req: NextRequest): Promise<NextResponse> => {
   let origin = req.nextUrl.origin;
   let url = req.nextUrl.href;
 
+  // FIXME: get the "Real" host and protocol from Nginx headers
+  /* FIXME: meaning update the nginx config with: 
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host; # This is the magic line
+        proxy_set_header X-Forwarded-Proto $scheme; # This tells it "https"
+    }
+  */
+  // const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+  // const protocol = req.headers.get("x-forwarded-proto") || "http";
+
+  // const origin = `${protocol}://${host}`;
+  // const url = `${origin}${req.nextUrl.pathname}${req.nextUrl.search}`;
   if (process.env.NODE_ENV === "production") {
     origin = origin.replace(
       /http:\/\/localhost:3000/,

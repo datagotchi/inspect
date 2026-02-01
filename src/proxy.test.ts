@@ -2,15 +2,15 @@
  * @jest-environment node
  */
 import { cookies, headers } from "next/headers";
-import { middleware, ANONYMOUS_REGEXES } from "./middleware";
-import { decryptToken } from "./middleware/functions";
+import { proxy, ANONYMOUS_REGEXES } from "./proxy";
+import { decryptToken } from "./proxy/functions";
 import { NextRequest } from "next/server";
 import { NextURL } from "next/dist/server/web/next-url";
 
 jest.mock("next/headers");
-jest.mock("./middleware/functions");
+jest.mock("./proxy/functions");
 
-describe("middleware", () => {
+describe("proxy", () => {
   let req: Pick<NextRequest, "nextUrl">;
 
   beforeEach(() => {
@@ -33,7 +33,7 @@ describe("middleware", () => {
           .replace("$", "")
           .replace(".*", "asdf")
           .replace("[0-9]+", "123");
-        const response = await middleware(req as NextRequest);
+        const response = await proxy(req as NextRequest);
         expect(response.status).toBe(200);
       }),
     );
@@ -41,7 +41,7 @@ describe("middleware", () => {
 
   it("should return 403 if no token is provided and path does not match ANONYMOUS_REGEXES", async () => {
     req.nextUrl.pathname = "/protected";
-    const response = await middleware(req as NextRequest);
+    const response = await proxy(req as NextRequest);
     expect(response.status).toBe(403);
     const json = await response.json();
     expect(json.statusText).toBe("A token is required for authentication");
@@ -50,7 +50,7 @@ describe("middleware", () => {
   it("should set x-url and x-origin headers correctly", async () => {
     // first: req associated with localhost:3000 (beforeEach above)
     req.nextUrl.pathname = "/login";
-    const response = await middleware(req as NextRequest);
+    const response = await proxy(req as NextRequest);
     expect(response.headers.get("x-url")).toBe("http://localhost:3000/");
     expect(response.headers.get("x-origin")).toBe("http://localhost:3000");
 
@@ -63,7 +63,7 @@ describe("middleware", () => {
         origin: "https://inspect.datagotchi.net",
       } as NextURL,
     };
-    const response2 = await middleware(req as NextRequest);
+    const response2 = await proxy(req as NextRequest);
     expect(response2.headers.get("x-url")).toBe(
       "https://inspect.datagotchi.net/",
     );
@@ -85,7 +85,7 @@ describe("middleware", () => {
     );
     (decryptToken as jest.Mock).mockReturnValue({ id: 1, name: "Test User" });
 
-    const response = await middleware(req as NextRequest);
+    const response = await proxy(req as NextRequest);
     expect(response.headers.get("x-authUser")).toBe(
       JSON.stringify({ id: 1, name: "Test User" }),
     );
@@ -101,7 +101,7 @@ describe("middleware", () => {
     );
     (decryptToken as jest.Mock).mockReturnValue(null);
 
-    const response = await middleware(req as NextRequest);
+    const response = await proxy(req as NextRequest);
     expect(response.headers.get("x-authUser")).toBeNull();
   });
 });

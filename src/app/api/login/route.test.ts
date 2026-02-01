@@ -6,11 +6,11 @@ import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 
 import { POST } from "./route";
-import { getEncryptedToken } from "../../../middleware/functions";
+import { getEncryptedToken } from "../../../proxy/functions";
 import { UserModel } from "../models/users";
 
 jest.mock("bcryptjs");
-jest.mock("../../../middleware/functions");
+jest.mock("../../../proxy/functions");
 
 jest.mock("../models/users", () => {
   const mockQueryBuilder = {
@@ -28,7 +28,7 @@ jest.mock("../models/users", () => {
   };
 });
 
-describe("POST /login", () => {
+describe("POST /api/login", () => {
   const mockUser = {};
 
   beforeEach(() => {

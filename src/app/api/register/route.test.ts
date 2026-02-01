@@ -4,14 +4,14 @@
 import bcrypt from "bcryptjs";
 
 import { POST } from "./route";
-import { getEncryptedToken } from "../../../middleware/functions";
+import { getEncryptedToken } from "../../../proxy/functions";
 import { NextRequest } from "next/server";
 import { UserModel } from "../models/users";
 import { UniqueViolationError } from "objection";
 
 jest.mock("bcryptjs");
 jest.mock("../functions");
-jest.mock("../../../middleware/functions");
+jest.mock("../../../proxy/functions");
 
 jest.mock("../models/users", () => {
   const mockQueryBuilder = {

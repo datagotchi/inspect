@@ -10,7 +10,7 @@ const mockAuthenticateUser = jest.fn((req, res, next) => {
   req.user = { id: 1 }; // Mock authenticated user
   next();
 });
-jest.mock("../middleware/auth.js", () => {
+jest.mock("../proxy.ts", () => {
   return { __esModule: true, default: mockAuthenticateUser };
 });
 

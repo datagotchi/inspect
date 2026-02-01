@@ -32,6 +32,13 @@ export default [
   {
     files: ["**/*.{ts,tsx}"],
   },
+  // global plugins
+  {
+    plugins: {
+      js: jsPlugin,
+      "@typescript-eslint": tseslint.plugin,
+    },
+  },
   // global ignores
   {
     ignores: [
@@ -44,27 +51,17 @@ export default [
       "src/scripts/",
     ],
   },
-  // global plugins
+  // global language options for TS files
   {
-    plugins: {
-      js: jsPlugin,
-      "@typescript-eslint": tseslint.plugin,
-    },
-  },
-  // global language options
-  {
+    files: ["**/*.{ts,tsx}"],
     languageOptions: {
       globals: { ...globals.browser, ...globals.node },
       parser: typescriptParser,
       parserOptions: {
         project: "./tsconfig.json",
-        ecmaFeatures: {
-          enableJsx: false,
-        },
       },
     },
   },
-  // global rules
   {
     rules: {
       ...jsPlugin.configs.recommended.rules,

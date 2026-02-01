@@ -57,31 +57,6 @@ export const getLinkFromServer = async (
   }
 };
 
-export async function createSessionAndLoginToRedRover(
-  pool: Pool,
-  email: string,
-  password: string,
-) {
-  // loginToRedRover will now throw an error if login fails or network issues occur
-  const rrApiResponse = await loginToRedRover(email, password);
-
-  const rrToken = rrApiResponse.token;
-
-  const token = await bcrypt.hash(email + Date.now(), 10);
-
-  const session = await pool
-    .query({
-      text: `insert into sessions (user_id, token, rr_token)
-             values ((select id from users where email = $1), $2, $3)
-             on conflict (user_id) do update set token = excluded.token, rr_token = excluded.rr_token
-             returning token`,
-      values: [email, token, rrToken],
-    })
-    .then((result) => result.rows[0]);
-
-  return session.token;
-}
-
 // red rover functions
 
 /**
@@ -90,7 +65,7 @@ export async function createSessionAndLoginToRedRover(
  * @returns {Promise<any>} The JSON parsed response if successful.
  * @throws {Error} An error object with statusCode and details if the response is not ok.
  */
-async function handleRedRoverApiResponse(response) {
+async function handleRedRoverApiResponse(response: Response) {
   if (!response.ok) {
     const errorData = await response
       .json()
@@ -99,8 +74,7 @@ async function handleRedRoverApiResponse(response) {
       errorData.message ||
         `Red Rover API call failed with status ${response.status}`,
     );
-    error.statusCode = response.status;
-    error.details = errorData; // Include full error response from Red Rover
+    error.message = errorData;
     throw error;
   }
   return response.json();
@@ -113,7 +87,7 @@ async function handleRedRoverApiResponse(response) {
  * @returns {Promise<object>} The JSON response containing the token for other API calls.
  * @throws {Error} If Red Rover login fails (network error or API returns non-2xx status).
  */
-export const loginToRedRover = async (username, password) => {
+export const loginToRedRover = async (username: string, password: string) => {
   try {
     const response = await fetch("https://api.redroverk12.com/v1/login", {
       method: "POST",
@@ -121,15 +95,13 @@ export const loginToRedRover = async (username, password) => {
       body: JSON.stringify({ username, password }),
     });
     return handleRedRoverApiResponse(response);
-  } catch (err) {
-    if (!err.statusCode) {
-      // This is a network error
-      throw Object.assign(
-        new Error(`Failed to connect to Red Rover login API: ${err.message}`),
-        { statusCode: 503 },
-      );
-    }
-    throw err; // Re-throw the error with statusCode and details
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- FIXME: can I use a better type for err?
+  } catch (err: any) {
+    // This is a network error
+    throw Object.assign(
+      new Error(`Failed to connect to Red Rover login API: ${err.message}`),
+      { statusCode: 503 },
+    );
   }
 };
 
@@ -139,7 +111,9 @@ export const loginToRedRover = async (username, password) => {
  * @param {object} req - The Express request object, containing req.user.rrToken.
  * @returns {Promise<boolean>} True if gig is active/confirmed.
  */
-export const verifyMyRedRoverGigToday = async (req) => {
+export const verifyMyRedRoverGigToday = async (req: {
+  user: { rrToken: string };
+}) => {
   const token = req.user?.rrToken; // Access token from req.user
 
   if (!token) {
@@ -166,17 +140,15 @@ export const verifyMyRedRoverGigToday = async (req) => {
     );
     const assignments = await handleRedRoverApiResponse(response);
     return assignments.length > 0;
-  } catch (err) {
-    if (!err.statusCode) {
-      // This is a network error
-      throw Object.assign(
-        new Error(
-          `Failed to connect to Red Rover assignments API: ${err.message}`,
-        ),
-        { statusCode: 503 },
-      );
-    }
-    throw err;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- FIXME: can I use a better type for err?
+  } catch (err: any) {
+    // This is a network error
+    throw Object.assign(
+      new Error(
+        `Failed to connect to Red Rover assignments API: ${err.message}`,
+      ),
+      { statusCode: 503 },
+    );
   }
 };
 /**
@@ -186,7 +158,7 @@ export const verifyMyRedRoverGigToday = async (req) => {
  * @param {object} req - The Express request object, containing req.user.rrToken.
  * @returns {Array<Object>} Normalized Gig objects {id, date, location, status}
  */
-export const getRedRoverGigs = async (req) => {
+export const getRedRoverGigs = async (req: { user: { rrToken: string } }) => {
   const token = req.user?.rrToken; // Access token from req.user
   if (!token) {
     // Throw an error if the token is missing, indicating an authentication issue
@@ -201,23 +173,22 @@ export const getRedRoverGigs = async (req) => {
       headers: { Authorization: `Bearer ${token}` },
     });
     const rawData = await handleRedRoverApiResponse(response);
-    return rawData.map((item) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- FIXME: create a type
+    return rawData.map((item: any) => ({
       id: item.AssignmentId, // Red Rover's specific key
       date: item.StartDate,
       location: item.SchoolName,
       status: item.Status === "Confirmed" ? "active" : "pending",
     }));
-  } catch (err) {
-    if (!err.statusCode) {
-      // This is a network error
-      throw Object.assign(
-        new Error(
-          `Failed to connect to Red Rover assignments API: ${err.message}`,
-        ),
-        { statusCode: 503 },
-      );
-    }
-    throw err;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- FIXME: can I use a better type for err?
+  } catch (err: any) {
+    // This is a network error
+    throw Object.assign(
+      new Error(
+        `Failed to connect to Red Rover assignments API: ${err.message}`,
+      ),
+      { statusCode: 503 },
+    );
   }
 };
 // google sheets functions
@@ -227,7 +198,7 @@ export const getRedRoverGigs = async (req) => {
  * Automates the financial ledger to remove manual entry friction.
  * @param {Object} gig - The normalized Gig object.
  */
-export const createGoogleSheetGig = async (gig) => {
-  // logic to append to GSheet using googleapis library
-  // Ensures 'One-Touch' data integrity between scheduling and budgeting.
-};
+// export const createGoogleSheetGig = async (gig: any) => {
+//   // logic to append to GSheet using googleapis library
+//   // Ensures 'One-Touch' data integrity between scheduling and budgeting.
+// };

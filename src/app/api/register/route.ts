@@ -4,7 +4,7 @@ import { UniqueViolationError } from "objection";
 
 import "../postgres";
 import { User } from "../../types";
-import { getEncryptedToken } from "../../../middleware/functions";
+import { getEncryptedToken } from "../../../proxy/functions";
 import { UserModel } from "../models/users";
 
 export type RegisterPostRouteRequestBody = Promise<{
@@ -44,12 +44,6 @@ export async function POST(
     });
 
     const token = await getEncryptedToken(user);
-
-    // const token = await createSessionAndLoginToRedRover(
-    //   req.pool,
-    //   email,
-    //   password,
-    // );
 
     await UserModel.query()
       .patch({

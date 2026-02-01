@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { encodeStringURI } from "./functions";
-import { decryptToken } from "../../middleware/functions";
+import { decryptToken } from "../../proxy/functions";
 
 const useUser = () => {
   // Initialize state with parsed cookie data to avoid re-parsing on every mount

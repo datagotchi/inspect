@@ -6,7 +6,7 @@ import request from "supertest";
 import express from "express";
 import router from "./field_values.js";
 
-jest.mock("../middleware/auth.js", () => (req, res, next) => next());
+jest.mock("../proxy.ts", () => (req, res, next) => next());
 
 describe("field_values routes", () => {
   let app, pool;
@@ -28,7 +28,6 @@ describe("field_values routes", () => {
   });
 
   describe("POST /", () => {
-    // TODO: figure out how to test auth middleware
     it("should insert a field value and return 201", async () => {
       const fakeRow = { note_id: 1, field_id: 2, value: "foo" };
       pool.query.mockResolvedValueOnce({ rows: [fakeRow] });

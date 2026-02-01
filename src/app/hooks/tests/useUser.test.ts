@@ -1,9 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 
 import useUser from "../useUser";
-import { decryptToken } from "../../../middleware/functions";
+import { decryptToken } from "../../../proxy/functions";
 
-jest.mock("../../../middleware/functions");
+jest.mock("../../../proxy/functions");
 
 describe("useUser hook", () => {
   beforeEach(() => {

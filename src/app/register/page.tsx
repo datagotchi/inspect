@@ -78,7 +78,7 @@ const RegisterPage = (): React.JSX.Element => {
                     }
                   }
                 } catch (err) {
-                  alert(err);
+                  alert(err); // FIXME: verify this alerts when a user already exists (http 401)
                 }
               }}
               className="btn btn-primary w-full"

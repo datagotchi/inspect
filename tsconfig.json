@@ -3,11 +3,7 @@
     "skipLibCheck": true,
     //...truncated...
     "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "strict": true,
     "strictNullChecks": true,
@@ -35,9 +31,8 @@
     "eslint.config.mjs",
     "playwright.config.ts",
     "src/scripts/*.js",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    "**/*.d.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }
