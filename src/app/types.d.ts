@@ -128,15 +128,18 @@ export type InsightLink = {
 
 export type Field = {
   id?: number;
+  name: string;
+  use_count?: number;
 };
 export type FieldValue = {
   id?: number;
-  field_id: number;
+  field_id?: number;
   value: string;
 };
 export type Note = {
   id?: number;
   text: string;
+  field_values?: (FieldValue & Field)[];
 };
 export type CookieUser = {
   email: string;

@@ -1,4 +1,6 @@
-export const styles = {
+import { CSSProperties } from "react";
+
+export const styles: { [key: string]: CSSProperties } = {
   app: {
     fontFamily:
       "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial",

@@ -7,7 +7,9 @@ import React, {
   useEffect,
 } from "react";
 import { useUserContext } from "./useUserContext";
+import { Field, FieldValue, Note } from "../types";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const FieldTransferContext = createContext<any>(undefined);
 
 interface Props {
@@ -16,25 +18,26 @@ interface Props {
 
 // TODO: If this context grows too big, split into FieldDefinitionContext and ActiveSelectionContext to prevent unnecessary re-renders.
 export const FieldTransferProvider = ({ children }: Props) => {
-  const [fieldDefinitions, setFieldDefinitions] = useState<any[]>();
-  const [selectedField, setSelectedField] = useState<any>();
-  const [updatedNote, setUpdatedNote] = useState<any>();
+  const [fieldDefinitions, setFieldDefinitions] = useState<Field[]>();
+  const [selectedField, setSelectedField] = useState<Field>();
+  const [updatedNote, setUpdatedNote] = useState<Note>();
   // TODO: move to Typescript & ESLint to handle state variable object attributes
-  const [newNote, setNewNote] = useState<any>({ text: "", field_values: [] });
+  const [newNote, setNewNote] = useState<Note>({ text: "", field_values: [] });
 
   // The "Transfer Payload"
   // TODO: move to Typescript & ESLint to handle state variable object attributes
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [activeSelection, setActiveSelection] = useState<any>({});
 
   const { api, isAuthenticated } = useUserContext();
 
   useEffect(() => {
     if (api?.fnToken && !fieldDefinitions) {
-      api.getFields().then((fields: any[]) => {
+      api.getFields().then((fields: Field[]) => {
         setFieldDefinitions(fields);
       });
     }
-  }, [api?.fnToken, fieldDefinitions]);
+  }, [api, api?.fnToken, fieldDefinitions]);
 
   // Effect to clear this context's state on logout
   useEffect(() => {
@@ -93,7 +96,7 @@ export const FieldTransferProvider = ({ children }: Props) => {
               Array.isArray(apiResponseNote.field_values)
             ) {
               apiResponseNote.field_values = apiResponseNote.field_values.map(
-                (fv: any) => {
+                (fv: FieldValue) => {
                   const fieldDef = fieldDefinitions?.find(
                     (fd) => fd.id === fv.field_id,
                   );
@@ -111,23 +114,24 @@ export const FieldTransferProvider = ({ children }: Props) => {
               setFieldDefinitions(
                 fieldDefinitions?.map((fd) =>
                   fd.id === field.id
-                    ? { ...fd, use_count: fd.use_count + 1 }
+                    ? { ...fd, use_count: fd.use_count ?? 0 + 1 }
                     : fd,
                 ),
               );
 
               clearSelection();
             }
-          } catch (err: any) {
-            const errorObj = err || {};
+          } catch (err) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const errorObj: any = err || {};
             if (errorObj.error?.code?.includes("SQLITE_CONSTRAINT_UNIQUE")) {
               return alertCantUseExistingField(field.name);
             }
           }
         } else if (activeSelection.text && !activeSelection.noteId) {
           // Stage the field for the NoteCreator
-          const isDuplicate = newNote.field_values.some(
-            (fv: any) => fv.field_id === field.id || fv.name === field.name,
+          const isDuplicate = newNote.field_values?.some(
+            (fv: FieldValue) => fv.field_id === field.id,
           );
 
           if (isDuplicate) {
@@ -153,7 +157,14 @@ export const FieldTransferProvider = ({ children }: Props) => {
         clearSelection();
       }
     },
-    [api?.fnToken, fieldDefinitions, activeSelection, newNote],
+    [
+      fieldDefinitions,
+      activeSelection.text,
+      activeSelection.noteId,
+      api,
+      trimNoteFromSelection,
+      newNote,
+    ],
   );
 
   const handleTextareaSelection = (e: Event) => {

@@ -33,7 +33,6 @@ import AddChildInsightsDialog, {
 import FactsDataContext from "../../contexts/FactsDataContext";
 import AddParentInsightsDialog from "./AddParentInsightsDialog";
 import {
-  doAddCitationsToOtherInsights,
   doAddCitationsToOtherInsightsSchema,
   doAddParentInsights,
   doAddParentInsightsSchema,

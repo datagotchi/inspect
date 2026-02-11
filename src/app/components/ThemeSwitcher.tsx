@@ -44,24 +44,6 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ className = "" }) => {
     { name: "Bold", class: "shadow-bold" },
   ];
 
-  useEffect(() => {
-    // Load saved preferences from localStorage
-    const savedTheme = localStorage.getItem("theme") || "";
-    const savedSpacing = localStorage.getItem("spacing") || "";
-    const savedRadius = localStorage.getItem("radius") || "";
-    const savedShadow = localStorage.getItem("shadow") || "";
-    const savedIsOpen = localStorage.getItem("themeSwitcherOpen") === "true";
-
-    setCurrentTheme(savedTheme);
-    setCurrentSpacing(savedSpacing);
-    setCurrentRadius(savedRadius);
-    setCurrentShadow(savedShadow);
-    setIsOpen(savedIsOpen);
-
-    // Apply saved theme to body
-    applyTheme(savedTheme, savedSpacing, savedRadius, savedShadow);
-  }, []);
-
   const applyTheme = (
     theme: string,
     spacing: string,
@@ -94,6 +76,24 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ className = "" }) => {
     if (radius && radius !== "") body.classList.add(radius);
     if (shadow && shadow !== "") body.classList.add(shadow);
   };
+
+  useEffect(() => {
+    // Load saved preferences from localStorage
+    const savedTheme = localStorage.getItem("theme") || "";
+    const savedSpacing = localStorage.getItem("spacing") || "";
+    const savedRadius = localStorage.getItem("radius") || "";
+    const savedShadow = localStorage.getItem("shadow") || "";
+    const savedIsOpen = localStorage.getItem("themeSwitcherOpen") === "true";
+
+    setCurrentTheme(savedTheme);
+    setCurrentSpacing(savedSpacing);
+    setCurrentRadius(savedRadius);
+    setCurrentShadow(savedShadow);
+    setIsOpen(savedIsOpen);
+
+    // Apply saved theme to body
+    applyTheme(savedTheme, savedSpacing, savedRadius, savedShadow);
+  }, []);
 
   const handleThemeChange = (themeClass: string) => {
     setCurrentTheme(themeClass);

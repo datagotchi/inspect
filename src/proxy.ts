@@ -31,9 +31,9 @@ export const proxy = async (req: NextRequest): Promise<NextResponse> => {
   const token = headersObject.get("x-access-token") || tokenCookie;
   let authUser;
   // TODO: figure out why x-access-token is sometimes the 'undefined' string
-  if (token && token !== "undefined") {
-    authUser = decryptToken(token); // FIXME: refactor how I do auth
-  }
+  // if (token && token !== "undefined") {
+  //   authUser = decryptToken(token); // FIXME: refactor how I do auth
+  // }
   const anonymousPathMatch = ANONYMOUS_REGEXES.find((regex) =>
     req.nextUrl.pathname.match(new RegExp(regex)),
   );
