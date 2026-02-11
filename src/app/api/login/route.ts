@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
-import "../postgres";
+import "../libsql";
 import { getEncryptedToken } from "../../../proxy/functions";
 import { User } from "../../types";
 import { UserModel } from "../models/users";

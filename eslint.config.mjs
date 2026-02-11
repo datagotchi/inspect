@@ -29,9 +29,7 @@ export default [
     },
   },
   // global files: all typescript files
-  {
-    files: ["**/*.{ts,tsx}"],
-  },
+  // This empty block was not doing anything and can be removed.
   // global plugins
   {
     plugins: {
@@ -62,7 +60,9 @@ export default [
       },
     },
   },
+  // global rules
   {
+    ignores: ["**/*.test.{ts,tsx}", "src/e2e-tests/*.spec.ts"],
     rules: {
       ...jsPlugin.configs.recommended.rules,
       ...tseslint.configs.recommended.rules,
@@ -103,13 +103,17 @@ export default [
       ...reactPlugin.configs.recommended.rules,
       ...jestPlugin.configs["flat/recommended"].rules,
 
+      "no-unused-vars": "off",
+
       "react/prop-types": "error",
       "react/display-name": "off",
 
       "@typescript-eslint/no-explicit-any": "off",
     },
     languageOptions: {
-      globals: { ...globals.jest },
+      globals: {
+        ...globals.jest,
+      },
     },
   },
   // next app config

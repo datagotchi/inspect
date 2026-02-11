@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { UniqueViolationError } from "objection";
 
-import "../postgres";
+import "../libsql";
 import { User } from "../../types";
 import { getEncryptedToken } from "../../../proxy/functions";
 import { UserModel } from "../models/users";

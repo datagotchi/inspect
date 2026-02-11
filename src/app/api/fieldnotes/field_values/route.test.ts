@@ -4,7 +4,7 @@
 
 import request from "supertest";
 import express from "express";
-import router from "./field_values.js";
+import router from "./route.js";
 
 jest.mock("../proxy.ts", () => (req, res, next) => next());
 

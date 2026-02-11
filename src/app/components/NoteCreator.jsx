@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
-import EasyEdit from "react-easy-edit";
+import React from "react";
 
 import { others, styles } from "../syndicates/fieldnotes/constants";
 import { useUserContext } from "../contexts/useUserContext";

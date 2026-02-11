@@ -27,7 +27,7 @@ const Notes = () => {
         setNotes(processedNotes);
       });
     }
-  }, [api?.fnToken, fieldDefinitions, notes]);
+  }, [api, api.fnToken, fieldDefinitions, notes]);
 
   useEffect(() => {
     if (updatedNote && notes) {
@@ -60,7 +60,7 @@ const Notes = () => {
       }
       setUpdatedNote(undefined);
     }
-  }, [updatedNote, notes]);
+  }, [updatedNote, notes, setUpdatedNote]);
 
   return (
     <ul style={styles.list}>

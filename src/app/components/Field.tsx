@@ -1,20 +1,39 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
+// @ts-expect-error there is no d.ts file
 import EasyEdit from "react-easy-edit";
 
 import { useUserContext } from "../contexts/useUserContext";
 import { useFieldTransferContext } from "../contexts/useFieldTransferContext";
+import { FieldValue } from "../types";
 
-const Field = ({ data, isStaged = false, deleteThisField = undefined }) => {
+interface Props {
+  data: {
+    id: number;
+    name: string;
+    value: string;
+    note_id: number;
+    field_id: number;
+  };
+  isStaged?: boolean;
+  deleteThisField?: () => Promise<undefined>;
+}
+
+const Field = ({
+  data,
+  isStaged = false,
+  deleteThisField = undefined,
+}: Props) => {
+  const [liveData, setLiveData] = useState(data);
   const { api } = useUserContext();
   const { setNewNote, newNote, setUpdatedNote } = useFieldTransferContext();
 
   const handleSave = useCallback(
-    async (newValue) => {
+    async (newValue: string) => {
       if (isStaged) {
         // Update the local staged state in the context
         setNewNote({
           ...newNote,
-          field_values: newNote.field_values.map((fv) =>
+          field_values: newNote.field_values.map((fv: FieldValue) =>
             fv.id === data.id ? { ...fv, value: newValue } : fv,
           ),
         });
@@ -24,10 +43,20 @@ const Field = ({ data, isStaged = false, deleteThisField = undefined }) => {
           data.field_id,
           newValue,
         );
-        data.value = updatedField.value;
+        // data.value = updatedField.value;
+        setLiveData({ ...liveData, value: updatedField.value });
       }
     },
-    [isStaged, api?.fnToken, data.id, data.note_id, newNote.field_values],
+    [
+      isStaged,
+      api,
+      setNewNote,
+      newNote,
+      data.id,
+      data.note_id,
+      data.field_id,
+      liveData,
+    ],
   );
 
   return (
@@ -41,14 +70,14 @@ const Field = ({ data, isStaged = false, deleteThisField = undefined }) => {
           <button
             onClick={async () => {
               if (confirm("Are you sure?")) {
-                if (isStaged && deleteThisField) {
+                if (isStaged) {
                   setNewNote({
                     ...newNote,
                     field_values: newNote.field_values.filter(
-                      (item) => item.id !== data.id,
+                      (item: FieldValue) => item.id !== data.id,
                     ),
                   });
-                } else {
+                } else if (deleteThisField) {
                   const result = await deleteThisField();
                   setUpdatedNote(result);
                 }

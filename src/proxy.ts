@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { cookies, headers } from "next/headers";
-import { decryptToken } from "./proxy/functions";
 
+// FIXME: seems like the route files should have an auth(enticateUser) option or something like express
 export const ANONYMOUS_REGEXES = [
   "^/_next",
   "^/images",
@@ -32,7 +32,7 @@ export const proxy = async (req: NextRequest): Promise<NextResponse> => {
   let authUser;
   // TODO: figure out why x-access-token is sometimes the 'undefined' string
   if (token && token !== "undefined") {
-    authUser = decryptToken(token);
+    authUser = decryptToken(token); // FIXME: refactor how I do auth
   }
   const anonymousPathMatch = ANONYMOUS_REGEXES.find((regex) =>
     req.nextUrl.pathname.match(new RegExp(regex)),

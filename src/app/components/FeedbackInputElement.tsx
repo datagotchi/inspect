@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import RichTextEditor from "./RichTextEditor";
 import { FactComment, FactReaction } from "../types";
 
@@ -16,7 +16,9 @@ const FeedbackInputElement = ({
   directions: string;
   afterSubmit: (response?: FactComment | FactReaction | void) => void;
 }): React.JSX.Element => {
-  const [html, setHtml] = useState<string>("");
+  const [html, setHtml] = useState<string>(
+    actionType === "reaction" ? "😀" : "",
+  );
 
   const firstEmojiCode = "😀".codePointAt(0);
   const reactOptions = Array.from({ length: 80 }, (_, i) => i)
@@ -27,12 +29,6 @@ const FeedbackInputElement = ({
         {char}
       </option>
     ));
-
-  useEffect(() => {
-    if (!html && actionType == "reaction") {
-      setHtml("😀");
-    }
-  }, [actionType, reactOptions, html]);
 
   const closeFeedbackInputElement = useCallback(() => {
     setHtml("");

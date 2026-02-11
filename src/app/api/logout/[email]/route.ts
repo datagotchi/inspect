@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import "../../libsql";
 import { UserModel } from "../../models/users";
 
 export interface DeleteSessionRouteProps {

@@ -1,10 +1,10 @@
 /**
  * @jest-environment node
  */
+import { NextRequest } from "next/server";
 
 import { encodeStringURI } from "../../hooks/functions";
 import { GET, POST } from "./route";
-import { NextRequest } from "next/server";
 import { SummaryModel } from "../models/summaries";
 import { getAuthUser } from "../../functions";
 

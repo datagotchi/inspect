@@ -1,9 +1,12 @@
-import React, { useMemo, useState } from "react";
+import React from "react";
 import { emojis } from "../syndicates/fieldnotes/constants";
 
-const EmojiSelection = ({ noteId, onSelect }) => {
-  const [selectedEmoji, setSelectedEmoji] = useState("😀");
+interface Props {
+  noteId: string;
+  onSelect: (noteId: string, emoji: string) => void;
+}
 
+const EmojiSelection = ({ noteId, onSelect }: Props) => {
   return (
     <div className="emoji-selector" style={{ display: "flex", gap: "5px" }}>
       <strong>Select Reaction:</strong>{" "}

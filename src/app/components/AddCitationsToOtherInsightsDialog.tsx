@@ -42,10 +42,9 @@ const AddCitationsToOtherInsightsDialog = ({
   const [citationsToRemove, setCitationsToRemove] = useState([]);
   const [newInsightName, setNewInsightName] = useState<string>("");
   const [newInsightIsCategory, setNewInsightIsCategory] = useState(false);
-  const [potentialInsights, setPotentialInsights] = useState<Insight[]>();
+  const [potentialInsights, setPotentialInsights] = useState<Insight[]>([]);
   const [citationsToRemoveDataFilter, setCitationsToRemoveDataFilter] =
     useState<string>("");
-  const [disabledInsightIds, setDisabledInsightIds] = useState<number[]>();
   const [selectedCitations, setSelectedCitations] = useState<InsightEvidence[]>(
     selectedCitationsInput,
   );
@@ -62,16 +61,6 @@ const AddCitationsToOtherInsightsDialog = ({
         setPotentialInsights(json);
       });
   }, []);
-
-  useEffect(() => {
-    if (potentialInsights) {
-      const disabledInsightIds = getDisabledInsightIds(
-        potentialInsights,
-        selectedCitations,
-      );
-      setDisabledInsightIds(disabledInsightIds);
-    }
-  }, [potentialInsights, selectedCitations]);
 
   const resetStateValues = () => {
     setSelectedInsights([]);
@@ -117,6 +106,10 @@ const AddCitationsToOtherInsightsDialog = ({
       },
     );
 
+  const disabledInsightIds = getDisabledInsightIds(
+    potentialInsights,
+    selectedCitations,
+  );
   return (
     <Modal
       id={id}

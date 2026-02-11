@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 
-import Field from "./Field";
+import Field from "../Field";
 
 // Mock the external dependencies
 const mockApi = {
@@ -28,7 +28,7 @@ jest.mock("../contexts/useFieldTransferContext", () => ({
 }));
 
 // Mock the EasyEdit component to control its behavior
-jest.mock("react-easy-edit", () => (props) => (
+jest.mock("react-easy-edit", () => (props: any) => (
   <div>
     <span>{props.value}</span>
     <button onClick={() => props.onSave("new value")}>Save</button>
@@ -57,7 +57,7 @@ describe("Field component", () => {
         <tbody>
           <Field data={mockData} />
         </tbody>
-      </table>
+      </table>,
     );
     expect(screen.getByText("Test Field:")).toBeInTheDocument();
     expect(screen.getByText("Test Value")).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe("Field component", () => {
           <tbody>
             <Field data={mockData} isStaged={false} />
           </tbody>
-        </table>
+        </table>,
       );
 
       await userEvent.click(screen.getByText("Save"));
@@ -78,7 +78,7 @@ describe("Field component", () => {
       expect(mockApi.updateFieldValue).toHaveBeenCalledWith(
         100,
         200,
-        "new value"
+        "new value",
       );
     });
 
@@ -88,7 +88,7 @@ describe("Field component", () => {
           <tbody>
             <Field data={mockData} isStaged={true} />
           </tbody>
-        </table>
+        </table>,
       );
 
       await userEvent.click(screen.getByText("Save"));
@@ -109,7 +109,7 @@ describe("Field component", () => {
               deleteThisField={mockDeleteThisField}
             />
           </tbody>
-        </table>
+        </table>,
       );
 
       await userEvent.click(screen.getByTitle("Remove field"));

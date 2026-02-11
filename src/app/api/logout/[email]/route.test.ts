@@ -93,13 +93,10 @@ describe("DELETE /api/logout", () => {
   it("should return 500 if the database query fails", async () => {
     const email = "test@example.com";
     const token = "valid-token-123";
+    // FIXME: disable this error from crashing all tests
     const dbError = new Error("DB connection failed");
 
     // Simulate a database error
-    (InsightLinkModel.query().then as jest.Mock).mockReset();
-    (InsightLinkModel.query().then as jest.Mock).mockImplementationOnce(() => {
-      throw new Error("DB error");
-    });
     (mockQueryBuilder.where as jest.Mock).mockRejectedValue(dbError);
 
     const req = new NextRequest("http://localhost/api/logout", {

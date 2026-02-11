@@ -1,4 +1,3 @@
-// src/contexts/FieldTransferContext.js
 import React, {
   createContext,
   useContext,
@@ -9,31 +8,29 @@ import React, {
 } from "react";
 import { useUserContext } from "./useUserContext";
 
-const FieldTransferContext = createContext(undefined);
+const FieldTransferContext = createContext<any>(undefined);
+
+interface Props {
+  children: React.ReactNode;
+}
 
 // TODO: If this context grows too big, split into FieldDefinitionContext and ActiveSelectionContext to prevent unnecessary re-renders.
-export const FieldTransferProvider = ({ children }) => {
-  const [fieldDefinitions, setFieldDefinitions] = useState();
-  const [selectedField, setSelectedField] = useState();
-  const [updatedNote, setUpdatedNote] = useState();
+export const FieldTransferProvider = ({ children }: Props) => {
+  const [fieldDefinitions, setFieldDefinitions] = useState<any[]>();
+  const [selectedField, setSelectedField] = useState<any>();
+  const [updatedNote, setUpdatedNote] = useState<any>();
   // TODO: move to Typescript & ESLint to handle state variable object attributes
-  const [newNote, setNewNote] = useState({ text: "", field_values: [] });
+  const [newNote, setNewNote] = useState<any>({ text: "", field_values: [] });
 
   // The "Transfer Payload"
   // TODO: move to Typescript & ESLint to handle state variable object attributes
-  const [activeSelection, setActiveSelection] = useState({
-    noteId: null,
-    text: "",
-    fullText: "",
-    startIndex: 0,
-    endIndex: 0,
-  });
+  const [activeSelection, setActiveSelection] = useState<any>({});
 
   const { api, isAuthenticated } = useUserContext();
 
   useEffect(() => {
     if (api?.fnToken && !fieldDefinitions) {
-      api.getFields().then((fields) => {
+      api.getFields().then((fields: any[]) => {
         setFieldDefinitions(fields);
       });
     }
@@ -56,9 +53,9 @@ export const FieldTransferProvider = ({ children }) => {
     }
   }, [isAuthenticated]);
 
-  const alertCantUseExistingField = (fieldName) => {
+  const alertCantUseExistingField = (fieldName: string) => {
     return alert(
-      `This field (${fieldName}) is already used in this note. To edit it, click or tap on its value below.`
+      `This field (${fieldName}) is already used in this note. To edit it, click or tap on its value below.`,
     );
   };
 
@@ -66,18 +63,19 @@ export const FieldTransferProvider = ({ children }) => {
     if (activeSelection.text) {
       const textBefore = activeSelection.fullText.substring(
         0,
-        activeSelection.startIndex
+        activeSelection.startIndex,
       );
       const textAfter = activeSelection.fullText.substring(
-        activeSelection.endIndex
+        activeSelection.endIndex,
       );
       return textBefore + textAfter;
     }
   }, [activeSelection]);
 
   const handlePillClick = useCallback(
-    async (e) => {
-      const fieldName = e.currentTarget.childNodes[0].nodeValue;
+    async (e: Event) => {
+      const fieldName = (e.currentTarget as HTMLElement).childNodes[0]
+        .nodeValue;
       const field = fieldDefinitions?.find((fd) => fd.name === fieldName);
       if (field) {
         if (activeSelection.text && activeSelection.noteId && api?.fnToken) {
@@ -88,22 +86,22 @@ export const FieldTransferProvider = ({ children }) => {
               activeSelection.noteId,
               field.id,
               activeSelection.text,
-              newNoteBody
+              newNoteBody,
             );
             if (
               apiResponseNote &&
               Array.isArray(apiResponseNote.field_values)
             ) {
               apiResponseNote.field_values = apiResponseNote.field_values.map(
-                (fv) => {
+                (fv: any) => {
                   const fieldDef = fieldDefinitions?.find(
-                    (fd) => fd.id === fv.field_id
+                    (fd) => fd.id === fv.field_id,
                   );
                   return {
                     ...fv,
                     name: fieldDef ? fieldDef.name : "Unknown Field",
                   };
-                }
+                },
               );
               setUpdatedNote({
                 ...apiResponseNote,
@@ -114,13 +112,13 @@ export const FieldTransferProvider = ({ children }) => {
                 fieldDefinitions?.map((fd) =>
                   fd.id === field.id
                     ? { ...fd, use_count: fd.use_count + 1 }
-                    : fd
-                )
+                    : fd,
+                ),
               );
 
               clearSelection();
             }
-          } catch (err) {
+          } catch (err: any) {
             const errorObj = err || {};
             if (errorObj.error?.code?.includes("SQLITE_CONSTRAINT_UNIQUE")) {
               return alertCantUseExistingField(field.name);
@@ -129,7 +127,7 @@ export const FieldTransferProvider = ({ children }) => {
         } else if (activeSelection.text && !activeSelection.noteId) {
           // Stage the field for the NoteCreator
           const isDuplicate = newNote.field_values.some(
-            (fv) => fv.field_id === field.id || fv.name === field.name
+            (fv: any) => fv.field_id === field.id || fv.name === field.name,
           );
 
           if (isDuplicate) {
@@ -155,11 +153,11 @@ export const FieldTransferProvider = ({ children }) => {
         clearSelection();
       }
     },
-    [api?.fnToken, fieldDefinitions, activeSelection, newNote]
+    [api?.fnToken, fieldDefinitions, activeSelection, newNote],
   );
 
-  const handleTextareaSelection = (e) => {
-    const textarea = e.target;
+  const handleTextareaSelection = (e: Event) => {
+    const textarea = e.target as HTMLTextAreaElement;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const value = textarea.value.substring(start, end);
@@ -205,7 +203,7 @@ export const FieldTransferProvider = ({ children }) => {
       setNewNote,
       handleTextareaSelection,
     }),
-    [fieldDefinitions, selectedField, activeSelection, updatedNote, newNote]
+    [fieldDefinitions, selectedField, activeSelection, updatedNote, newNote],
   );
 
   return (
@@ -215,7 +213,10 @@ export const FieldTransferProvider = ({ children }) => {
   );
 };
 
-export const useFieldTransferContext = () => {
-  const context = useContext(FieldTransferContext);
-  return context ?? {};
+export const useFieldTransferContext = (): React.ContextType<
+  typeof FieldTransferContext
+> => {
+  return useContext<React.ContextType<typeof FieldTransferContext>>(
+    FieldTransferContext,
+  );
 };

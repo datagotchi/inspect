@@ -1,6 +1,6 @@
 "use client";
 import styles from "../../styles/components/login-register-links.module.css";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -11,8 +11,7 @@ const LoginRegisterLinks = ({
 }: {
   loggedIn: boolean;
 }): React.JSX.Element => {
-  const [returnPath, setReturnPath] = useState<string>();
-  useEffect(() => setReturnPath(window.location.pathname), []);
+  const returnPath = window.location.pathname;
 
   const { logout } = useUser();
   const path = usePathname();

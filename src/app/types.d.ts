@@ -125,3 +125,20 @@ export type InsightLink = {
   parentInsight?: Insight;
   childInsight?: Insight;
 };
+
+export type Field = {
+  id?: number;
+};
+export type FieldValue = {
+  id?: number;
+  field_id: number;
+  value: string;
+};
+export type Note = {
+  id?: number;
+  text: string;
+};
+export type CookieUser = {
+  email: string;
+  token: string;
+};

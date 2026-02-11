@@ -1,9 +1,15 @@
 import React from "react";
 
 import { useFieldTransferContext } from "../contexts/useFieldTransferContext";
+import { Note } from "../types";
 
-const NoteEditor = ({ note, setNote }) => {
-  const handleChange = (e) => {
+interface Props {
+  note: Note;
+  setNote: (note: Note) => void;
+}
+
+const NoteEditor = ({ note, setNote }: Props) => {
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNote({ ...note, text: e.target.value });
   };
 
@@ -16,7 +22,7 @@ const NoteEditor = ({ note, setNote }) => {
         <p
           style={{
             fontSize: "smaller",
-            fontColor: "#CCC",
+            color: "#CCC",
             fontStyle: "italic",
           }}
         >
@@ -24,8 +30,8 @@ const NoteEditor = ({ note, setNote }) => {
         </p>
       )}
       <textarea
-        rows="10"
-        cols="100"
+        rows={10}
+        cols={100}
         value={note.text}
         onChange={handleChange}
         data-note-id={note.id}

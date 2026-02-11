@@ -8,7 +8,7 @@ let libSqlInstance: Client;
 
 if (!global.libSql || process.env.NODE_ENV === "development") {
   libSqlInstance = createClient({
-    url: "file:fieldnotes.db", // TODO: make this dynamic once there are more syndicates
+    url: "file:fieldnotes.db", // FIXME: make this dynamic/shared once there are more syndicates
   });
   global.libSql = libSqlInstance;
 } else {

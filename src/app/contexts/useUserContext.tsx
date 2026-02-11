@@ -4,15 +4,30 @@ import React, {
   useState,
   useEffect,
   useMemo,
+  useCallback,
 } from "react";
 import Cookies from "js-cookie";
 
 import useAPI from "../hooks/useAPI";
+import { User } from "../types";
 
-const UserContext = createContext(undefined);
+interface UserContextType {
+  user: User | undefined;
+  setUser: React.Dispatch<React.SetStateAction<User | undefined>>;
+  loading: boolean;
+  isAuthenticated: boolean;
+  logout: () => Promise<void>;
+  api: ReturnType<typeof useAPI>;
+}
 
-export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState();
+const UserContext = createContext<UserContextType | undefined>(undefined);
+
+interface Props {
+  children: React.ReactNode;
+}
+
+export const UserProvider = ({ children }: Props) => {
+  const [user, setUser] = useState<User>();
   const [loading, setLoading] = useState(true);
 
   // Initialize API hook here, inside the provider
@@ -23,7 +38,7 @@ export const UserProvider = ({ children }) => {
     try {
       const cookieUser = Cookies.get("token"); // js-cookie automatically parses JSON if set as an object
       if (cookieUser) {
-        setUser(cookieUser);
+        setUser(JSON.parse(cookieUser));
       }
     } catch (error) {
       console.error("Failed to parse user cookie", error);
@@ -32,7 +47,7 @@ export const UserProvider = ({ children }) => {
     }
   }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     if (user) {
       await api.logout(user.email); // Invalidate session on the backend
     }
@@ -40,7 +55,7 @@ export const UserProvider = ({ children }) => {
     setUser(undefined); // Clear user state in the app
     // Navigate to the home page to reset the UI state cleanly.
     window.location.href = "/";
-  };
+  }, [api, user]);
 
   const contextValue = useMemo(
     () => ({
@@ -59,7 +74,7 @@ export const UserProvider = ({ children }) => {
   );
 };
 
-export const useUserContext = () => {
+export const useUserContext = (): any => {
   const context = useContext(UserContext);
   if (context === undefined) {
     throw new Error("useUserContext must be used within a UserProvider");
