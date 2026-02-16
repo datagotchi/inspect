@@ -131,17 +131,28 @@ export type Field = {
   name: string;
   use_count?: number;
 };
+
 export type FieldValue = {
   id?: number;
   field_id?: number;
   value: string;
 };
+
 export type Note = {
   id?: number;
   text: string;
   field_values?: (FieldValue & Field)[];
+  datetime?: string;
 };
+
 export type CookieUser = {
   email: string;
   token: string;
+};
+
+export type Session = {
+  id: number;
+  sessionToken: string;
+  userId: number;
+  expires: Date;
 };

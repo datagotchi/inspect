@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 
 import { POST } from "./route";
-import { getEncryptedToken } from "../../../proxy/functions";
+import { createSession } from "../../../proxy/functions";
 import { UserModel } from "../models/users";
 
 jest.mock("bcryptjs");
@@ -59,7 +59,7 @@ describe("POST /api/login", () => {
       Promise.resolve(callback([localUser])),
     );
     (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-    (getEncryptedToken as jest.Mock).mockReturnValue(token);
+    (createSession as jest.Mock).mockResolvedValue(token);
 
     const res = await POST(req);
     expect(res.status).toBe(200);

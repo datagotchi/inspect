@@ -1,18 +1,24 @@
-import { createClient, Client } from "@libsql/client";
+import Knex from "knex";
+import { Model } from "objection";
 
 declare global {
-  var libSql: Client;
+  var libSqlKnexInstance: Knex.Knex;
 }
 
-let libSqlInstance: Client;
+let libSqlKnexInstance: Knex.Knex;
 
-if (!global.libSql || process.env.NODE_ENV === "development") {
-  libSqlInstance = createClient({
-    url: "file:fieldnotes.db", // FIXME: make this dynamic/shared once there are more syndicates
+if (!global.libSqlKnexInstance || process.env.NODE_ENV === "development") {
+  libSqlKnexInstance = Knex({
+    client: "better-sqlite3",
+    connection: "fieldnotes.db", // FIXME: make this dynamic for multiple syndicates
+    useNullAsDefault: true,
   });
-  global.libSql = libSqlInstance;
+
+  Model.knex(libSqlKnexInstance);
+
+  global.libSqlKnexInstance = libSqlKnexInstance;
 } else {
-  libSqlInstance = global.libSql;
+  libSqlKnexInstance = global.libSqlKnexInstance;
 }
 
-export default libSqlInstance;
+export default libSqlKnexInstance;

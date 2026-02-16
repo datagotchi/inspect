@@ -31,14 +31,14 @@ export const UserProvider = ({ children }: Props) => {
   const [loading, setLoading] = useState(true);
 
   // Initialize API hook here, inside the provider
-  const api = useAPI(user);
+  const api = useAPI({ email: user?.email || "", token: user?.token || "" });
 
   // Load user from cookie on initial load
   useEffect(() => {
     try {
       const cookieUser = Cookies.get("token"); // js-cookie automatically parses JSON if set as an object
       if (cookieUser) {
-        setUser(JSON.parse(cookieUser));
+        setUser(JSON.parse(cookieUser) as User);
       }
     } catch (error) {
       console.error("Failed to parse user cookie", error);
@@ -74,7 +74,7 @@ export const UserProvider = ({ children }: Props) => {
   );
 };
 
-export const useUserContext = (): any => {
+export const useUserContext = () => {
   const context = useContext(UserContext);
   if (context === undefined) {
     throw new Error("useUserContext must be used within a UserProvider");

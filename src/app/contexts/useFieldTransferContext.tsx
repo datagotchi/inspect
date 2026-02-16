@@ -87,7 +87,7 @@ export const FieldTransferProvider = ({ children }: Props) => {
 
             const apiResponseNote = await api.useField(
               activeSelection.noteId,
-              field.id,
+              field.id!,
               activeSelection.text,
               newNoteBody,
             );
@@ -214,7 +214,14 @@ export const FieldTransferProvider = ({ children }: Props) => {
       setNewNote,
       handleTextareaSelection,
     }),
-    [fieldDefinitions, selectedField, activeSelection, updatedNote, newNote],
+    [
+      fieldDefinitions,
+      selectedField,
+      activeSelection,
+      updatedNote,
+      handlePillClick,
+      newNote,
+    ],
   );
 
   return (
@@ -224,9 +231,7 @@ export const FieldTransferProvider = ({ children }: Props) => {
   );
 };
 
-export const useFieldTransferContext = (): React.ContextType<
-  typeof FieldTransferContext
-> => {
+export const useFieldTransferContext = () => {
   return useContext<React.ContextType<typeof FieldTransferContext>>(
     FieldTransferContext,
   );

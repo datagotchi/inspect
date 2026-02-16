@@ -4,13 +4,12 @@
 import bcrypt from "bcryptjs";
 
 import { POST } from "./route";
-import { getEncryptedToken } from "../../../proxy/functions";
+import { createSession } from "../../../proxy/functions";
 import { NextRequest } from "next/server";
 import { UserModel } from "../models/users";
 import { UniqueViolationError } from "objection";
 
 jest.mock("bcryptjs");
-jest.mock("../functions");
 jest.mock("../../../proxy/functions");
 
 jest.mock("../models/users", () => {
@@ -65,7 +64,7 @@ describe("POST /register", () => {
       Promise.resolve(callback(localUser)),
     );
     (bcrypt.hash as jest.Mock).mockResolvedValue(encryptedPassword);
-    (getEncryptedToken as jest.Mock).mockReturnValue(token);
+    (createSession as jest.Mock).mockResolvedValue(token);
 
     const response = await POST(req as NextRequest);
     expect(response.status).toBe(201);

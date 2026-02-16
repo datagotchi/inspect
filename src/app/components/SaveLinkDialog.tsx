@@ -43,7 +43,6 @@ const SaveLinkDialog = ({
   setActiveServerFunction: (value: undefined) => void;
 }): React.JSX.Element => {
   const [linkUrl, setLinkUrl] = useState<string>("");
-  const [linkUrlError, setLinkUrlError] = useState<string>("");
   const [dataFilter, setDataFilter] = useState<string>("");
   const [selectedInsights, setSelectedInsights] = useState<Insight[]>([]);
   const [newInsightName, setNewInsightName] = useState<string>("");
@@ -52,22 +51,16 @@ const SaveLinkDialog = ({
   const [potentialInsights, setPotentialInsights] = useState<Insight[]>(
     potentialInsightsFromServer,
   );
-  const [urlValidationTimeout, setUrlValidationTimeout] = useState<ReturnType<
-    typeof setTimeout
-  > | null>(null);
-
-  // TODO: improve the logic here
   const useLinksReturn = useLinks({
     offset: 0,
     limit: 1,
-    query: (linkUrlError || !linkUrl ? null : `url=${linkUrl}`) as string,
+    query: linkUrl ? (`url=${linkUrl}` as string) : null,
   });
   const existingLinks = useLinksReturn[0];
-  useEffect(() => {
-    if (!linkUrlError && existingLinks && existingLinks.length > 0) {
-      setLinkUrlError("Link already exists");
-    }
-  }, [existingLinks, existingLinks?.length, linkUrlError]);
+  const [linkUrlError, setLinkUrlError] = useState<string>("");
+  const [urlValidationTimeout, setUrlValidationTimeout] = useState<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
   const resetStateValues = useCallback(() => {
     setSelectedInsights([]);
@@ -120,44 +113,6 @@ const SaveLinkDialog = ({
     onClose,
   ]);
 
-  useEffect(() => {
-    if (linkUrl && !pageTitle && !loading && !linkUrlError) {
-      // Only fetch if URL looks valid and complete
-      const isValidCompleteUrl =
-        linkUrl.match(/^https?:\/\/[^\s]+$/) && linkUrl.length > 10;
-
-      if (isValidCompleteUrl) {
-        setLoading(true);
-        setLinkUrlError("");
-
-        getPageTitle(linkUrl)
-          .then((title) => {
-            setPageTitle(title);
-            setLoading(false);
-          })
-          .catch((error) => {
-            console.error("Error fetching page title:", error);
-            setLoading(false);
-
-            // Check if it's a blocking error (403, 429, etc.)
-            if (
-              error.message.includes("403") ||
-              error.message.includes("blocked") ||
-              error.message.includes("Forbidden")
-            ) {
-              setLinkUrlError(
-                "Website blocks automated access - you can still save the link",
-              );
-            } else {
-              setLinkUrlError(
-                "Could not get page title - you can still save the link",
-              );
-            }
-          });
-      }
-    }
-  }, [linkUrl, pageTitle, loading, linkUrlError]);
-
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
@@ -166,6 +121,39 @@ const SaveLinkDialog = ({
       }
     };
   }, [urlValidationTimeout]);
+
+  const fetchPageTitle = useCallback((urlToFetch: string) => {
+    setLoading(true);
+    setLinkUrlError("");
+
+    getPageTitle(urlToFetch)
+      .then((title) => {
+        setPageTitle(title);
+      })
+      .catch((error) => {
+        console.error("Error fetching page title:", error);
+        if (
+          error.message.includes("403") ||
+          error.message.includes("blocked") ||
+          error.message.includes("Forbidden")
+        ) {
+          setLinkUrlError(
+            "Website blocks automated access - you can still save the link",
+          );
+        } else {
+          setLinkUrlError(
+            "Could not get page title - you can still save the link",
+          );
+        }
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  const linkExistsError =
+    existingLinks && existingLinks.length > 0 ? "Link already exists" : "";
+  const displayError = linkUrlError || linkExistsError;
 
   return (
     <Modal
@@ -196,26 +184,22 @@ const SaveLinkDialog = ({
                 setLinkUrlError("");
                 setLoading(false);
 
-                // Only validate and fetch if the URL looks complete
-                if (text && text.length > 5) {
-                  const isValidUrl =
-                    text.match(/^https?:\/\/[^\s]+$/) ||
-                    text.match(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/);
+                const isValidUrl =
+                  text.match(/^https?:\/\/[^\s]+$/) ||
+                  text.match(/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/.*)?$/);
 
-                  if (isValidUrl) {
-                    // Debounce the URL validation to prevent rapid requests
-                    const timeout = setTimeout(() => {
-                      const fullUrl = text.startsWith("http")
-                        ? text
-                        : `https://${text}`;
-                      setLinkUrl(fullUrl);
-                    }, 1000); // Wait 1 second after user stops typing
-
-                    setUrlValidationTimeout(timeout);
-                  }
+                if (isValidUrl) {
+                  // Debounce the URL validation and fetch to prevent rapid requests
+                  const timeout = setTimeout(() => {
+                    const fullUrl = text.startsWith("http")
+                      ? text
+                      : `https://${text}`;
+                    fetchPageTitle(fullUrl);
+                  }, 1000); // Wait 1 second after user stops typing
+                  setUrlValidationTimeout(timeout);
                 }
               }}
-              error={linkUrlError}
+              error={displayError}
             />
           </FormGroup>
           {loading && <ModalLoadingState message="Fetching page title..." />}

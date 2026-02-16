@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
 import "../libsql";
-import { getEncryptedToken } from "../../../proxy/functions";
+import { createSession } from "../../../proxy/functions";
 import { User } from "../../types";
 import { UserModel } from "../models/users";
 
@@ -48,7 +48,7 @@ export async function POST(
   const user = resultRows[0];
 
   if (user && (await bcrypt.compare(password.trim(), user.password!))) {
-    const token = await getEncryptedToken(user);
+    const token = await createSession(user);
     user.token = token;
 
     return NextResponse.json({

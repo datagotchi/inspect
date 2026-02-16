@@ -1,20 +1,83 @@
-import { getEncryptedToken } from "./functions";
+/**
+ * @jest-environment node
+ */
 
-describe("getEncryptedToken", () => {
-  const originalEnv = process.env;
+import { createSession, verifyTokenAndGetUser } from "./functions";
+import { SessionModel } from "../app/api/models/sessions";
+import { User } from "../app/types";
+
+// Mock the SessionModel to isolate the functions from the database
+jest.mock("../app/api/models/sessions", () => {
+  const mockQueryBuilder = {
+    insertGraph: jest.fn().mockReturnThis(),
+    findOne: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    withGraphFetched: jest.fn(), // This will be the final call in the chain for verify
+  };
+
+  const MockSessionModelConstructor = jest.fn();
+  Object.assign(MockSessionModelConstructor, {
+    query: jest.fn(() => mockQueryBuilder),
+  });
+
+  return {
+    SessionModel: MockSessionModelConstructor,
+  };
+});
+
+const mockSessionQuery = SessionModel.query as jest.Mock;
+
+describe("proxy/functions", () => {
   beforeEach(() => {
-    jest.resetModules();
-    process.env = { ...originalEnv, TOKEN_KEY: "testkey" };
+    jest.clearAllMocks();
   });
 
-  afterEach(() => {
-    process.env = originalEnv;
+  describe("createSession", () => {
+    it("should generate a token and insert a session into the database", async () => {
+      const user: User = { id: 1, email: "test@example.com", username: "test" };
+      const token = await createSession(user);
+
+      // Check that a token was generated
+      expect(typeof token).toBe("string");
+      expect(token.length).toBe(96); // 48 bytes in hex
+
+      // Check that the session was inserted
+      const insertMock = mockSessionQuery().insertGraph;
+      expect(insertMock).toHaveBeenCalledTimes(1);
+      expect(insertMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: user.id,
+          sessionToken: token,
+          expires: expect.any(Date),
+        }),
+      );
+    });
   });
 
-  it("should encrypt user object into a token", async () => {
-    const user = { id: 1, email: "test@example.com", username: "testuser" };
-    const token = await getEncryptedToken(user);
-    expect(typeof token).toBe("string");
-    expect(token).not.toBe("");
+  describe("verifyTokenAndGetUser", () => {
+    it("should return the user for a valid token", async () => {
+      const user: User = { id: 1, email: "test@example.com", username: "test" };
+      const mockSession = { user };
+      (mockSessionQuery().withGraphFetched as jest.Mock).mockResolvedValue(
+        mockSession,
+      );
+
+      const result = await verifyTokenAndGetUser("valid-token");
+
+      expect(result).toEqual(user);
+      expect(mockSessionQuery().findOne).toHaveBeenCalledWith({
+        sessionToken: "valid-token",
+      });
+    });
+
+    it("should return null for an invalid or expired token", async () => {
+      (mockSessionQuery().withGraphFetched as jest.Mock).mockResolvedValue(
+        undefined,
+      );
+
+      const result = await verifyTokenAndGetUser("invalid-token");
+
+      expect(result).toBeNull();
+    });
   });
 });

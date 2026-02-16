@@ -4,7 +4,7 @@ import { UniqueViolationError } from "objection";
 
 import "../libsql";
 import { User } from "../../types";
-import { getEncryptedToken } from "../../../proxy/functions";
+import { createSession } from "../../../proxy/functions";
 import { UserModel } from "../models/users";
 
 export type RegisterPostRouteRequestBody = Promise<{
@@ -43,14 +43,7 @@ export async function POST(
       password: encryptedPassword,
     });
 
-    const token = await getEncryptedToken(user);
-
-    await UserModel.query()
-      .patch({
-        token,
-      })
-      .where("id", user.id!);
-
+    const token = await createSession(user);
     user.token = token;
     return NextResponse.json(user, { status: 201 });
   } catch (error) {

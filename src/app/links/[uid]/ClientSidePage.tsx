@@ -88,12 +88,12 @@ const ClientSidePage = ({
             directions="Select an emoji character"
             afterSubmit={(newObject) => {
               if (newObject) {
-                if (!link.reactions) {
-                  link.reactions = [];
-                }
                 setLink({
                   ...link,
-                  reactions: [...link.reactions, newObject as FactReaction],
+                  reactions: [
+                    ...(link.reactions ?? []),
+                    newObject as FactReaction,
+                  ],
                 });
               }
             }}
@@ -112,13 +112,10 @@ const ClientSidePage = ({
             directions="Enter a text comment"
             afterSubmit={(newObject) => {
               if (newObject) {
-                if (!link.comments) {
-                  link.comments = [];
-                }
                 setLink({
                   ...link,
                   comments: [
-                    ...link.comments,
+                    ...(link.comments ?? []),
                     {
                       ...newObject,
                       // avatar_uri: currentUser.avatar_uri,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { verifyTokenAndGetUser } from "./proxy/functions"; // You'll need to create this
 import { cookies, headers } from "next/headers";
 
 // FIXME: seems like the route files should have an auth(enticateUser) option or something like express
@@ -29,11 +30,11 @@ export const proxy = async (req: NextRequest): Promise<NextResponse> => {
     : "";
   const headersObject = await headers();
   const token = headersObject.get("x-access-token") || tokenCookie;
-  let authUser;
+  let authUser = null;
   // TODO: figure out why x-access-token is sometimes the 'undefined' string
-  // if (token && token !== "undefined") {
-  //   authUser = decryptToken(token); // FIXME: refactor how I do auth
-  // }
+  if (token && token !== "undefined") {
+    authUser = await verifyTokenAndGetUser(token);
+  }
   const anonymousPathMatch = ANONYMOUS_REGEXES.find((regex) =>
     req.nextUrl.pathname.match(new RegExp(regex)),
   );
@@ -79,7 +80,7 @@ export const proxy = async (req: NextRequest): Promise<NextResponse> => {
 
   if (authUser) {
     res.headers.set("x-authUser", JSON.stringify(authUser));
-  } else if (token && token !== "undefined") {
+  } else if (token && token !== "undefined" && !anonymousPathMatch) {
     // Clear invalid token from cookies
     res.cookies.set("token", "", {
       expires: new Date(0),
