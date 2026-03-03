@@ -19,7 +19,6 @@ export default [
   jsPlugin.configs.recommended,
   eslintPluginPrettierRecommended,
   ...tseslint.configs.recommended,
-  ...Object.values(nextPlugin.configs),
   // global settings
   {
     settings: {
@@ -118,12 +117,17 @@ export default [
   {
     ...reactPlugin.configs.flat.recommended,
     files: ["src/app/**/*.{ts,tsx}"],
-    ignores: ["**/*.test.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}"], // still ignore test files within the app directory
     plugins: {
       react: reactPlugin,
       "react-hooks": reactHooksPlugin,
+      "@next/next": nextPlugin,
     },
     rules: {
+      ...reactPlugin.configs.recommended.rules,
+      ...reactHooksPlugin.configs.recommended.rules,
+      ...nextPlugin.configs.recommended.rules,
+
       "react/prop-types": "error",
       "react/display-name": "off",
 
@@ -131,6 +135,8 @@ export default [
       "react-hooks/exhaustive-deps": "warn",
 
       "react-hooks/set-state-in-effect": "off",
+
+      "@next/next/no-img-element": "error",
     },
   },
 ];
