@@ -1,4 +1,5 @@
 import globals from "globals";
+import nextPlugin from "@next/eslint-plugin-next";
 
 import jsPlugin from "@eslint/js";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
@@ -11,8 +12,6 @@ import typescriptParser from "@typescript-eslint/parser";
 
 import jestPlugin from "eslint-plugin-jest";
 
-import nextPlugin from "@next/eslint-plugin-next";
-
 import playwrightPlugin from "eslint-plugin-playwright";
 
 export default [
@@ -20,6 +19,7 @@ export default [
   jsPlugin.configs.recommended,
   eslintPluginPrettierRecommended,
   ...tseslint.configs.recommended,
+  ...Object.values(nextPlugin.configs),
   // global settings
   {
     settings: {
@@ -28,8 +28,6 @@ export default [
       },
     },
   },
-  // global files: all typescript files
-  // This empty block was not doing anything and can be removed.
   // global plugins
   {
     plugins: {
@@ -119,17 +117,13 @@ export default [
   // next app config
   {
     ...reactPlugin.configs.flat.recommended,
+    files: ["src/app/**/*.{ts,tsx}"],
     ignores: ["**/*.test.{ts,tsx}"],
     plugins: {
       react: reactPlugin,
       "react-hooks": reactHooksPlugin,
-      "@next/next": nextPlugin,
     },
     rules: {
-      ...reactPlugin.configs.recommended.rules,
-      ...reactHooksPlugin.configs.recommended.rules,
-      ...nextPlugin.configs.recommended.rules,
-
       "react/prop-types": "error",
       "react/display-name": "off",
 
@@ -137,8 +131,6 @@ export default [
       "react-hooks/exhaustive-deps": "warn",
 
       "react-hooks/set-state-in-effect": "off",
-
-      "@next/next/no-img-element": "error",
     },
   },
 ];

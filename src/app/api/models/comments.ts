@@ -13,6 +13,8 @@ export class CommentModel extends Model implements FactComment {
   summary_id?: number;
   insight_id?: number;
   user_id?: number;
+  created_at?: string;
+  updated_at?: string;
 
   static jsonSchema = {
     type: "object",
@@ -49,4 +51,13 @@ export class CommentModel extends Model implements FactComment {
       },
     },
   };
+
+  $beforeInsert() {
+    this.created_at = new Date().toISOString();
+    this.updated_at = new Date().toISOString();
+  }
+
+  $beforeUpdate() {
+    this.updated_at = new Date().toISOString();
+  }
 }

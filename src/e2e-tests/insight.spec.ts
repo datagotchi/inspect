@@ -20,7 +20,6 @@ import { encodeStringURI } from "../app/hooks/functions";
 let client: pg.Client;
 let token: string;
 
-// FIXME: get e2e tests working, starting with single insight page
 test.describe("Insight page", () => {
   // TODO: perform tests as me, Test, and anonymous
   test.beforeAll(async ({ request }) => {

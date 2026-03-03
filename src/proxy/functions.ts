@@ -13,7 +13,6 @@ export const createSession = async (user: User): Promise<string> => {
   const randomBytes = new Uint8Array(48);
   crypto.getRandomValues(randomBytes);
   const sessionToken = Buffer.from(randomBytes).toString("hex");
-
   // 2. Set an expiration date (e.g., 30 days from now).
   const expires = new Date();
   expires.setDate(expires.getDate() + 30);

@@ -8,6 +8,7 @@ export class InsightLinkModel extends Model implements InsightLink {
   id?: number;
   parent_id!: number;
   child_id!: number;
+  created_at?: string;
 
   static jsonSchema = {
     type: "object",
@@ -49,5 +50,9 @@ export class InsightLinkModel extends Model implements InsightLink {
         },
       },
     };
+  }
+
+  $beforeInsert() {
+    this.created_at = new Date().toISOString();
   }
 }

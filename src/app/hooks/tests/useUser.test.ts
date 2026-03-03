@@ -1,15 +1,12 @@
 import { act, renderHook } from "@testing-library/react";
 
 import useUser from "../useUser";
-import { decryptToken } from "../../../proxy/functions";
 
 jest.mock("../../../proxy/functions");
 
 describe("useUser hook", () => {
   beforeEach(() => {
-    // Clear all cookies before each test
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    (decryptToken as jest.Mock).mockReturnValue({});
   });
 
   it("should initialize with default values", () => {

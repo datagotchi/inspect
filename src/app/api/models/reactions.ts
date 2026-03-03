@@ -9,6 +9,8 @@ export class ReactionModel extends Model implements FactReaction {
 
   id?: number;
   reaction?: string;
+  created_at?: string;
+  updated_at?: string;
 
   static jsonSchema = {
     type: "object",
@@ -55,5 +57,14 @@ export class ReactionModel extends Model implements FactReaction {
         },
       },
     };
+  }
+
+  $beforeInsert() {
+    this.created_at = new Date().toISOString();
+    this.updated_at = new Date().toISOString();
+  }
+
+  $beforeUpdate() {
+    this.updated_at = new Date().toISOString();
   }
 }

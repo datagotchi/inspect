@@ -10,6 +10,7 @@ export class EvidenceModel extends Model implements EvidenceRecord {
   id?: number;
   summary_id?: number;
   insight_id?: number;
+  created_at?: string;
 
   // static idColumn = ["summary_id", "insight_id"];
 
@@ -71,5 +72,9 @@ export class EvidenceModel extends Model implements EvidenceRecord {
         },
       },
     };
+  }
+
+  $beforeInsert() {
+    this.created_at = new Date().toISOString();
   }
 }

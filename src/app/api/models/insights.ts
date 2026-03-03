@@ -14,6 +14,8 @@ export class InsightModel extends Model implements Insight {
   title!: string;
   is_public!: boolean;
   user_id!: number;
+  created_at?: string;
+  updated_at?: string;
 
   static jsonSchema = {
     type: "object",
@@ -139,5 +141,14 @@ export class InsightModel extends Model implements Insight {
         },
       },
     };
+  }
+
+  $beforeInsert() {
+    this.created_at = new Date().toISOString();
+    this.updated_at = new Date().toISOString();
+  }
+
+  $beforeUpdate() {
+    this.updated_at = new Date().toISOString();
   }
 }

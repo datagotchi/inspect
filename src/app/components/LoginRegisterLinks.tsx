@@ -1,4 +1,5 @@
 "use client";
+
 import styles from "../../styles/components/login-register-links.module.css";
 import React from "react";
 import Link from "next/link";
@@ -11,8 +12,6 @@ const LoginRegisterLinks = ({
 }: {
   loggedIn: boolean;
 }): React.JSX.Element => {
-  const returnPath = window.location.pathname;
-
   const { logout } = useUser();
   const path = usePathname();
 
@@ -22,7 +21,7 @@ const LoginRegisterLinks = ({
         <button
           onClick={() => {
             logout();
-            window.location.href = returnPath || "/";
+            window.location.href = path || "/";
           }}
           className={styles.logoutButton}
         >
@@ -38,16 +37,13 @@ const LoginRegisterLinks = ({
   return (
     <div className={styles.loginRegisterContainer}>
       <li className={path === "/login" ? "active" : ""}>
-        <Link
-          href={`/login?return=${returnPath}`}
-          className={styles.loginButton}
-        >
+        <Link href={`/login?return=${path}`} className={styles.loginButton}>
           Login
         </Link>
       </li>
       <li className={path === "/register" ? "active" : ""}>
         <Link
-          href={`/register?return=${returnPath}`}
+          href={`/register?return=${path}`}
           className={styles.registerButton}
         >
           Register

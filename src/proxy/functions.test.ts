@@ -48,7 +48,7 @@ describe("proxy/functions", () => {
         expect.objectContaining({
           userId: user.id,
           sessionToken: token,
-          expires: expect.any(Date),
+          expires: expect.any(String),
         }),
       );
     });

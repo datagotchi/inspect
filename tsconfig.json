@@ -20,7 +20,10 @@
         "name": "next"
       }
     ],
-    "sourceMap": true
+    "sourceMap": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": [
     "src/app/types.d.ts",

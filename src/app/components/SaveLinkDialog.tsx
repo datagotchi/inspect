@@ -20,9 +20,9 @@ import {
 // need to create a schema here
 // because processing of it to get the insights is necessary before createInsights() is called
 export type ServerFunctionInputSchemaForSavedLinks = {
-  url: string;
-  selectedInsights: Insight[];
-  newInsightName: string;
+  url?: string;
+  selectedInsights?: Insight[];
+  newInsightName?: string;
 };
 
 const SaveLinkDialog = ({

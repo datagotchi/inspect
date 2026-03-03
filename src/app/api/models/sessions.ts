@@ -34,4 +34,22 @@ export class SessionModel extends Model implements Session {
       expires: { type: "string", format: "date-time" },
     },
   };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  $parseJson(json: any, opt: any) {
+    json = super.$parseJson(json, opt);
+    if (json.expires && typeof json.expires === "string") {
+      json.expires = new Date(json.expires);
+    }
+    return json;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  $formatJson(json: any) {
+    json = super.$formatJson(json);
+    if (json.expires instanceof Date) {
+      json.expires = json.expires.toISOString();
+    }
+    return json;
+  }
 }

@@ -1,4 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+/**
+ * @jest-environment node
+ */
+import { NextRequest } from "next/server";
 
 import { DELETE, DeleteSessionRouteProps } from "./route";
 import { UserModel } from "../models/users";
@@ -49,12 +52,9 @@ describe("DELETE /api/logout", () => {
     expect(mockWhereToken).toHaveBeenCalledWith("token", token);
 
     // Verify the response
-    expect(response).toEqual(
-      NextResponse.json({
-        statusText: "Successfully logged out",
-        status: 204,
-      }),
-    );
+    expect(response.status).toBe(204);
+    const body = await response.json();
+    expect(body.statusText).toBe("Successfully logged out");
   });
 
   it("should return 401 Unauthorized if no token is provided", async () => {
@@ -74,12 +74,9 @@ describe("DELETE /api/logout", () => {
     expect(UserModel.query).not.toHaveBeenCalled();
 
     // Verify the response
-    expect(response).toEqual(
-      NextResponse.json({
-        statusText: "Unauthorized",
-        status: 401,
-      }),
-    );
+    expect(response.status).toBe(401);
+    const body = await response.json();
+    expect(body.statusText).toBe("Unauthorized");
   });
 
   it("should return 500 if the database query fails", async () => {
@@ -100,11 +97,8 @@ describe("DELETE /api/logout", () => {
 
     const response = await DELETE(req, props);
 
-    expect(response).toEqual(
-      NextResponse.json(
-        { statusText: "Internal server error while logging out" },
-        { status: 500 },
-      ),
-    );
+    expect(response.status).toBe(500);
+    const body = await response.json();
+    expect(body.statusText).toBe("Internal server error while logging out");
   });
 });
