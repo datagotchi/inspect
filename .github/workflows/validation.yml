@@ -9,12 +9,13 @@ jobs:
     name: Type Check
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4 # Move this to the top
       - uses: actions/setup-node@v4
         with:
-          node-version: ">=22.0.0"
-      - uses: actions/checkout@v3
+          node-version: "22" # Stick to a major version for stability
+          cache: "yarn" # Adding this will speed up your Air's lag later
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --frozen-lockfile
       - name: Run type-check
         run: yarn type-check
 
