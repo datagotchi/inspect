@@ -33,6 +33,7 @@ describe("proxy/functions", () => {
   });
 
   describe("createSession", () => {
+    // FIXME: failing test
     it("should generate a token and insert a session into the database", async () => {
       const user: User = { id: 1, email: "test@example.com", username: "test" };
       const token = await createSession(user);
