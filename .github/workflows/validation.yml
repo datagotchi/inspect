@@ -9,13 +9,12 @@ jobs:
     name: Type Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4 # Move this to the top
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "22" # Stick to a major version for stability
-          cache: "yarn" # Adding this will speed up your Air's lag later
+          node-version: ">=22.0.0"
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install
       - name: Run type-check
         run: yarn type-check
 
@@ -24,10 +23,10 @@ jobs:
     needs: type-check
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - uses: actions/setup-node@v4
         with:
           node-version: ">=22.0.0"
-      - uses: actions/checkout@v3
       - name: Install dependencies
         run: yarn install
       - name: Run eslint
@@ -38,10 +37,10 @@ jobs:
     needs: type-check
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ">=22.0.0"
-      - uses: actions/checkout@v3
       - name: Install dependencies
         run: yarn install
       - name: Run jest tests
@@ -52,10 +51,10 @@ jobs:
     needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ">=22.0.0"
-      - uses: actions/checkout@v3
       - name: Install dependencies
         run: yarn install
       - name: Install Playwright Browsers
