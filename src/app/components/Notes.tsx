@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 
-import { styles } from "../syndicates/fieldnotes/constants";
-import Note from "./note";
+import { styles } from "../constants";
+import NoteType from "./note";
 import { useUserContext } from "../contexts/useUserContext";
 import { useFieldTransferContext } from "../contexts/useFieldTransferContext";
+import { Field, FieldValue, Note } from "../types";
 
 const Notes = () => {
-  const [notes, setNotes] = useState();
+  const [notes, setNotes] = useState<Note[]>();
 
   const { user, api } = useUserContext();
   const { fieldDefinitions, updatedNote, setUpdatedNote } =
@@ -15,10 +16,10 @@ const Notes = () => {
   useEffect(() => {
     if (api.fnToken && fieldDefinitions && !notes) {
       api.getNotes().then((notes) => {
-        const processedNotes = notes.map((n) => {
-          n.field_values.forEach((fv) => {
+        const processedNotes = notes.map((n: Note) => {
+          n.field_values?.forEach((fv: FieldValue & Field) => {
             const fieldDefinition = fieldDefinitions.find(
-              (fd) => fd.id === fv.field_id,
+              (fd: Field) => fd.id === fv.field_id,
             );
             fv.name = fieldDefinition.name;
           });
@@ -40,9 +41,9 @@ const Notes = () => {
               // Merge logic: keep existing fields, but replace if IDs match,
               // or append if the ID is new.
               const incomingField = updatedNote.field_values?.[0];
-              const otherFields = n.field_values.filter(
-                (fv) => fv.id !== incomingField?.id,
-              );
+              const otherFields =
+                n.field_values?.filter((fv) => fv.id !== incomingField?.id) ??
+                [];
 
               return {
                 ...n, // Keep existing note data
@@ -72,7 +73,7 @@ const Notes = () => {
         <p
           style={{
             fontSize: "smaller",
-            fontColor: "#CCC",
+            color: "#CCC",
             fontStyle: "italic",
           }}
         >
@@ -81,11 +82,14 @@ const Notes = () => {
       )}
       {notes &&
         notes
-          .sort((a, b) => new Date(b.datetime) - new Date(a.datetime))
+          .sort(
+            (a, b) =>
+              new Date(b.datetime!).getTime() - new Date(a.datetime!).getTime(),
+          )
           .map((note) => {
             return (
-              <Note
-                user={user}
+              <NoteType
+                // user={user}
                 data={note}
                 setData={(updatedNote) => {
                   const updatedNotes = notes.map((n) =>
@@ -97,7 +101,7 @@ const Notes = () => {
                   await api.deleteNote(note);
                   setNotes(notes.filter((n) => n.id !== note.id));
                 }}
-                fieldDefinitions={fieldDefinitions}
+                // fieldDefinitions={fieldDefinitions}
                 key={`note: ${note.id}`}
               />
             );

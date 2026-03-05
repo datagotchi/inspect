@@ -1,7 +1,6 @@
 import React from "react";
-import Cookies from "js-cookie";
 
-import { styles } from "../../../fieldnotes-tmp/public/src/constants";
+import { styles } from "../constants";
 import { useUserContext } from "../contexts/useUserContext";
 
 const Header = () => {

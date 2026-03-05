@@ -2,98 +2,107 @@
  * @jest-environment node
  */
 
-import request from "supertest";
-import express from "express";
-import router from "./route.js";
+import { NextRequest } from "next/server";
+import { POST } from "./route";
+import { PATCH, DELETE } from "./[id]/route";
+import { FieldValueModel } from "../models/field_values";
 
-jest.mock("../proxy.ts", () => (req, res, next) => next());
+jest.mock("../models/field_values", () => {
+  const mockQueryBuilder = {
+    insertAndFetch: jest.fn(),
+    patch: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    returning: jest.fn(),
+    delete: jest.fn(),
+  };
+
+  return {
+    FieldValueModel: {
+      query: jest.fn(() => mockQueryBuilder),
+    },
+  };
+});
 
 describe("field_values routes", () => {
-  let app, pool;
-
   beforeEach(() => {
-    pool = {
-      query: jest.fn().mockResolvedValue({ rows: [] }),
-    };
-    app = express();
-    app.use(express.json());
-    app.use((req, res, next) => {
-      req.pool = pool;
-      next();
-    });
-    app.use("/", router);
-    app.use((err, req, res) => {
-      res.status(500).json({ error: err.message });
-    });
+    jest.clearAllMocks();
   });
 
   describe("POST /", () => {
     it("should insert a field value and return 201", async () => {
       const fakeRow = { note_id: 1, field_id: 2, value: "foo" };
-      pool.query.mockResolvedValueOnce({ rows: [fakeRow] });
+      (FieldValueModel.query().insertAndFetch as jest.Mock).mockResolvedValue(
+        fakeRow,
+      );
 
-      const res = await request(app)
-        .post("/")
-        .send({ note_id: 1, field_id: 2, value: "foo" });
+      const req = {
+        json: jest.fn().mockResolvedValue(fakeRow),
+      } as unknown as NextRequest;
 
-      expect(pool.query).toHaveBeenCalledWith({
-        text: expect.stringContaining("insert into field_values"),
-        values: [1, 2, "foo"],
-      });
-      expect(res.status).toBe(201);
-      expect(res.body).toEqual(fakeRow);
+      const res = await POST(req);
+
+      expect(FieldValueModel.query().insertAndFetch).toHaveBeenCalledWith(
+        fakeRow,
+      );
+      expect(res?.status).toBe(201);
+      const json = await res!.json();
+      expect(json).toEqual(fakeRow);
     });
 
-    it("should handle errors", async () => {
-      pool.query.mockRejectedValue(new Error("fail"));
-      const res = await request(app)
-        .post("/")
-        .send({ note_id: 1, field_id: 2, value: "foo" });
-      expect(res.status).toBe(500);
-      expect(res.body.error).toBe("fail");
+    it("should return 400 if required fields are missing", async () => {
+      const req = {
+        json: jest.fn().mockResolvedValue({ note_id: 1 }),
+      } as unknown as NextRequest;
+
+      const res = await POST(req);
+      expect(res?.status).toBe(400);
     });
   });
 
-  describe("PATCH /:note_id/:field_id", () => {
-    // TODO: figure out how to test auth middleware
+  describe("PATCH /", () => {
     it("should update a field value and return it", async () => {
       const fakeRow = { note_id: "1", field_id: "2", value: "bar" };
-      pool.query.mockResolvedValueOnce({ rows: [fakeRow] });
+      (FieldValueModel.query().returning as jest.Mock).mockResolvedValue([
+        fakeRow,
+      ]);
 
-      const res = await request(app).patch("/1/2").send({ value: "bar" });
+      const req = {
+        nextUrl: {
+          searchParams: new URLSearchParams({ field_id: "2" }),
+        },
+        json: jest.fn().mockResolvedValue({ value: "bar" }),
+      } as unknown as NextRequest;
 
-      expect(pool.query).toHaveBeenCalledWith({
-        text: expect.stringContaining("update field_values"),
-        values: ["bar", "1", "2"],
+      const res = await PATCH(req, { params: { id: "1" } });
+
+      expect(FieldValueModel.query().patch).toHaveBeenCalledWith({
+        value: "bar",
+      });
+      expect(FieldValueModel.query().where).toHaveBeenCalledWith({
+        note_id: "1",
+        field_id: "2",
       });
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(fakeRow);
-    });
-
-    it("should handle errors", async () => {
-      pool.query.mockRejectedValue(new Error("fail"));
-      const res = await request(app).patch("/1/2").send({ value: "bar" });
-      expect(res.status).toBe(500);
-      expect(res.body.error).toBe("fail");
+      const json = await res.json();
+      expect(json).toEqual([fakeRow]);
     });
   });
 
   describe("DELETE /:note_id/:field_id", () => {
     it("should delete a field value and return 204", async () => {
-      pool.query.mockResolvedValueOnce({});
-      const res = await request(app).delete("/1/2");
-      expect(pool.query).toHaveBeenCalledWith({
-        text: expect.stringContaining("delete from field_values"),
-        values: ["1", "2"],
-      });
-      expect(res.status).toBe(204);
-    });
+      (FieldValueModel.query().delete as jest.Mock).mockResolvedValue(1);
 
-    it("should handle errors", async () => {
-      pool.query.mockRejectedValue(new Error("fail"));
-      const res = await request(app).delete("/1/2");
-      expect(res.status).toBe(500);
-      expect(res.body.error).toBe("fail");
+      const req = {
+        nextUrl: {
+          searchParams: new URLSearchParams({ field_id: "2" }),
+        },
+      } as unknown as NextRequest;
+
+      const res = await DELETE(req, { params: { id: "1" } });
+      expect(FieldValueModel.query().where).toHaveBeenCalledWith({
+        note_id: "1",
+      });
+      expect(res?.status).toBe(204);
     });
   });
 });

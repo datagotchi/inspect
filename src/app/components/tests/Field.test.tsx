@@ -36,13 +36,13 @@ jest.mock("react-easy-edit", () => (props: any) => (
 ));
 
 describe("Field component", () => {
-  const mockData = {
+  const mockFFV = {
     id: 1,
     name: "Test Field",
     value: "Test Value",
-    note_id: 100,
     field_id: 200,
   };
+  const mockNoteId = 100;
 
   beforeEach(() => {
     // Clear mock history before each test
@@ -55,7 +55,7 @@ describe("Field component", () => {
     render(
       <table>
         <tbody>
-          <Field data={mockData} />
+          <Field data={mockFFV} noteId={mockNoteId} />
         </tbody>
       </table>,
     );
@@ -68,7 +68,7 @@ describe("Field component", () => {
       render(
         <table>
           <tbody>
-            <Field data={mockData} isStaged={false} />
+            <Field data={mockFFV} isStaged={false} noteId={mockNoteId} />
           </tbody>
         </table>,
       );
@@ -86,7 +86,7 @@ describe("Field component", () => {
       render(
         <table>
           <tbody>
-            <Field data={mockData} isStaged={true} />
+            <Field data={mockFFV} isStaged={true} noteId={mockNoteId} />
           </tbody>
         </table>,
       );
@@ -104,9 +104,10 @@ describe("Field component", () => {
         <table>
           <tbody>
             <Field
-              data={mockData}
+              data={mockFFV}
               isStaged={false}
               deleteThisField={mockDeleteThisField}
+              noteId={mockNoteId}
             />
           </tbody>
         </table>,

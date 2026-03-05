@@ -119,7 +119,7 @@ describe("functions", () => {
     it("should delete a comment", async () => {
       mockFetch.mockResolvedValueOnce({ status: 200, rowCount: 1 });
 
-      const result = await deleteComment({ id: 1 }, "token");
+      const result = await deleteComment({ id: "1" }, "token");
       expect(mockFetch).toHaveBeenCalledWith("/api/comments/1", {
         method: "DELETE",
         headers: {

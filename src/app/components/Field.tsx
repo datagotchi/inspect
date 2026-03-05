@@ -4,22 +4,18 @@ import EasyEdit from "react-easy-edit";
 
 import { useUserContext } from "../contexts/useUserContext";
 import { useFieldTransferContext } from "../contexts/useFieldTransferContext";
-import { FieldValue } from "../types";
+import { Field as FieldType, FieldValue } from "../types";
 
 interface Props {
-  data: {
-    id: number;
-    name: string;
-    value: string;
-    note_id: number;
-    field_id: number;
-  };
+  data: FieldValue & FieldType;
+  noteId: number;
   isStaged?: boolean;
   deleteThisField?: () => Promise<undefined>;
 }
 
 const Field = ({
   data,
+  noteId,
   isStaged = false,
   deleteThisField = undefined,
 }: Props) => {
@@ -39,8 +35,8 @@ const Field = ({
         });
       } else if (api?.fnToken) {
         const updatedField = await api.updateFieldValue(
-          data.note_id,
-          data.field_id,
+          noteId,
+          data.field_id!,
           newValue,
         );
         // data.value = updatedField.value;
@@ -53,7 +49,7 @@ const Field = ({
       setNewNote,
       newNote,
       data.id,
-      data.note_id,
+      noteId,
       data.field_id,
       liveData,
     ],

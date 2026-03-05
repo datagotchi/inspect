@@ -41,7 +41,7 @@ describe("GET /api/users/[id]", () => {
     );
 
     const req = new NextRequest("http://localhost");
-    const props = { params: Promise.resolve({ id: 1 }) };
+    const props = { params: Promise.resolve({ id: "1" }) };
 
     const response = await GET(req, props);
     const json = await response.json();
@@ -55,7 +55,7 @@ describe("GET /api/users/[id]", () => {
       Promise.resolve(callback(null)),
     );
     const req = new NextRequest("http://localhost");
-    const props = { params: Promise.resolve({ id: 1 }) };
+    const props = { params: Promise.resolve({ id: "1" }) };
 
     const response = await GET(req, props);
     const json = await response.json();
@@ -76,7 +76,7 @@ describe("DELETE /api/users/[id]", () => {
   });
   it("should delete user if authenticated user matches request user id", async () => {
     const req = new NextRequest("http://localhost");
-    const props = { params: Promise.resolve({ id: 1 }) };
+    const props = { params: Promise.resolve({ id: "1" }) };
 
     const response = await DELETE(req, props);
     const json = await response.json();
@@ -87,7 +87,7 @@ describe("DELETE /api/users/[id]", () => {
 
   it("should return 403 if authenticated user does not match request user id", async () => {
     const req = new NextRequest("http://localhost");
-    const props = { params: Promise.resolve({ id: 2 }) };
+    const props = { params: Promise.resolve({ id: "2" }) };
 
     const response = await DELETE(req, props);
     const json = await response.json();
@@ -100,7 +100,7 @@ describe("DELETE /api/users/[id]", () => {
     (getAuthUser as jest.Mock).mockResolvedValueOnce(null);
 
     const req = new NextRequest("http://localhost");
-    const props = { params: Promise.resolve({ id: 1 }) };
+    const props = { params: Promise.resolve({ id: "1" }) };
 
     const response = await DELETE(req, props);
     const json = await response.json();
@@ -119,7 +119,7 @@ describe("DELETE /api/users/[id]", () => {
         "x-authUser": JSON.stringify({ user_id: "1" }),
       },
     });
-    const props = { params: Promise.resolve({ id: 1 }) };
+    const props = { params: Promise.resolve({ id: "1" }) };
 
     const response = await DELETE(req, props);
     expect(response.status).toBe(500);

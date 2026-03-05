@@ -47,7 +47,7 @@ describe("DELETE /api/comments/[id]", () => {
       json: jest.fn(),
     };
     props = {
-      params: Promise.resolve({ id: 1 }),
+      params: Promise.resolve({ id: "1" }),
     };
     authUser = { user_id: 123 };
     (getAuthUser as jest.Mock).mockResolvedValue(authUser);

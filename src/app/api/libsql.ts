@@ -10,7 +10,7 @@ let libSqlKnexInstance: Knex.Knex;
 if (!global.libSqlKnexInstance || process.env.NODE_ENV === "development") {
   libSqlKnexInstance = Knex({
     client: "better-sqlite3",
-    connection: "fieldnotes.db", // FIXME: make this dynamic for multiple syndicates
+    connection: "fieldnotes.db", // TODO: make this dynamic for multiple syndicates
     useNullAsDefault: true,
   });
 

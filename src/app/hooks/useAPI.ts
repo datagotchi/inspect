@@ -145,7 +145,7 @@ const useAPI = (cookieUser: CookieUser) => {
       noteId: number,
       fieldId: number,
       value: string,
-      newTextValue: string,
+      newTextValue: string = "",
     ) => {
       const newField = {
         field_id: fieldId,

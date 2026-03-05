@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyTokenAndGetUser } from "./proxy/functions"; // You'll need to create this
 import { cookies, headers } from "next/headers";
 
-// FIXME: seems like the route files should have an auth(enticateUser) option or something like express
 export const ANONYMOUS_REGEXES = [
   "^/_next",
   "^/images",
@@ -50,8 +49,8 @@ export const proxy = async (req: NextRequest): Promise<NextResponse> => {
   let origin = req.nextUrl.origin;
   let url = req.nextUrl.href;
 
-  // FIXME: get the "Real" host and protocol from Nginx headers
-  /* FIXME: meaning update the nginx config with: 
+  // TODO: get the "Real" host and protocol from Nginx headers
+  /* TODO: meaning update the nginx config with: 
     location / {
         proxy_pass http://localhost:3000;
         proxy_set_header Host $host; # This is the magic line
@@ -88,7 +87,7 @@ export const proxy = async (req: NextRequest): Promise<NextResponse> => {
     });
   }
 
-  // FIXME: include rr_token for api routes: rrToken: sessionAndUser.rr_token,
+  // TODO: include rr_token for api routes: rrToken: sessionAndUser.rr_token,
 
   return res;
 };

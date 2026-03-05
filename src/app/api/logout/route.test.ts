@@ -3,7 +3,7 @@
  */
 import { NextRequest } from "next/server";
 
-import { DELETE, DeleteSessionRouteProps } from "./route";
+import { DELETE, DeleteSessionRouteProps } from "./[email]/route";
 import { UserModel } from "../models/users";
 
 // Mock the UserModel from the database layer

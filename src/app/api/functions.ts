@@ -95,7 +95,7 @@ export const loginToRedRover = async (username: string, password: string) => {
       body: JSON.stringify({ username, password }),
     });
     return handleRedRoverApiResponse(response);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- FIXME: can I use a better type for err?
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: can I use a better type for err?
   } catch (err: any) {
     // This is a network error
     throw Object.assign(
@@ -140,7 +140,7 @@ export const verifyMyRedRoverGigToday = async (req: {
     );
     const assignments = await handleRedRoverApiResponse(response);
     return assignments.length > 0;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- FIXME: can I use a better type for err?
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: can I use a better type for err?
   } catch (err: any) {
     // This is a network error
     throw Object.assign(
@@ -173,14 +173,14 @@ export const getRedRoverGigs = async (req: { user: { rrToken: string } }) => {
       headers: { Authorization: `Bearer ${token}` },
     });
     const rawData = await handleRedRoverApiResponse(response);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- FIXME: create a type
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: create a type
     return rawData.map((item: any) => ({
       id: item.AssignmentId, // Red Rover's specific key
       date: item.StartDate,
       location: item.SchoolName,
       status: item.Status === "Confirmed" ? "active" : "pending",
     }));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- FIXME: can I use a better type for err?
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: can I use a better type for err?
   } catch (err: any) {
     // This is a network error
     throw Object.assign(

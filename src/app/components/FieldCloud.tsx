@@ -2,6 +2,7 @@ import React from "react";
 
 import { useFieldTransferContext } from "../contexts/useFieldTransferContext";
 import FieldCreator from "./FieldCreator";
+import { Field } from "../types";
 
 const FieldCloud = () => {
   const { fieldDefinitions, handlePillClick } = useFieldTransferContext();
@@ -19,7 +20,7 @@ const FieldCloud = () => {
         }}
       >
         {fieldDefinitions &&
-          fieldDefinitions.map((field) => (
+          fieldDefinitions.map((field: Field) => (
             <span
               key={field.id || field.name}
               style={{

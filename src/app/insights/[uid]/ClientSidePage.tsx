@@ -21,7 +21,7 @@ import { submitComment, submitReaction } from "../../functions";
 import FeedbackLink from "../../components/FeedbackLink";
 import SourceLogo from "../../components/SourceLogo";
 import useUser from "../../hooks/useUser";
-import EditableTitle from "../../components/EditableTitle";
+import EditableText from "../../components/EditableText";
 import AddLinksAsEvidenceDialog from "./AddLinksAsEvidenceDialog";
 import InfiniteScrollLoader from "../../components/InfiniteScrollLoader";
 import FactsListView from "../../components/FactsListView";
@@ -215,7 +215,22 @@ const ClientSidePage = ({
                     <SourceLogo fact={insight} />
                   </div>
                   <div className={styles.headerInfo}>
-                    <EditableTitle insight={insight} apiRoot="/api/insights" />
+                    <EditableText
+                      insight={insight}
+                      apiRoot="/api/insights"
+                      fieldName="title"
+                      initialValue={insight.title}
+                      as="h1"
+                    />
+                    <EditableText
+                      insight={insight}
+                      apiRoot="/api/insights"
+                      fieldName="description"
+                      initialValue={insight.description}
+                      as="p"
+                      isTextarea={true}
+                      placeholder="Add a description..."
+                    />
                     <div className={styles.headerSubtitle}>
                       {createdOrUpdated}
                     </div>

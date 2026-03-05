@@ -1,9 +1,10 @@
 import React from "react";
 
-import { others, styles } from "../syndicates/fieldnotes/constants";
+import { others, styles } from "../constants";
 import { useUserContext } from "../contexts/useUserContext";
 import { useFieldTransferContext } from "../contexts/useFieldTransferContext";
-import Field from "./Field";
+import FieldComponent from "./Field";
+import { Field, FieldValue, Note } from "../types";
 
 const NoteCreator = () => {
   const { api } = useUserContext();
@@ -15,13 +16,13 @@ const NoteCreator = () => {
     handleTextareaSelection,
   } = useFieldTransferContext();
 
-  const submitNewNote = async (note) => {
-    if (note.text || note.field_values.length > 0) {
+  const submitNewNote = async (note: Note) => {
+    if (note.text || (note.field_values && note.field_values.length > 0)) {
       const addedNote = await api.addNote(note);
       addedNote.field_values = await Promise.all(
-        newNote.field_values.map((fv) =>
+        newNote.field_values.map((fv: FieldValue) =>
           api
-            .useField(addedNote.id, fv.id, fv.value)
+            .useField(addedNote.id, fv.field_id!, fv.value)
             .then((note) => note.field_values[0]),
         ),
       );
@@ -60,16 +61,17 @@ const NoteCreator = () => {
       <table className="fieldTable" key="new note fieldTable">
         <tbody>
           {newNote.field_values.length > 0 &&
-            newNote.field_values.map((fv) => (
-              <Field
+            newNote.field_values.map((fv: FieldValue & Field) => (
+              <FieldComponent
                 key={`new note field #${fv.id}`}
                 data={fv}
+                noteId={newNote.id}
                 isStaged={true}
                 deleteThisField={async () => {
                   setNewNote({
                     ...newNote,
                     field_values: newNote.field_values.filter(
-                      (item) => item.id !== fv.id,
+                      (fv2: FieldValue) => fv2.id !== fv.id,
                     ),
                   });
                 }}

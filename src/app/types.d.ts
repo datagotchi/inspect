@@ -68,6 +68,7 @@ export type InsightEvidence = EvidenceRecord & {
 };
 
 export type Insight = Fact & {
+  description?: string;
   evidence?: InsightEvidence[];
   is_public?: boolean;
   username?: string;
@@ -143,6 +144,7 @@ export type Note = {
   text: string;
   field_values?: (FieldValue & Field)[];
   datetime?: string;
+  emoji?: string;
 };
 
 export type CookieUser = {

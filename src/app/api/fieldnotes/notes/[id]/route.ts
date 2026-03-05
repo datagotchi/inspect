@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { FieldValueModel } from "../../models/field_values";
-import { getAuthUser } from "../../../../functions";
+import { headers } from "next/headers";
+
 import { NoteModel } from "../../models/notes";
+import { getAuthUser } from "../../../../functions";
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
   try {
-    const authUser = await getAuthUser(() => Promise.resolve(req.headers));
+    const authUser = await getAuthUser(headers);
     if (!authUser) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
@@ -40,7 +41,7 @@ export async function PATCH(
 
     return NextResponse.json(updatedNote);
   } catch (err) {
-    console.error("Error in PATCH /api/fieldnotes/notes/[note_id]:", err);
+    console.error("Error in PATCH /api/fieldnotes/notes/[id]:", err);
     return NextResponse.json(
       { statusText: "Internal server error while updating note" },
       { status: 500 },
@@ -53,19 +54,18 @@ export async function DELETE(
   { params }: { params: { id: string } },
 ) {
   try {
-    const user = await getAuthUser(() => Promise.resolve(req.headers));
-    if (!user) {
+    const authUser = await getAuthUser(headers);
+    if (!authUser) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // We might add a check here in the future to ensure the user owns the note
-    // associated with this field value before allowing deletion.
-
-    await FieldValueModel.query().deleteById(params.id);
+    await NoteModel.query()
+      .deleteById(params.id)
+      .where("user_id", authUser.user_id);
 
     return new NextResponse(null, { status: 204 });
   } catch (err) {
-    console.error("Error in DELETE /api/fieldnotes/field_values/[id]:", err);
+    console.error("Error in DELETE /api/fieldnotes/notes/[id]:", err);
     return NextResponse.json(
       { statusText: "Internal server error" },
       { status: 500 },

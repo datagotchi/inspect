@@ -10,7 +10,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "e2e": "playwright test",
-    "validate": "npm run type-check && npm run lint && npm run test",
+    "validate": "npm run type-check && npm run lint && npm run test && npm run e2e",
     "build-prod": "next build",
     "start-prod": "next start",
     "start:local": "IS_LOCAL_PRODUCTION=true next start",
@@ -20,7 +20,7 @@
     "db:reload": "PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} -c 'DROP DATABASE IF EXISTS inspect' && PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} -c 'CREATE DATABASE inspect' && PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} -d inspect < inspect-dump.sql",
     "db:schema": "PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} -d inspect < schema.sql",
     "export": "next export",
-    "sl": "node src/scripts/sqlite-cli.js"
+    "sqlite": "node src/scripts/sqlite-cli.js"
   },
   "jest": {
     "verbose": true,

@@ -1,5 +1,5 @@
 import React from "react";
-import { emojis } from "../syndicates/fieldnotes/constants";
+import { emojis } from "../constants";
 
 interface Props {
   noteId: string;

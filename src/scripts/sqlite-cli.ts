@@ -42,7 +42,7 @@ rl.on("line", async (line) => {
     } else {
       console.log("Query executed successfully.");
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error(`Error: ${err.message}`);
   }
   rl.prompt();

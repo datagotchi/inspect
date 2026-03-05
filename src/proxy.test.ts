@@ -3,7 +3,6 @@
  */
 import { cookies, headers } from "next/headers";
 import { proxy, ANONYMOUS_REGEXES } from "./proxy";
-import { decryptToken } from "./proxy/functions";
 import { NextRequest } from "next/server";
 import { NextURL } from "next/dist/server/web/next-url";
 
@@ -83,7 +82,7 @@ describe("proxy", () => {
     (headers as jest.Mock).mockResolvedValue(
       new Map([["x-access-token", token]]),
     );
-    (decryptToken as jest.Mock).mockReturnValue({ id: 1, name: "Test User" });
+    // (decryptToken as jest.Mock).mockReturnValue({ id: 1, name: "Test User" });
 
     const response = await proxy(req as NextRequest);
     expect(response.headers.get("x-authUser")).toBe(
@@ -99,7 +98,7 @@ describe("proxy", () => {
     (headers as jest.Mock).mockResolvedValue(
       new Map([["x-access-token", token]]),
     );
-    (decryptToken as jest.Mock).mockReturnValue(null);
+    // (decryptToken as jest.Mock).mockReturnValue(null);
 
     const response = await proxy(req as NextRequest);
     expect(response.headers.get("x-authUser")).toBeNull();

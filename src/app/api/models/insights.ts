@@ -12,6 +12,7 @@ export class InsightModel extends Model implements Insight {
   id?: number;
   uid?: string;
   title!: string;
+  description!: string; // FIXME: add to the PR: alter table insights add column description text
   is_public!: boolean;
   user_id!: number;
   created_at?: string;
