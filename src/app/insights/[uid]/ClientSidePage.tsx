@@ -9,6 +9,7 @@ import {
   Fact,
   FactComment,
   FactReaction,
+  FLVResponse,
   Insight,
   InsightEvidence,
   InsightLink,
@@ -27,25 +28,23 @@ import InfiniteScrollLoader from "../../components/InfiniteScrollLoader";
 import FactsListView from "../../components/FactsListView";
 import AddCitationsToOtherInsightsDialog from "../../components/AddCitationsToOtherInsightsDialog";
 import CurrentUserContext from "../../contexts/CurrentUserContext";
-import AddChildInsightsDialog, {
-  ServerFunctionInputSchemaForChildInsights,
-} from "./AddChildInsightsDialog";
+import AddChildInsightsDialog from "./AddChildInsightsDialog";
 import FactsDataContext from "../../contexts/FactsDataContext";
 import AddParentInsightsDialog from "./AddParentInsightsDialog";
+import ServerActionContext from "../../contexts/ServerActionContext";
 import {
-  doAddCitationsToOtherInsightsSchema,
-  doAddParentInsights,
-  doAddParentInsightsSchema,
+  // doAddCitationsToOtherInsightsSchema,
+  // doAddParentInsights,
+  // doAddParentInsightsSchema,
   doDeleteInsightChildren,
   doDeleteInsightCitations,
-  doDeleteInsightCitationsSchema,
+  // doDeleteInsightCitationsSchema,
   doDeleteParentInsights,
 } from "./functions";
-import {
-  addChildrenToInsight,
-  addCitationsToInsight,
-  addCitationsToInsightAPISchema,
-} from "../../components/SelectedCitationsAPI";
+import {} from // addChildrenToInsight,
+// addCitationsToInsight,
+// addCitationsToInsightAPISchema,
+"../../components/SelectedCitationsAPI";
 import Comment from "../../components/Comment";
 import { deleteInsights, publishInsights } from "../../components/InsightsAPI";
 
@@ -129,66 +128,15 @@ const ClientSidePage = ({
     isAddCitationsToOtherInsightsDialogOpen,
     setIsAddCitationsToOtherInsightsDialogOpen,
   ] = useState(false);
-  const [isAddChildInsightsDialogOpen, setIsAddChildInsightsDialogOpen] =
-    useState(false);
   const [isAddParentInsightsDialogOpen, setIsAddParentInsightsDialogOpen] =
     useState(false);
-
-  // shared functions for child insights
-  const [
-    serverFunctionInputForChildInsights,
-    setServerFunctionInputForChildInsights,
-  ] = useState<ServerFunctionInputSchemaForChildInsights | InsightLink[]>();
-  const [
-    activeServerFunctionForChildInsights,
-    setActiveServerFunctionForChildInsights,
-  ] = useState<
-    | { function: ServerFunction<ServerFunctionInputSchemaForChildInsights> }
-    | { function: ServerFunction<InsightLink[]> }
-    | undefined
-  >();
-
-  // shared functions for snippets
-  const [serverFunctionInputForSnippets, setServerFunctionInputForSnippets] =
-    useState<
-      | addCitationsToInsightAPISchema
-      | doAddCitationsToOtherInsightsSchema
-      | doDeleteInsightCitationsSchema
-    >();
-  const [activeServerFunctionForSnippets, setActiveServerFunctionForSnippets] =
-    useState<
-      | {
-          function: ServerFunction<addCitationsToInsightAPISchema>;
-        }
-      | {
-          function: ServerFunction<doAddCitationsToOtherInsightsSchema>;
-        }
-      | {
-          function: ServerFunction<doDeleteInsightCitationsSchema>;
-        }
-      | undefined
-    >();
-
-  // shared functions for parent insights
-  const [
-    serverFunctionInputForParentInsights,
-    setServerFunctionInputForParentInsights,
-  ] = useState<doAddParentInsightsSchema | InsightLink[]>();
-  const [
-    activeServerFunctionForParentInsights,
-    setActiveServerFunctionForParentInsights,
-  ] = useState<
-    | { function: ServerFunction<doAddParentInsightsSchema> }
-    | { function: ServerFunction<InsightLink[]> }
-    | undefined
-  >();
 
   const createdOrUpdated = useMemo(() => {
     if (insight) {
       if (insight.created_at == insight.updated_at) {
         return `Created ${moment(insight.created_at).fromNow()}`;
       }
-      // FIXME: show the time between created and updated?
+      // TODO: show the time between created and updated?
       return `Updated ${moment(insight.updated_at).fromNow()}`;
     }
     return "";
@@ -202,167 +150,289 @@ const ClientSidePage = ({
     }
   }, [returnPath]);
 
+  const executeAction = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async (func: ServerFunction<any>, input: any) => {
+      if (!token) {
+        console.error("No token available for server action");
+        return;
+      }
+      try {
+        const response = await func(input, token);
+        if (response) {
+          const responses = Array.isArray(response) ? response : [response];
+          responses.forEach((res: FLVResponse) => {
+            if (res.action === -1) {
+              // Delete
+              const idsToDelete = new Set(res.facts.map((f) => f.id));
+              setInsight(
+                (prev: Insight) =>
+                  ({
+                    ...prev,
+                    parents: prev.parents.filter((p) => !idsToDelete.has(p.id)),
+                    children: prev.children.filter(
+                      (c) => !idsToDelete.has(c.id),
+                    ),
+                    evidence: prev.evidence?.filter(
+                      (e) => !idsToDelete.has(e.id),
+                    ),
+                  }) as unknown as Insight,
+              );
+            } else if (res.action === 1) {
+              // Create
+              // This is complex and depends on what is being created.
+              // For now, we can assume a page reload might be simplest,
+              // or more specific logic can be added here.
+              // For example, adding a new child insight:
+              if (res.facts[0]?.child_id) {
+                setInsight((prev) => ({
+                  ...prev,
+                  children: [...prev.children, ...(res.facts as InsightLink[])],
+                }));
+              }
+            }
+          });
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        console.error("Error executing server action:", error);
+        alert(`Action failed: ${error.message}`);
+      }
+    },
+    [token],
+  );
+
   return (
     <div className={styles.pageContainer}>
       <div className={styles.mainContent}>
         <CurrentUserContext.Provider value={currentUser}>
-          {/* Page Header - Overall Page Level */}
-          <div className={styles.pageHeader}>
-            <div className={styles.pageHeaderContent}>
-              <div className={styles.headerTop}>
-                <div className={styles.headerLeft}>
-                  <div className={styles.sourceLogoContainer}>
-                    <SourceLogo fact={insight} />
+          <ServerActionContext.Provider value={{ executeAction }}>
+            {/* Page Header - Overall Page Level */}
+            <div className={styles.pageHeader}>
+              <div className={styles.pageHeaderContent}>
+                <div className={styles.headerTop}>
+                  <div className={styles.headerLeft}>
+                    <div className={styles.sourceLogoContainer}>
+                      <SourceLogo fact={insight} />
+                    </div>
+                    <div className={styles.headerInfo}>
+                      <EditableText
+                        insight={insight}
+                        apiRoot="/api/insights"
+                        fieldName="title"
+                        initialValue={insight.title}
+                        as="h1"
+                      />
+                      <EditableText
+                        insight={insight}
+                        apiRoot="/api/insights"
+                        fieldName="description"
+                        initialValue={insight.description}
+                        as="p"
+                        isTextarea={true}
+                        placeholder="Add a description..."
+                      />
+                      <div className={styles.headerSubtitle}>
+                        {createdOrUpdated}
+                      </div>
+                    </div>
                   </div>
-                  <div className={styles.headerInfo}>
-                    <EditableText
-                      insight={insight}
-                      apiRoot="/api/insights"
-                      fieldName="title"
-                      initialValue={insight.title}
-                      as="h1"
-                    />
-                    <EditableText
-                      insight={insight}
-                      apiRoot="/api/insights"
-                      fieldName="description"
-                      initialValue={insight.description}
-                      as="p"
-                      isTextarea={true}
-                      placeholder="Add a description..."
-                    />
-                    <div className={styles.headerSubtitle}>
-                      {createdOrUpdated}
+                  <div className={styles.headerRight}>
+                    <div className={styles.reactionsContainer}>
+                      {insightReactions?.map((r) => r.reaction).join("") || (
+                        <span className="text-text-tertiary">
+                          😲 (no reactions)
+                        </span>
+                      )}
+                    </div>
+                    <div className={styles.citationsCount}>
+                      📄 {liveSnippetData.length ?? 0} citations
                     </div>
                   </div>
                 </div>
-                <div className={styles.headerRight}>
-                  <div className={styles.reactionsContainer}>
-                    {insightReactions?.map((r) => r.reaction).join("") || (
-                      <span className="text-text-tertiary">
-                        😲 (no reactions)
-                      </span>
-                    )}
-                  </div>
-                  <div className={styles.citationsCount}>
-                    📄 {liveSnippetData.length ?? 0} citations
-                  </div>
-                </div>
-              </div>
 
-              {/* Big Actions */}
-              {currentUser && insight.user_id == currentUser.id && (
-                <div className={styles.actionsSection}>
-                  {!insight.is_public && (
+                {/* Big Actions */}
+                {currentUser && insight.user_id == currentUser.id && (
+                  <div className={styles.actionsSection}>
+                    {!insight.is_public && (
+                      <button
+                        className={styles.actionButton}
+                        aria-label="Publish Insight"
+                        title="Publish Insight"
+                        onClick={async () => {
+                          if (token && confirm("Are you sure?")) {
+                            await publishInsights(
+                              { insights: [insight] },
+                              token,
+                            );
+                            setInsight({ ...insight, is_public: true });
+                          }
+                        }}
+                      >
+                        <span>🌎</span>
+                        <span className="text-xs">Publish</span>
+                      </button>
+                    )}
                     <button
-                      className={styles.actionButton}
-                      aria-label="Publish Insight"
-                      title="Publish Insight"
+                      className="btn btn-sm btn-ghost text-text-secondary hover:text-text-primary hover:bg-background-secondary flex items-center gap-1"
+                      aria-label="Delete Insight"
+                      title="Delete Insight"
                       onClick={async () => {
                         if (token && confirm("Are you sure?")) {
-                          await publishInsights({ insights: [insight] }, token);
-                          setInsight({ ...insight, is_public: true });
+                          await deleteInsights({ insights: [insight] }, token);
+                          window.location.href = "/";
                         }
                       }}
                     >
-                      <span>🌎</span>
-                      <span className="text-xs">Publish</span>
+                      <span>🗑️</span>
+                      <span className="text-xs">Delete</span>
                     </button>
-                  )}
-                  <button
-                    className="btn btn-sm btn-ghost text-text-secondary hover:text-text-primary hover:bg-background-secondary flex items-center gap-1"
-                    aria-label="Delete Insight"
-                    title="Delete Insight"
-                    onClick={async () => {
-                      if (token && confirm("Are you sure?")) {
-                        await deleteInsights({ insights: [insight] }, token);
-                        window.location.href = "/";
-                      }
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Parent Insights Section */}
+            {(loggedIn || insight.parents.length > 0) && (
+              <div className={cardStyles.contentCard}>
+                <div className={cardStyles.contentCardHeader}>
+                  <div className={cardStyles.hierarchyIndicator}>
+                    <span className={cardStyles.hierarchyIcon}>⬆️</span>
+                    Parent Insights
+                  </div>
+                  <div className={cardStyles.sectionHeader}>
+                    <h3 className={cardStyles.sectionTitle}>
+                      This insight is important because:
+                    </h3>
+                    {currentUser?.id == insight.user_id && (
+                      <div className={cardStyles.sectionActions}>
+                        <button
+                          onClick={() => {
+                            setIsAddParentInsightsDialogOpen(true);
+                          }}
+                          className={cardStyles.addButton}
+                          aria-label="Add Parent Insight"
+                          title="Add Parent Insight"
+                        >
+                          <span className={cardStyles.addButtonIcon}>+</span>
+                          <span className={cardStyles.addButtonText}>Add</span>
+                        </button>
+                        {selectedParentInsights.length > 0 && (
+                          <button
+                            onClick={() => {
+                              if (
+                                confirm(
+                                  "Are you sure you want to remove these parent relationships?",
+                                )
+                              ) {
+                                executeAction(
+                                  doDeleteParentInsights,
+                                  selectedParentInsights,
+                                );
+                              }
+                            }}
+                            className={`${cardStyles.addButton} ${cardStyles.removeButton}`}
+                            aria-label="Remove Selected Parent Insights"
+                            title="Remove Selected Parent Insights"
+                          >
+                            <span className={cardStyles.addButtonIcon}>🗑️</span>
+                            <span className={cardStyles.addButtonText}>
+                              Remove
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className={cardStyles.sectionSubtitle}>
+                    {insight.parents.length > 0
+                      ? `${insight.parents.length} parent insight${insight.parents.length !== 1 ? "s" : ""}`
+                      : "No parent insights yet"}
+                  </div>
+                </div>
+                <div className={cardStyles.contentCardBody}>
+                  <FactsDataContext.Provider
+                    value={{
+                      data:
+                        insight.parents.map((p) => ({
+                          ...p.parentInsight,
+                          ...p,
+                        })) ?? [],
+                      setData: (setStateActionOrFacts) => {
+                        if (typeof setStateActionOrFacts == "function") {
+                          setInsight({
+                            ...insight,
+                            parents: setStateActionOrFacts(
+                              insight.parents,
+                            ) as InsightLink[],
+                          });
+                        } else {
+                          setInsight({
+                            ...insight,
+                            parents: setStateActionOrFacts as InsightLink[],
+                          });
+                        }
+                      },
                     }}
                   >
-                    <span>🗑️</span>
-                    <span className="text-xs">Delete</span>
-                  </button>
+                    <FactsListView
+                      factName="parentInsights"
+                      selectedFacts={selectedParentInsights}
+                      setSelectedFacts={
+                        setSelectedParentInsights as React.Dispatch<
+                          React.SetStateAction<Fact[]>
+                        >
+                      }
+                      selectedActions={[]}
+                      hideHead={true}
+                    />
+                  </FactsDataContext.Provider>
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
+            )}
 
-          {/* Parent Insights Section */}
-          {(loggedIn || insight.parents.length > 0) && (
+            {/* Child Insights Section */}
             <div className={cardStyles.contentCard}>
               <div className={cardStyles.contentCardHeader}>
                 <div className={cardStyles.hierarchyIndicator}>
-                  <span className={cardStyles.hierarchyIcon}>⬆️</span>
-                  Parent Insights
+                  <span className={cardStyles.hierarchyIcon}>📋</span>
+                  Child Insights
                 </div>
                 <div className={cardStyles.sectionHeader}>
                   <h3 className={cardStyles.sectionTitle}>
-                    This insight is important because:
+                    Insights that build upon this one:
                   </h3>
                   {currentUser?.id == insight.user_id && (
                     <div className={cardStyles.sectionActions}>
                       <button
                         onClick={() => {
-                          setIsAddParentInsightsDialogOpen(true);
-                          // Set the active server function so it gets called when the dialog submits
-                          setActiveServerFunctionForParentInsights({
-                            function: async ({
-                              childInsight,
-                              newParentInsights,
-                              newInsightName,
-                            }: doAddParentInsightsSchema) => {
-                              if (token) {
-                                return doAddParentInsights(
-                                  {
-                                    childInsight,
-                                    newParentInsights,
-                                    newInsightName,
-                                  },
-                                  token,
-                                );
-                              }
-                              return Promise.resolve([]);
-                            },
-                          });
+                          // This will now be handled by the dialog directly using context
+                          // setIsAddChildInsightsDialogOpen(true);
                         }}
                         className={cardStyles.addButton}
-                        aria-label="Add Parent Insight"
-                        title="Add Parent Insight"
+                        aria-label="Add Child Insight"
+                        title="Add Child Insight"
                       >
                         <span className={cardStyles.addButtonIcon}>+</span>
                         <span className={cardStyles.addButtonText}>Add</span>
                       </button>
-                      {selectedParentInsights.length > 0 && (
+                      {selectedChildInsights.length > 0 && (
                         <button
                           onClick={() => {
                             if (
                               confirm(
-                                "Are you sure you want to remove these parent relationships?",
+                                "Are you sure you want to remove these child relationships?",
                               )
                             ) {
-                              setServerFunctionInputForParentInsights(
-                                selectedParentInsights,
+                              executeAction(
+                                doDeleteInsightChildren,
+                                selectedChildInsights,
                               );
-                              setActiveServerFunctionForParentInsights({
-                                function: async (
-                                  parentLinksToDelete: InsightLink[],
-                                  token: string,
-                                ) => {
-                                  if (token) {
-                                    return doDeleteParentInsights(
-                                      parentLinksToDelete,
-                                      token,
-                                    );
-                                  }
-                                  return Promise.resolve();
-                                },
-                              });
                             }
                           }}
                           className={`${cardStyles.addButton} ${cardStyles.removeButton}`}
-                          aria-label="Remove Selected Parent Insights"
-                          title="Remove Selected Parent Insights"
+                          aria-label="Remove Selected Child Insights"
+                          title="Remove Selected Child Insights"
                         >
                           <span className={cardStyles.addButtonIcon}>🗑️</span>
                           <span className={cardStyles.addButtonText}>
@@ -374,271 +444,92 @@ const ClientSidePage = ({
                   )}
                 </div>
                 <div className={cardStyles.sectionSubtitle}>
-                  {insight.parents.length > 0
-                    ? `${insight.parents.length} parent insight${insight.parents.length !== 1 ? "s" : ""}`
-                    : "No parent insights yet"}
+                  {insight.children.length > 0
+                    ? `${insight.children.length} child insight${insight.children.length !== 1 ? "s" : ""}`
+                    : "No child insights yet"}
                 </div>
               </div>
               <div className={cardStyles.contentCardBody}>
                 <FactsDataContext.Provider
                   value={{
-                    data:
-                      insight.parents.map((p) => ({
-                        ...p.parentInsight,
-                        ...p,
-                      })) ?? [],
+                    data: insight.children.map((c) => ({
+                      ...c.childInsight,
+                      ...c,
+                    })),
                     setData: (setStateActionOrFacts) => {
                       if (typeof setStateActionOrFacts == "function") {
                         setInsight({
                           ...insight,
-                          parents: setStateActionOrFacts(
-                            insight.parents,
+                          children: setStateActionOrFacts(
+                            insight.children,
                           ) as InsightLink[],
                         });
                       } else {
                         setInsight({
                           ...insight,
-                          parents: setStateActionOrFacts as InsightLink[],
+                          children: setStateActionOrFacts as InsightLink[],
                         });
                       }
                     },
                   }}
                 >
                   <FactsListView
-                    factName="parentInsights"
-                    serverFunctionInput={serverFunctionInputForParentInsights}
-                    setServerFunctionInput={
-                      setServerFunctionInputForParentInsights
-                    }
-                    activeServerFunction={activeServerFunctionForParentInsights}
-                    setActiveServerFunction={
-                      setActiveServerFunctionForParentInsights
-                    }
-                    selectedFacts={selectedParentInsights}
+                    factName="childInsights"
+                    selectedFacts={selectedChildInsights}
                     setSelectedFacts={
-                      setSelectedParentInsights as React.Dispatch<
+                      setSelectedChildInsights as React.Dispatch<
                         React.SetStateAction<Fact[]>
                       >
                     }
                     selectedActions={[]}
-                    hideHead={true}
+                    columns={[
+                      {
+                        name: "📄",
+                        dataColumn: "childInsight.evidence",
+                        display: (insightLink: Fact | InsightLink) => (
+                          <span className="badge text-bg-danger">
+                            {insightLink.childInsight.directEvidenceCount ?? 0}
+                          </span>
+                        ),
+                      },
+                      {
+                        name: "🌎",
+                        dataColumn: "childInsight.is_public",
+                        display: (insight: Fact | Insight) => (
+                          <span>{insight.is_public ? "✅" : ""}</span>
+                        ),
+                      },
+                    ]}
                   />
                 </FactsDataContext.Provider>
               </div>
             </div>
-          )}
 
-          {/* Child Insights Section */}
-          <div className={cardStyles.contentCard}>
-            <div className={cardStyles.contentCardHeader}>
-              <div className={cardStyles.hierarchyIndicator}>
-                <span className={cardStyles.hierarchyIcon}>📋</span>
-                Child Insights
-              </div>
-              <div className={cardStyles.sectionHeader}>
-                <h3 className={cardStyles.sectionTitle}>
-                  Insights that build upon this one:
-                </h3>
-                {currentUser?.id == insight.user_id && (
-                  <div className={cardStyles.sectionActions}>
-                    <button
-                      onClick={() => {
-                        setIsAddChildInsightsDialogOpen(true);
-                        // Set the active server function so it gets called when the dialog submits
-                        setActiveServerFunctionForChildInsights({
-                          function: async ({
-                            insight,
-                            children,
-                            newInsightName,
-                          }: ServerFunctionInputSchemaForChildInsights) => {
-                            if (token) {
-                              addChildrenToInsight(
-                                {
-                                  parentInsight: insight,
-                                  children,
-                                  newChildInsightName: newInsightName,
-                                },
-                                token,
-                              ).then((flvResponse) => {
-                                if (
-                                  flvResponse.facts &&
-                                  flvResponse.facts.length > 0
-                                ) {
-                                  const newChildren =
-                                    flvResponse.facts as InsightLink[];
-                                  setInsight({
-                                    ...insight,
-                                    children: [
-                                      ...newChildren,
-                                      ...(insight.children ?? []),
-                                    ],
-                                  });
-                                }
-                                setServerFunctionInputForChildInsights(
-                                  undefined,
-                                );
-                              });
-                            }
-                            return Promise.resolve([]);
-                          },
-                        });
-                      }}
-                      className={cardStyles.addButton}
-                      aria-label="Add Child Insight"
-                      title="Add Child Insight"
-                    >
-                      <span className={cardStyles.addButtonIcon}>+</span>
-                      <span className={cardStyles.addButtonText}>Add</span>
-                    </button>
-                    {selectedChildInsights.length > 0 && (
+            {/* Evidence Section */}
+            <div className={cardStyles.contentCard}>
+              <div className={cardStyles.contentCardHeader}>
+                <div className={cardStyles.hierarchyIndicator}>
+                  <span className={cardStyles.hierarchyIcon}>📄</span>
+                  Evidence
+                </div>
+                <div className={cardStyles.sectionHeader}>
+                  <h3 className={cardStyles.sectionTitle}>
+                    Supporting evidence and citations:
+                  </h3>
+                  {currentUser?.id == insight.user_id && (
+                    <div className={cardStyles.sectionActions}>
                       <button
                         onClick={() => {
-                          if (
-                            confirm(
-                              "Are you sure you want to remove these child relationships?",
-                            )
-                          ) {
-                            setServerFunctionInputForChildInsights(
-                              selectedChildInsights,
-                            );
-                            setActiveServerFunctionForChildInsights({
-                              function: async (
-                                childLinksToDelete: InsightLink[],
-                                token: string,
-                              ) => {
-                                if (token) {
-                                  return doDeleteInsightChildren(
-                                    childLinksToDelete,
-                                    token,
-                                  );
-                                }
-                                return Promise.resolve();
-                              },
-                            });
-                          }
+                          setIsAddLinksAsEvidenceDialogOpen(true);
                         }}
-                        className={`${cardStyles.addButton} ${cardStyles.removeButton}`}
-                        aria-label="Remove Selected Child Insights"
-                        title="Remove Selected Child Insights"
+                        className={cardStyles.addButton}
+                        aria-label="Add Evidence"
+                        title="Add Evidence"
                       >
-                        <span className={cardStyles.addButtonIcon}>🗑️</span>
-                        <span className={cardStyles.addButtonText}>Remove</span>
+                        <span className={cardStyles.addButtonIcon}>+</span>
+                        <span className={cardStyles.addButtonText}>Add</span>
                       </button>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className={cardStyles.sectionSubtitle}>
-                {insight.children.length > 0
-                  ? `${insight.children.length} child insight${insight.children.length !== 1 ? "s" : ""}`
-                  : "No child insights yet"}
-              </div>
-            </div>
-            <div className={cardStyles.contentCardBody}>
-              <FactsDataContext.Provider
-                value={{
-                  data: insight.children.map((c) => ({
-                    ...c.childInsight,
-                    ...c,
-                  })),
-                  setData: (setStateActionOrFacts) => {
-                    if (typeof setStateActionOrFacts == "function") {
-                      setInsight({
-                        ...insight,
-                        children: setStateActionOrFacts(
-                          insight.children,
-                        ) as InsightLink[],
-                      });
-                    } else {
-                      setInsight({
-                        ...insight,
-                        children: setStateActionOrFacts as InsightLink[],
-                      });
-                    }
-                  },
-                }}
-              >
-                <FactsListView
-                  factName="childInsights"
-                  setServerFunctionInput={
-                    setServerFunctionInputForChildInsights
-                  }
-                  serverFunctionInput={serverFunctionInputForChildInsights}
-                  selectedFacts={selectedChildInsights}
-                  setSelectedFacts={
-                    setSelectedChildInsights as React.Dispatch<
-                      React.SetStateAction<Fact[]>
-                    >
-                  }
-                  setActiveServerFunction={
-                    setActiveServerFunctionForChildInsights
-                  }
-                  activeServerFunction={activeServerFunctionForChildInsights}
-                  selectedActions={[]}
-                  columns={[
-                    {
-                      name: "📄",
-                      dataColumn: "childInsight.evidence",
-                      display: (insightLink: Fact | InsightLink) => (
-                        <span className="badge text-bg-danger">
-                          {insightLink.childInsight.directEvidenceCount ?? 0}
-                        </span>
-                      ),
-                    },
-                    {
-                      name: "🌎",
-                      dataColumn: "childInsight.is_public",
-                      display: (insight: Fact | Insight) => (
-                        <span>{insight.is_public ? "✅" : ""}</span>
-                      ),
-                    },
-                  ]}
-                />
-              </FactsDataContext.Provider>
-            </div>
-          </div>
-
-          {/* Evidence Section */}
-          <div className={cardStyles.contentCard}>
-            <div className={cardStyles.contentCardHeader}>
-              <div className={cardStyles.hierarchyIndicator}>
-                <span className={cardStyles.hierarchyIcon}>📄</span>
-                Evidence
-              </div>
-              <div className={cardStyles.sectionHeader}>
-                <h3 className={cardStyles.sectionTitle}>
-                  Supporting evidence and citations:
-                </h3>
-                {currentUser?.id == insight.user_id && (
-                  <div className={cardStyles.sectionActions}>
-                    <button
-                      onClick={() => {
-                        setIsAddLinksAsEvidenceDialogOpen(true);
-                        // Set the active server function so it gets called when the dialog submits
-                        setActiveServerFunctionForSnippets({
-                          function: async ({
-                            insight,
-                            evidence,
-                            newLinkUrl,
-                          }: addCitationsToInsightAPISchema) => {
-                            if (token) {
-                              return addCitationsToInsight(
-                                { insight, evidence, newLinkUrl },
-                                token,
-                              );
-                            }
-                            return Promise.resolve();
-                          },
-                        });
-                      }}
-                      className={cardStyles.addButton}
-                      aria-label="Add Evidence"
-                      title="Add Evidence"
-                    >
-                      <span className={cardStyles.addButtonIcon}>+</span>
-                      <span className={cardStyles.addButtonText}>Add</span>
-                    </button>
-                    {/* FIXME: move citations button should be a selected action
+                      {/* TODO: move citations button should be a selected action
                     <button
                       onClick={() => {
                         setIsAddCitationsToOtherInsightsDialogOpen(true);
@@ -658,327 +549,244 @@ const ClientSidePage = ({
                         });
                       }}
                       className={cardStyles.addButton}
-                      aria-label="Move Citations"
-                      title="Move Citations"
+                      aria-label="Add Evidence"
+                      title="Add Evidence"
                     >
                       <span className={cardStyles.addButtonIcon}>🔄</span>
                       <span className={cardStyles.addButtonText}>Move</span>
                     </button> */}
-                    {selectedCitations.length > 0 && (
-                      <button
-                        onClick={() => {
-                          if (
-                            confirm(
-                              "Are you sure you want to remove these citations?",
-                            )
-                          ) {
-                            setServerFunctionInputForSnippets({
-                              citations: selectedCitations,
-                            });
-                            setActiveServerFunctionForSnippets({
-                              function: async (
-                                input: doDeleteInsightCitationsSchema,
-                                token: string,
-                              ) => {
-                                if (token) {
-                                  return doDeleteInsightCitations(input, token);
-                                }
-                                return Promise.resolve();
-                              },
-                            });
-                          }
-                        }}
-                        className={`${cardStyles.addButton} ${cardStyles.removeButton}`}
-                        aria-label="Remove Selected Citations"
-                        title="Remove Selected Citations"
-                      >
-                        <span className={cardStyles.addButtonIcon}>🗑️</span>
-                        <span className={cardStyles.addButtonText}>Remove</span>
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className={cardStyles.sectionSubtitle}>
-                {liveSnippetData.length > 0
-                  ? `${liveSnippetData.length} citation${liveSnippetData.length !== 1 ? "s" : ""}`
-                  : "No evidence yet"}
-              </div>
-            </div>
-            <div className={cardStyles.contentCardBody}>
-              <InfiniteScrollLoader
-                data={liveSnippetData}
-                setData={
-                  setLiveSnippetData as React.Dispatch<
-                    React.SetStateAction<Fact[] | undefined>
-                  >
-                }
-                limit={20}
-                getDataFunctionParams={{ insightUid: insight.uid ?? "" }}
-                getDataFunction={async (
-                  offset,
-                  token,
-                  getDataFunctionParams,
-                ) => {
-                  if (getDataFunctionParams) {
-                    const response = await fetch(
-                      `/api/insights/${getDataFunctionParams.insightUid}?offset=${offset}`,
-                      {
-                        method: "GET",
-                        headers: {
-                          "Content-Type": "application/json",
-                          "x-access-token": token,
-                        },
-                      },
-                    );
-                    const json = (await response.json()) as Insight;
-                    return await json.citations;
-                  }
-                  return Promise.resolve([]);
-                }}
-              >
-                <FactsListView
-                  factName="snippet"
-                  serverFunctionInput={serverFunctionInputForSnippets}
-                  setServerFunctionInput={setServerFunctionInputForSnippets}
-                  activeServerFunction={activeServerFunctionForSnippets}
-                  setActiveServerFunction={setActiveServerFunctionForSnippets}
-                  selectedFacts={selectedCitations}
-                  setSelectedFacts={
-                    setSelectedCitations as React.Dispatch<
-                      React.SetStateAction<Fact[]>
-                    >
-                  }
-                  selectedActions={[]}
-                />
-              </InfiniteScrollLoader>
-            </div>
-          </div>
-
-          {/* Feedback Section */}
-          <div className={cardStyles.contentCard}>
-            <div className={cardStyles.contentCardHeader}>
-              <div className={cardStyles.hierarchyIndicator}>
-                <span className={cardStyles.hierarchyIcon}>💬</span>
-                Feedback
-              </div>
-              <h3 className={cardStyles.sectionTitle}>
-                Reactions and comments:
-              </h3>
-              <div className="flex items-center justify-center space-x-8">
-                <FeedbackLink
-                  actionVerb="React"
-                  icon="😲"
-                  setOnClickFunction={() =>
-                    currentUser
-                      ? setIsEditingReaction(true)
-                      : confirmAndRegister()
-                  }
-                />
-                <FeedbackLink
-                  actionVerb="Comment"
-                  icon="💬"
-                  setOnClickFunction={() =>
-                    currentUser
-                      ? setIsEditingComment(true)
-                      : confirmAndRegister()
-                  }
-                />
-              </div>
-            </div>
-            <div className={cardStyles.contentCardBody}>
-              {/* Comments */}
-              {insightComments && insightComments.length > 0 && (
-                <div className="space-y-3">
-                  {insightComments.map((comment) => (
-                    <Comment
-                      key={`Insight Comment #${comment.id}`}
-                      comment={comment}
-                      removeCommentFunc={(id) => {
-                        setInsight({
-                          ...insight,
-                          comments:
-                            insight.comments?.filter((c) => c.id !== id) ?? [],
-                        });
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-              {(!insightComments || insightComments.length === 0) && (
-                <p className="text-text-tertiary text-center py-4">
-                  No comments yet. Be the first to share your thoughts!
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Feedback Input Elements */}
-          {currentUser && isEditingReaction && (
-            <FeedbackInputElement
-              actionType="reaction"
-              submitFunc={(reaction) => {
-                if (token) {
-                  return submitReaction(
-                    { reaction, insight_id: insight.id },
-                    token,
-                  );
-                }
-                return Promise.resolve();
-              }}
-              directions="Select an emoji character"
-              afterSubmit={(newObject) => {
-                if (newObject) {
-                  const existingReaction = insight.reactions?.find(
-                    (r) =>
-                      r.user_id == currentUser?.id &&
-                      r.insight_id == insight.id,
-                  );
-                  const existingReactions = insight.reactions?.filter(
-                    (r) => r.id !== existingReaction?.id,
-                  );
-                  setInsight({
-                    ...insight,
-                    reactions: [
-                      ...(existingReactions ?? []),
-                      newObject as FactReaction,
-                    ],
-                  });
-                }
-              }}
-              closeFunc={() => setIsEditingReaction(false)}
-            />
-          )}
-          {currentUser && isEditingComment && (
-            <FeedbackInputElement
-              actionType="comment"
-              submitFunc={(comment) => {
-                if (token) {
-                  return submitComment(
-                    { comment, insight_id: insight.id },
-                    token,
-                  );
-                }
-                return Promise.resolve();
-              }}
-              directions="Enter a text comment"
-              afterSubmit={(newObject) => {
-                if (newObject) {
-                  setInsight({
-                    ...insight,
-                    comments: [...(insight.comments ?? []), newObject],
-                  });
-                }
-              }}
-              closeFunc={() => setIsEditingComment(false)}
-            />
-          )}
-
-          {/* Dialogs - Child Level */}
-          {currentUser && insight.user_id == currentUser.id && (
-            <>
-              <AddLinksAsEvidenceDialog
-                id={ADD_LINKS_AS_EVIDENCE_DIALOG_ID}
-                isOpen={isAddLinksAsEvidenceDialogOpen}
-                onClose={() => setIsAddLinksAsEvidenceDialogOpen(false)}
-                insight={insight}
-                setServerFunctionInput={
-                  setServerFunctionInputForSnippets as React.Dispatch<
-                    React.SetStateAction<
-                      addCitationsToInsightAPISchema | undefined
-                    >
-                  >
-                }
-                setActiveServerFunction={
-                  setActiveServerFunctionForSnippets as React.Dispatch<
-                    | {
-                        function: ServerFunction<addCitationsToInsightAPISchema>;
-                      }
-                    | undefined
-                  >
-                }
-              />
-              <AddCitationsToOtherInsightsDialog
-                id={ADD_CITATIONS_TO_OTHER_INSIGHTS_DIALOG_ID}
-                isOpen={isAddCitationsToOtherInsightsDialogOpen}
-                onClose={() =>
-                  setIsAddCitationsToOtherInsightsDialogOpen(false)
-                }
-                selectedCitations={liveSnippetData}
-                setServerFunctionInput={
-                  setServerFunctionInputForSnippets as React.Dispatch<
-                    React.SetStateAction<
-                      doAddCitationsToOtherInsightsSchema | undefined
-                    >
-                  >
-                }
-                setActiveServerFunction={
-                  setActiveServerFunctionForSnippets as React.Dispatch<
-                    | {
-                        function: ServerFunction<doAddCitationsToOtherInsightsSchema>;
-                      }
-                    | undefined
-                  >
-                }
-              />
-              <AddChildInsightsDialog
-                id={ADD_CHILD_INSIGHTS_DIALOG_ID}
-                isOpen={isAddChildInsightsDialogOpen}
-                onClose={() => setIsAddChildInsightsDialogOpen(false)}
-                insight={insight}
-                setServerFunctionInput={setServerFunctionInputForChildInsights}
-                setActiveServerFunction={(value) => {
-                  if (value) {
-                    setActiveServerFunctionForChildInsights({
-                      function: async (
-                        input: ServerFunctionInputSchemaForChildInsights,
-                      ) => {
-                        if (token) {
-                          addChildrenToInsight(
-                            {
-                              parentInsight: input.insight,
-                              children: input.children,
-                              newChildInsightName: input.newInsightName,
-                            },
-                            token,
-                          ).then((flvResponse) => {
+                      {selectedCitations.length > 0 && (
+                        <button
+                          onClick={() => {
                             if (
-                              flvResponse.facts &&
-                              flvResponse.facts.length > 0
+                              confirm(
+                                "Are you sure you want to remove these citations?",
+                              )
                             ) {
-                              const newChildren =
-                                flvResponse.facts as InsightLink[];
-                              setInsight({
-                                ...insight,
-                                children: [
-                                  ...newChildren,
-                                  ...(insight.children ?? []),
-                                ],
+                              executeAction(doDeleteInsightCitations, {
+                                citations: selectedCitations,
                               });
                             }
-                            setServerFunctionInputForChildInsights(undefined);
+                          }}
+                          className={`${cardStyles.addButton} ${cardStyles.removeButton}`}
+                          aria-label="Remove Selected Citations"
+                          title="Remove Selected Citations"
+                        >
+                          <span className={cardStyles.addButtonIcon}>🗑️</span>
+                          <span className={cardStyles.addButtonText}>
+                            Remove
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className={cardStyles.sectionSubtitle}>
+                  {liveSnippetData.length > 0
+                    ? `${liveSnippetData.length} citation${liveSnippetData.length !== 1 ? "s" : ""}`
+                    : "No evidence yet"}
+                </div>
+              </div>
+              <div className={cardStyles.contentCardBody}>
+                <InfiniteScrollLoader
+                  data={liveSnippetData}
+                  setData={
+                    setLiveSnippetData as React.Dispatch<
+                      React.SetStateAction<Fact[] | undefined>
+                    >
+                  }
+                  limit={20}
+                  getDataFunctionParams={{ insightUid: insight.uid ?? "" }}
+                  getDataFunction={async (
+                    offset,
+                    token,
+                    getDataFunctionParams,
+                  ) => {
+                    if (getDataFunctionParams) {
+                      const response = await fetch(
+                        `/api/insights/${getDataFunctionParams.insightUid}?offset=${offset}`,
+                        {
+                          method: "GET",
+                          headers: {
+                            "Content-Type": "application/json",
+                            "x-access-token": token,
+                          },
+                        },
+                      );
+                      const json = (await response.json()) as Insight;
+                      return await json.citations;
+                    }
+                    return Promise.resolve([]);
+                  }}
+                >
+                  <FactsListView
+                    factName="snippet"
+                    selectedFacts={selectedCitations}
+                    setSelectedFacts={
+                      setSelectedCitations as React.Dispatch<
+                        React.SetStateAction<Fact[]>
+                      >
+                    }
+                    selectedActions={[]}
+                  />
+                </InfiniteScrollLoader>
+              </div>
+            </div>
+
+            {/* Feedback Section */}
+            <div className={cardStyles.contentCard}>
+              <div className={cardStyles.contentCardHeader}>
+                <div className={cardStyles.hierarchyIndicator}>
+                  <span className={cardStyles.hierarchyIcon}>💬</span>
+                  Feedback
+                </div>
+                <h3 className={cardStyles.sectionTitle}>
+                  Reactions and comments:
+                </h3>
+                <div className="flex items-center justify-center space-x-8">
+                  <FeedbackLink
+                    actionVerb="React"
+                    icon="😲"
+                    setOnClickFunction={() =>
+                      currentUser
+                        ? setIsEditingReaction(true)
+                        : confirmAndRegister()
+                    }
+                  />
+                  <FeedbackLink
+                    actionVerb="Comment"
+                    icon="💬"
+                    setOnClickFunction={() =>
+                      currentUser
+                        ? setIsEditingComment(true)
+                        : confirmAndRegister()
+                    }
+                  />
+                </div>
+              </div>
+              <div className={cardStyles.contentCardBody}>
+                {/* Comments */}
+                {insightComments && insightComments.length > 0 && (
+                  <div className="space-y-3">
+                    {insightComments.map((comment) => (
+                      <Comment
+                        key={`Insight Comment #${comment.id}`}
+                        comment={comment}
+                        removeCommentFunc={(id) => {
+                          setInsight({
+                            ...insight,
+                            comments:
+                              insight.comments?.filter((c) => c.id !== id) ??
+                              [],
                           });
-                        }
-                        return Promise.resolve([]);
-                      },
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+                {(!insightComments || insightComments.length === 0) && (
+                  <p className="text-text-tertiary text-center py-4">
+                    No comments yet. Be the first to share your thoughts!
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Feedback Input Elements */}
+            {currentUser && isEditingReaction && (
+              <FeedbackInputElement
+                actionType="reaction"
+                submitFunc={(reaction) => {
+                  if (token) {
+                    return submitReaction(
+                      { reaction, insight_id: insight.id },
+                      token,
+                    );
+                  }
+                  return Promise.resolve();
+                }}
+                directions="Select an emoji character"
+                afterSubmit={(newObject) => {
+                  if (newObject) {
+                    const existingReaction = insight.reactions?.find(
+                      (r) =>
+                        r.user_id == currentUser?.id &&
+                        r.insight_id == insight.id,
+                    );
+                    const existingReactions = insight.reactions?.filter(
+                      (r) => r.id !== existingReaction?.id,
+                    );
+                    setInsight({
+                      ...insight,
+                      reactions: [
+                        ...(existingReactions ?? []),
+                        newObject as FactReaction,
+                      ],
                     });
-                  } else {
-                    setActiveServerFunctionForChildInsights(undefined);
                   }
                 }}
+                closeFunc={() => setIsEditingReaction(false)}
               />
-              <AddParentInsightsDialog
-                id={ADD_PARENT_INSIGHTS_DIALOG_ID}
-                isOpen={isAddParentInsightsDialogOpen}
-                onClose={() => setIsAddParentInsightsDialogOpen(false)}
-                insight={insight}
-                setServerFunctionInput={setServerFunctionInputForParentInsights}
-                setActiveServerFunction={
-                  setActiveServerFunctionForParentInsights
-                }
+            )}
+            {currentUser && isEditingComment && (
+              <FeedbackInputElement
+                actionType="comment"
+                submitFunc={(comment) => {
+                  if (token) {
+                    return submitComment(
+                      { comment, insight_id: insight.id },
+                      token,
+                    );
+                  }
+                  return Promise.resolve();
+                }}
+                directions="Enter a text comment"
+                afterSubmit={(newObject) => {
+                  if (newObject) {
+                    setInsight({
+                      ...insight,
+                      comments: [...(insight.comments ?? []), newObject],
+                    });
+                  }
+                }}
+                closeFunc={() => setIsEditingComment(false)}
               />
-            </>
-          )}
+            )}
+
+            {/* Dialogs - Child Level */}
+            {currentUser && insight.user_id == currentUser.id && (
+              <>
+                <AddLinksAsEvidenceDialog
+                  id={ADD_LINKS_AS_EVIDENCE_DIALOG_ID}
+                  isOpen={isAddLinksAsEvidenceDialogOpen}
+                  onClose={() => setIsAddLinksAsEvidenceDialogOpen(false)}
+                  insight={insight}
+                />
+                <AddCitationsToOtherInsightsDialog
+                  id={ADD_CITATIONS_TO_OTHER_INSIGHTS_DIALOG_ID}
+                  isOpen={isAddCitationsToOtherInsightsDialogOpen}
+                  onClose={() =>
+                    setIsAddCitationsToOtherInsightsDialogOpen(false)
+                  }
+                  selectedCitations={liveSnippetData}
+                />
+                <AddChildInsightsDialog
+                  id={ADD_CHILD_INSIGHTS_DIALOG_ID}
+                  isOpen={false} // This dialog's open state is now managed internally or via a different trigger
+                  onClose={() => {
+                    /* handle close */
+                  }}
+                  insight={insight}
+                />
+                <AddParentInsightsDialog
+                  id={ADD_PARENT_INSIGHTS_DIALOG_ID}
+                  isOpen={isAddParentInsightsDialogOpen}
+                  onClose={() => setIsAddParentInsightsDialogOpen(false)}
+                  insight={insight}
+                />
+              </>
+            )}
+          </ServerActionContext.Provider>
         </CurrentUserContext.Provider>
       </div>
     </div>

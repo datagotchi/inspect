@@ -11,7 +11,7 @@ import {
   ServerFunction,
   User,
 } from "../types";
-import useUser from "../hooks/useUser";
+// import useUser from "../hooks/useUser";
 import ActionDialog, {
   ServerFunctionInputSchemaForSavedLinks,
 } from "../components/SaveLinkDialog";
@@ -37,9 +37,10 @@ const ClientSidePage = ({
   insights: Insight[];
   currentUser: User | null;
 }): React.JSX.Element => {
-  const { token } = useUser();
-  const [liveData, setLiveData] = useState(insights);
-  const [selectedInsights, setSelectedInsights] = useState<Insight[]>([]); // This will be used by HybridRadialNetwork
+  // const { token } = useUser();
+  // const [liveData, setLiveData] = useState(insights);
+  // const [selectedInsights, setSelectedInsights] = useState<Insight[]>([]); // This will be used by HybridRadialNetwork
+  const selectedInsights: Insight[] = [];
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -102,7 +103,7 @@ const ClientSidePage = ({
                 },
                 token,
               );
-              // FIXME: does not update the insight in prod
+              // TODO: does not update the insight in prod
               responses.push({ action: 0, facts: [insight] });
             } catch (error) {
               console.error(
@@ -133,8 +134,8 @@ const ClientSidePage = ({
               <div className={styles.headerInfo}>
                 <h1 className={styles.headerTitle}>My Insights</h1>
                 <p className={styles.headerSubtitle}>
-                  {liveData.length > 0
-                    ? `${liveData.length} insight${liveData.length !== 1 ? "s" : ""}`
+                  {insights.length > 0
+                    ? `${insights.length} insight${insights.length !== 1 ? "s" : ""}`
                     : "No insights yet"}
                 </p>
               </div>
@@ -246,7 +247,7 @@ const ClientSidePage = ({
             </div>
             <div className={cardStyles.contentCardBody}>
               <HybridRadialNetwork
-                data={liveData}
+                data={insights}
                 crossLinks={[]}
                 // onSelectionChange={setSelectedInsights}
               />
@@ -263,54 +264,10 @@ const ClientSidePage = ({
               }}
               // title={dialogConfig.title}
               // isLinkSave={dialogConfig.isLinkSave}
-              potentialInsightsFromServer={liveData.filter(
+              potentialInsightsFromServer={insights.filter(
                 (insight) => insight.user_id === currentUser?.id,
               )}
               id={""}
-              setServerFunctionInput={function (
-                value: ServerFunctionInputSchemaForSavedLinks | undefined,
-              ): void {
-                throw new Error("Function not implemented.");
-              }}
-              setActiveServerFunction={function (value: undefined): void {
-                throw new Error("Function not implemented.");
-              }} // onSubmit={(input) => {
-              //   if (token) {
-              //     const finalInput = { ...dialogConfig.input, ...input };
-              //     dialogConfig
-              //       .serverFunction(finalInput, token)
-              //       .then((responses: FLVResponse[]) => {
-              //         console.log("Server function successful:", responses);
-              //         // Update the live data with the responses
-              //         responses.forEach((response) => {
-              //           if (response.action === 1) {
-              //             // Create
-              //             setLiveData((prev) => [
-              //               ...(response.facts as Insight[]),
-              //               ...prev,
-              //             ]);
-              //           } else if (response.action === 0) {
-              //             // Update
-              //             setLiveData((prev) =>
-              //               prev.map((insight) => {
-              //                 const updatedInsight = response.facts.find(
-              //                   (f) => f.uid === insight.uid,
-              //                 ) as Insight | undefined;
-              //                 return updatedInsight
-              //                   ? { ...insight, ...updatedInsight }
-              //                   : insight;
-              //               }),
-              //             );
-              //           }
-              //         });
-              //         alert(`${dialogConfig.title} successful!`);
-              //       })
-              //       .catch((error) => {
-              //         console.error("Error in server function:", error);
-              //         alert(`Failed: ${error.message || "Unknown error"}`);
-              //       });
-              //   }
-              // }}
             />
           )}
         </CurrentUserContext.Provider>

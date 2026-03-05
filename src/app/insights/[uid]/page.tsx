@@ -60,7 +60,7 @@ const InsightPage = async ({
   const insight = await getInsightFromServer(origin ?? "", { uid }, token);
   if (insight) {
     const authUser = await getAuthUser(headers);
-    // FIXME: include a .user in the insight via ojs join?
+    // TODO: include a .user in the insight via ojs join?
     const currentUser = authUser
       ? await getUserFromServer(
           origin ?? "",

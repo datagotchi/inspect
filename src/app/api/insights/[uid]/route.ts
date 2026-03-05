@@ -47,7 +47,7 @@ export async function GET(
     children: {
       childInsight: includeNestedEvidenceTotals
         ? {
-            // FIXME: separate the CTE modifier into its own API to, e.g., enable users to request aggegate counts after seeing direct counts
+            // TODO: separate the CTE modifier into its own API to, e.g., enable users to request aggegate counts after seeing direct counts
             $modify: ["selectTotalEvidenceCount"],
             // title: true,
             // children: { childInsight: true },
@@ -66,7 +66,7 @@ export async function GET(
     evidence: {
       $modify: [
         "selectDisplayAndSummaryJoinColumn",
-        // FIXME: pagination of evidence does not work because of modifier formatting:
+        // TODO: pagination of evidence does not work because of modifier formatting:
         // ["selectPagedEvidence", evidenceOffset, evidenceLimit],
       ],
       summary: { source: true, comments: { user: true }, reactions: true },

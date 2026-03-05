@@ -1,18 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 
-import {
-  Fact,
-  Insight,
-  InsightEvidence,
-  Link,
-  ServerFunction,
-} from "../../types";
+import { Fact, Insight, InsightEvidence, Link } from "../../types";
 import FactsTable from "../../components/FactsTable";
 import { getPageTitle } from "../../hooks/functions";
 import useUser from "../../hooks/useUser";
-import { addCitationsToInsightAPISchema } from "../../components/SelectedCitationsAPI";
+// import { addCitationsToInsightAPISchema } from "../../components/SelectedCitationsAPI";
 import { GetLinksResponse } from "../../api/links/route";
 import {
   Modal,
@@ -26,18 +20,14 @@ import {
   ModalContentSection,
   ModalLoadingState,
 } from "../../components/Modal";
+import ServerActionContext from "../../contexts/ServerActionContext";
+import { addCitationsToInsight } from "../../components/SelectedCitationsAPI";
 
 interface Props {
   id: string;
   isOpen: boolean;
   onClose: () => void;
   insight: Insight;
-  setServerFunctionInput: React.Dispatch<
-    React.SetStateAction<addCitationsToInsightAPISchema | undefined>
-  >;
-  setActiveServerFunction: React.Dispatch<
-    { function: ServerFunction<addCitationsToInsightAPISchema> } | undefined
-  >;
 }
 
 const AddLinksAsEvidenceDialog = ({
@@ -45,8 +35,6 @@ const AddLinksAsEvidenceDialog = ({
   isOpen,
   onClose,
   insight,
-  setServerFunctionInput,
-  setActiveServerFunction,
 }: Props): React.JSX.Element => {
   const [dataFilter, setDataFilter] = useState<string>("");
   const [selectedCitations, setSelectedCitations] = useState<InsightEvidence[]>(
@@ -57,6 +45,7 @@ const AddLinksAsEvidenceDialog = ({
   const [loading, setLoading] = useState(false);
   const [linkUrlError, setLinkUrlError] = useState<string>("");
   const [activeTab, setActiveTab] = useState("existing");
+  const serverActionContext = useContext(ServerActionContext);
 
   const { token } = useUser();
   const notExistingCitation = useCallback(
@@ -90,7 +79,7 @@ const AddLinksAsEvidenceDialog = ({
     }
   }, [linksToShow, linksToShow?.length, linkUrlError, newLinkUrl]);
 
-  const resetStateValues = () => {
+  const resetStateValues = useCallback(() => {
     setSelectedCitations([]);
     setDataFilter("");
     setNewLinkUrl("");
@@ -98,24 +87,31 @@ const AddLinksAsEvidenceDialog = ({
     setLinkUrlError("");
     setPageTitle("");
     setActiveTab("existing");
-  };
+  }, []);
 
   const handleClose = useCallback(() => {
-    setServerFunctionInput(undefined);
-    setActiveServerFunction(undefined);
     resetStateValues();
     onClose();
-  }, [setActiveServerFunction, setServerFunctionInput, onClose]);
+  }, [resetStateValues, onClose]);
 
   const handleSubmit = useCallback(() => {
-    setServerFunctionInput({
-      insight,
-      evidence: selectedCitations,
-      newLinkUrl,
-    });
+    if (serverActionContext) {
+      serverActionContext.executeAction(addCitationsToInsight, {
+        insight,
+        evidence: selectedCitations,
+        newLinkUrl,
+      });
+    }
     resetStateValues();
     onClose();
-  }, [insight, selectedCitations, newLinkUrl, setServerFunctionInput, onClose]);
+  }, [
+    insight,
+    selectedCitations,
+    newLinkUrl,
+    serverActionContext,
+    resetStateValues,
+    onClose,
+  ]);
 
   useEffect(() => {
     if (newLinkUrl && !pageTitle) {

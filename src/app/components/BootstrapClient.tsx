@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 export default function BootstrapClient() {
   useEffect(() => {
-    // FIXME: call .then().catch() to help with bootstraps init, supposedly?
+    // TODO: call .then().catch() to help with bootstraps init?
     import("bootstrap");
   }, []);
 

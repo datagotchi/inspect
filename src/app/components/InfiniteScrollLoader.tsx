@@ -74,7 +74,7 @@ const InfiniteScrollLoader = ({
   return (
     <FactsDataContext.Provider value={{ data, setData }}>
       {children}
-      {/* FIXME: "Loading..." still showing up on e.g. http://localhost:3000/insights/m4eu2p0r */}
+      {/* TODO: "Loading..." still showing up on e.g. http://localhost:3000/insights/m4eu2p0r */}
       {loading && !endOfData && <h1>Loading...</h1>}
     </FactsDataContext.Provider>
   );

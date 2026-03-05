@@ -23,7 +23,7 @@ jest.mock("../../hooks/functions");
 
 describe("SaveLinkDialog", () => {
   const mockSetServerFunctionInput = jest.fn();
-  const mockSetActiveServerFunction = jest.fn();
+  // const mockSetActiveServerFunction = jest.fn();
   const mockPotentialInsights = [
     {
       id: 1,
@@ -77,8 +77,8 @@ describe("SaveLinkDialog", () => {
         isOpen={true}
         onClose={jest.fn()}
         potentialInsightsFromServer={mockPotentialInsights}
-        setServerFunctionInput={mockSetServerFunctionInput}
-        setActiveServerFunction={jest.fn()}
+        // setServerFunctionInput={mockSetServerFunctionInput}
+        // setActiveServerFunction={jest.fn()}
       />,
       { container: document.getElementById("root")! },
     );
@@ -93,8 +93,8 @@ describe("SaveLinkDialog", () => {
           isOpen={true}
           onClose={jest.fn()}
           potentialInsightsFromServer={mockPotentialInsights}
-          setServerFunctionInput={mockSetServerFunctionInput}
-          setActiveServerFunction={jest.fn()}
+          // setServerFunctionInput={mockSetServerFunctionInput}
+          // setActiveServerFunction={jest.fn()}
         />,
         { container: document.getElementById("root")! },
       );
@@ -119,8 +119,8 @@ describe("SaveLinkDialog", () => {
           isOpen={true}
           onClose={jest.fn()}
           potentialInsightsFromServer={mockPotentialInsights}
-          setServerFunctionInput={mockSetServerFunctionInput}
-          setActiveServerFunction={jest.fn()}
+          // setServerFunctionInput={mockSetServerFunctionInput}
+          // setActiveServerFunction={jest.fn()}
         />,
         { container: document.getElementById("root")! },
       );
@@ -153,8 +153,8 @@ describe("SaveLinkDialog", () => {
           isOpen={true}
           onClose={jest.fn()}
           potentialInsightsFromServer={mockPotentialInsights}
-          setServerFunctionInput={mockSetServerFunctionInput}
-          setActiveServerFunction={jest.fn()}
+          // setServerFunctionInput={mockSetServerFunctionInput}
+          // setActiveServerFunction={jest.fn()}
         />,
         { container: document.getElementById("root")! },
       );
@@ -181,8 +181,8 @@ describe("SaveLinkDialog", () => {
         isOpen={true}
         onClose={jest.fn()}
         potentialInsightsFromServer={mockPotentialInsights}
-        setServerFunctionInput={mockSetServerFunctionInput}
-        setActiveServerFunction={jest.fn()}
+        // setServerFunctionInput={mockSetServerFunctionInput}
+        // setActiveServerFunction={jest.fn()}
       />,
       { container: document.getElementById("root")! },
     );
@@ -209,8 +209,8 @@ describe("SaveLinkDialog", () => {
         isOpen={true}
         onClose={jest.fn()}
         potentialInsightsFromServer={mockPotentialInsights}
-        setServerFunctionInput={mockSetServerFunctionInput}
-        setActiveServerFunction={mockSetActiveServerFunction}
+        // setServerFunctionInput={mockSetServerFunctionInput}
+        // setActiveServerFunction={mockSetActiveServerFunction}
       />,
       { container: document.getElementById("root")! },
     );
@@ -231,8 +231,8 @@ describe("SaveLinkDialog", () => {
         isOpen={true}
         onClose={jest.fn()}
         potentialInsightsFromServer={mockPotentialInsights}
-        setServerFunctionInput={mockSetServerFunctionInput}
-        setActiveServerFunction={jest.fn()}
+        // setServerFunctionInput={mockSetServerFunctionInput}
+        // setActiveServerFunction={jest.fn()}
       />,
       { container: document.getElementById("root")! },
     );
@@ -270,8 +270,8 @@ describe("SaveLinkDialog", () => {
           isOpen={true}
           onClose={jest.fn()}
           potentialInsightsFromServer={mockPotentialInsights}
-          setServerFunctionInput={mockSetServerFunctionInput}
-          setActiveServerFunction={jest.fn()}
+          // setServerFunctionInput={mockSetServerFunctionInput}
+          // setActiveServerFunction={jest.fn()}
         />,
         { container: document.getElementById("root")! },
       );
@@ -308,8 +308,8 @@ describe("SaveLinkDialog", () => {
         isOpen={true}
         onClose={jest.fn()}
         potentialInsightsFromServer={mockPotentialInsights}
-        setServerFunctionInput={mockSetServerFunctionInput}
-        setActiveServerFunction={jest.fn()}
+        // setServerFunctionInput={mockSetServerFunctionInput}
+        // setActiveServerFunction={jest.fn()}
       />,
       { container: document.getElementById("root")! },
     );
@@ -345,8 +345,8 @@ describe("SaveLinkDialog", () => {
         isOpen={true}
         onClose={jest.fn()}
         potentialInsightsFromServer={mockPotentialInsights}
-        setServerFunctionInput={mockSetServerFunctionInput}
-        setActiveServerFunction={mockSetActiveServerFunction}
+        // setServerFunctionInput={mockSetServerFunctionInput}
+        // setActiveServerFunction={mockSetActiveServerFunction}
       />,
       { container: document.getElementById("root")! },
     );
@@ -391,8 +391,8 @@ describe("SaveLinkDialog", () => {
         isOpen={true}
         onClose={jest.fn()}
         potentialInsightsFromServer={mockPotentialInsights}
-        setServerFunctionInput={mockSetServerFunctionInput}
-        setActiveServerFunction={jest.fn()}
+        // setServerFunctionInput={mockSetServerFunctionInput}
+        // setActiveServerFunction={jest.fn()}
       />,
       { container: document.getElementById("root")! },
     );
@@ -420,8 +420,8 @@ describe("SaveLinkDialog", () => {
         isOpen={true}
         onClose={jest.fn()}
         potentialInsightsFromServer={mockPotentialInsights}
-        setServerFunctionInput={mockSetServerFunctionInput}
-        setActiveServerFunction={jest.fn()}
+        // setServerFunctionInput={mockSetServerFunctionInput}
+        // setActiveServerFunction={jest.fn()}
       />,
       { container: document.getElementById("root")! },
     );

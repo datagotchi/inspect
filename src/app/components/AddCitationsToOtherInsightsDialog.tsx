@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 
-import { Fact, Insight, InsightEvidence, ServerFunction } from "../types";
+import { Fact, Insight, InsightEvidence } from "../types";
 import FactsTable from "./FactsTable";
 import { getDisabledInsightIds } from "../functions";
-import { doAddCitationsToOtherInsightsSchema } from "../insights/[uid]/functions";
+import { doAddCitationsToOtherInsights } from "../insights/[uid]/functions";
 import { GetLinksResponse } from "../api/links/route";
 import {
   Modal,
@@ -16,26 +16,18 @@ import {
   ModalButton,
   ModalContentSection,
 } from "./Modal";
+import ServerActionContext from "../contexts/ServerActionContext";
 
 const AddCitationsToOtherInsightsDialog = ({
   id,
   isOpen,
   onClose,
   selectedCitations: selectedCitationsInput,
-  setServerFunctionInput,
-  setActiveServerFunction,
 }: {
   id: string;
   isOpen: boolean;
   onClose: () => void;
   selectedCitations: InsightEvidence[];
-  setServerFunctionInput: React.Dispatch<
-    React.SetStateAction<doAddCitationsToOtherInsightsSchema | undefined>
-  >;
-  setActiveServerFunction: React.Dispatch<
-    | { function: ServerFunction<doAddCitationsToOtherInsightsSchema> }
-    | undefined
-  >;
 }): React.JSX.Element => {
   const [selectedInsights, setSelectedInsights] = useState([]);
   const [dataFilter, setDataFilter] = useState<string>("");
@@ -48,6 +40,7 @@ const AddCitationsToOtherInsightsDialog = ({
   const [selectedCitations, setSelectedCitations] = useState<InsightEvidence[]>(
     selectedCitationsInput,
   );
+  const serverActionContext = useContext(ServerActionContext);
 
   useEffect(() => {
     fetch(`/api/insights?offset=0&limit=10`)
@@ -62,38 +55,39 @@ const AddCitationsToOtherInsightsDialog = ({
       });
   }, []);
 
-  const resetStateValues = () => {
+  const resetStateValues = useCallback(() => {
     setSelectedInsights([]);
     setDataFilter("");
     setCitationsToRemove([]);
     setNewInsightName("");
     setNewInsightIsCategory(false);
     setCitationsToRemoveDataFilter("");
-  };
+  }, []);
 
   const handleClose = useCallback(() => {
-    setServerFunctionInput(undefined);
-    setActiveServerFunction(undefined);
     resetStateValues();
     onClose();
-  }, [setActiveServerFunction, setServerFunctionInput, onClose]);
+  }, [resetStateValues, onClose]);
 
   const handleSubmit = useCallback(() => {
-    setServerFunctionInput({
-      selectedCitations,
-      citationsToRemove,
-      selectedInsights: [...selectedInsights],
-      newInsightName,
-    });
+    if (serverActionContext) {
+      serverActionContext.executeAction(doAddCitationsToOtherInsights, {
+        selectedCitations,
+        citationsToRemove,
+        selectedInsights: [...selectedInsights],
+        newInsightName,
+      });
+    }
     resetStateValues();
     onClose();
   }, [
+    serverActionContext,
+    resetStateValues,
+    onClose,
     selectedCitations,
     citationsToRemove,
     selectedInsights,
     newInsightName,
-    setServerFunctionInput,
-    onClose,
   ]);
 
   const snippetQueryFunction = (query: string) =>

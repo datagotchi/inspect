@@ -53,11 +53,11 @@ export type Link = Fact & {
 };
 
 export type EvidenceRecord = {
+  id?: number;
   summary_id?: number;
 };
 
 export type InsightEvidence = EvidenceRecord & {
-  id?: number;
   summary_id: number;
   summary: Link;
   insight_id: number;

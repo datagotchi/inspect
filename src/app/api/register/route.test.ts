@@ -87,7 +87,7 @@ describe("POST /register", () => {
     expect(json).toEqual({ message: "All input is required" });
   });
 
-  // eslint-disable-next-line jest/no-disabled-tests -- FIXME: throwing a UniqueViolationError is hard
+  // eslint-disable-next-line jest/no-disabled-tests -- TODO: throwing a UniqueViolationError is hard
   it.skip("should return 401 if user already exists", async () => {
     (req.json as jest.Mock).mockResolvedValueOnce({
       username: "test",

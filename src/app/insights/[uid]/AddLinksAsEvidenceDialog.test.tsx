@@ -91,8 +91,8 @@ describe("AddLinksAsEvidenceDialog", () => {
         isOpen={true}
         onClose={jest.fn()}
         insight={mockInsight}
-        setServerFunctionInput={mockSetServerFunctionInput}
-        setActiveServerFunction={mockSetActiveServerFunction}
+        // setServerFunctionInput={mockSetServerFunctionInput}
+        // setActiveServerFunction={mockSetActiveServerFunction}
       />,
     );
     await waitFor(() => {
@@ -109,8 +109,8 @@ describe("AddLinksAsEvidenceDialog", () => {
         isOpen={true}
         onClose={jest.fn()}
         insight={mockInsight}
-        setServerFunctionInput={mockSetServerFunctionInput}
-        setActiveServerFunction={mockSetActiveServerFunction}
+        // setServerFunctionInput={mockSetServerFunctionInput}
+        // setActiveServerFunction={mockSetActiveServerFunction}
       />,
     );
     await waitFor(() => {
@@ -126,8 +126,8 @@ describe("AddLinksAsEvidenceDialog", () => {
         isOpen={true}
         onClose={jest.fn()}
         insight={mockInsight}
-        setServerFunctionInput={mockSetServerFunctionInput}
-        setActiveServerFunction={mockSetActiveServerFunction}
+        // setServerFunctionInput={mockSetServerFunctionInput}
+        // setActiveServerFunction={mockSetActiveServerFunction}
       />,
     );
 
@@ -155,8 +155,8 @@ describe("AddLinksAsEvidenceDialog", () => {
         isOpen={true}
         onClose={jest.fn()}
         insight={mockInsight}
-        setServerFunctionInput={mockSetServerFunctionInput}
-        setActiveServerFunction={mockSetActiveServerFunction}
+        // setServerFunctionInput={mockSetServerFunctionInput}
+        // setActiveServerFunction={mockSetActiveServerFunction}
       />,
     );
     await waitFor(() => {
@@ -186,8 +186,8 @@ describe("AddLinksAsEvidenceDialog", () => {
         isOpen={true}
         onClose={jest.fn()}
         insight={mockInsight}
-        setServerFunctionInput={mockSetServerFunctionInput}
-        setActiveServerFunction={mockSetActiveServerFunction}
+        // setServerFunctionInput={mockSetServerFunctionInput}
+        // setActiveServerFunction={mockSetActiveServerFunction}
       />,
     );
     await waitFor(() => {
@@ -241,8 +241,8 @@ describe("AddLinksAsEvidenceDialog", () => {
         isOpen={true}
         onClose={jest.fn()}
         insight={mockInsight}
-        setServerFunctionInput={mockSetServerFunctionInput}
-        setActiveServerFunction={mockSetActiveServerFunction}
+        // setServerFunctionInput={mockSetServerFunctionInput}
+        // setActiveServerFunction={mockSetActiveServerFunction}
       />,
     );
 
@@ -284,8 +284,8 @@ describe("AddLinksAsEvidenceDialog", () => {
         isOpen={true}
         onClose={jest.fn()}
         insight={mockInsight}
-        setServerFunctionInput={mockSetServerFunctionInput}
-        setActiveServerFunction={mockSetActiveServerFunction}
+        // setServerFunctionInput={mockSetServerFunctionInput}
+        // setActiveServerFunction={mockSetActiveServerFunction}
       />,
     );
 

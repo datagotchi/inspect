@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 
-import { Fact, FLVResponse, Insight } from "../../types";
+import { Fact, Insight } from "../../types";
 import FactsTable from "../../components/FactsTable";
 import {
-  doAddParentInsightsSchema,
+  doAddParentInsights,
+  // doAddParentInsightsSchema,
   potentialInsightsWithoutLoops,
 } from "./functions";
 import { GetInsightsRouteResponse } from "../../api/insights/route";
@@ -20,24 +21,13 @@ import {
   ModalButton,
   ModalContentSection,
 } from "../../components/Modal";
+import ServerActionContext from "../../contexts/ServerActionContext";
 
 interface Props {
   id: string;
   isOpen: boolean;
   onClose: () => void;
   insight: Insight;
-  setServerFunctionInput: (
-    value: doAddParentInsightsSchema | undefined,
-  ) => void;
-  setActiveServerFunction: (
-    value:
-      | {
-          function: (
-            input: doAddParentInsightsSchema,
-          ) => Promise<FLVResponse | FLVResponse[]>;
-        }
-      | undefined,
-  ) => void;
 }
 
 const AddParentInsightsDialog = ({
@@ -45,8 +35,6 @@ const AddParentInsightsDialog = ({
   isOpen,
   onClose,
   insight,
-  setServerFunctionInput,
-  setActiveServerFunction,
 }: Props): React.JSX.Element => {
   const [dataFilter, setDataFilter] = useState<string>("");
   const [insights, setInsights] = useState<Insight[] | undefined>();
@@ -55,6 +43,7 @@ const AddParentInsightsDialog = ({
   >([]);
   const [newInsightName, setNewInsightName] = useState<string>("");
   const [activeTab, setActiveTab] = useState("existing");
+  const serverActionContext = useContext(ServerActionContext);
 
   useEffect(() => {
     fetch("/api/insights?offset=0&limit=20&parents=true&children=true")
@@ -69,34 +58,35 @@ const AddParentInsightsDialog = ({
       });
   }, [insight]);
 
-  const resetStateValues = () => {
+  const resetStateValues = useCallback(() => {
     setSelectedParentInsights([]);
     setDataFilter("");
     setNewInsightName("");
     setActiveTab("existing");
-  };
+  }, []);
 
   const handleClose = useCallback(() => {
-    setServerFunctionInput(undefined);
-    setActiveServerFunction(undefined);
     resetStateValues();
     onClose();
-  }, [setActiveServerFunction, setServerFunctionInput, onClose]);
+  }, [resetStateValues, onClose]);
 
   const handleSubmit = useCallback(() => {
-    setServerFunctionInput({
-      childInsight: insight,
-      newParentInsights: selectedParentInsights,
-      newInsightName,
-    });
+    if (serverActionContext) {
+      serverActionContext.executeAction(doAddParentInsights, {
+        childInsight: insight,
+        newParentInsights: selectedParentInsights,
+        newInsightName,
+      });
+    }
     resetStateValues();
     onClose();
   }, [
+    serverActionContext,
+    resetStateValues,
+    onClose,
     insight,
     selectedParentInsights,
     newInsightName,
-    setServerFunctionInput,
-    onClose,
   ]);
 
   const queryFunctionForAddParentInsightsDialog = async (search: string) => {

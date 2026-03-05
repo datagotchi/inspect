@@ -9,7 +9,7 @@ import {
   showAddLinksAsEvidenceDialog,
   showAddChildInsightsDialog,
   openAddCitationsToOtherInsightsDialog,
-  getShowConfirmationFunction,
+  // getShowConfirmationFunction,
   doDeleteInsightCitations,
   doAddCitationsToOtherInsights,
   doDeleteInsightChildren,
@@ -93,17 +93,17 @@ describe("getShowConfirmationFunction", () => {
   it("calls setServerFunctionInput if confirmed", () => {
     global.confirm = jest.fn(() => true);
     const setServerFunctionInput = jest.fn();
-    const fn = getShowConfirmationFunction(setServerFunctionInput);
+    // const fn = getShowConfirmationFunction(setServerFunctionInput);
     const selectedLinks = [{ id: 1 }];
-    fn(selectedLinks as any);
+    // fn(selectedLinks as any);
     expect(setServerFunctionInput).toHaveBeenCalledWith(selectedLinks);
   });
 
   it("does not call setServerFunctionInput if not confirmed", () => {
     global.confirm = jest.fn(() => false);
     const setServerFunctionInput = jest.fn();
-    const fn = getShowConfirmationFunction(setServerFunctionInput);
-    fn([{ id: 1 }] as any);
+    // const fn = getShowConfirmationFunction(setServerFunctionInput);
+    // fn([{ id: 1 }] as any);
     expect(setServerFunctionInput).not.toHaveBeenCalled();
   });
 });

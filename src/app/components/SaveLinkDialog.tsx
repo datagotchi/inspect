@@ -16,6 +16,7 @@ import {
   ModalContentSection,
   ModalLoadingState,
 } from "./Modal";
+// import ServerActionContext from "../contexts/ServerActionContext";
 
 // need to create a schema here
 // because processing of it to get the insights is necessary before createInsights() is called
@@ -30,18 +31,14 @@ const SaveLinkDialog = ({
   isOpen,
   onClose,
   potentialInsightsFromServer,
-  setServerFunctionInput,
-  setActiveServerFunction,
 }: {
   id: string;
   isOpen: boolean;
   onClose: () => void;
   potentialInsightsFromServer: Insight[];
-  setServerFunctionInput: (
-    value: ServerFunctionInputSchemaForSavedLinks | undefined,
-  ) => void;
-  setActiveServerFunction: (value: undefined) => void;
 }): React.JSX.Element => {
+  // const serverActionContext = useContext(ServerActionContext);
+
   const [linkUrl, setLinkUrl] = useState<string>("");
   const [dataFilter, setDataFilter] = useState<string>("");
   const [selectedInsights, setSelectedInsights] = useState<Insight[]>([]);
@@ -77,16 +74,9 @@ const SaveLinkDialog = ({
   }, [urlValidationTimeout]);
 
   const handleClose = useCallback(() => {
-    setServerFunctionInput(undefined);
-    setActiveServerFunction(undefined);
     resetStateValues();
     onClose();
-  }, [
-    setActiveServerFunction,
-    setServerFunctionInput,
-    resetStateValues,
-    onClose,
-  ]);
+  }, [resetStateValues, onClose]);
 
   const handleSubmit = useCallback(() => {
     // Validate URL before submitting
@@ -97,21 +87,17 @@ const SaveLinkDialog = ({
       return;
     }
 
-    setServerFunctionInput({
-      url: linkUrl,
-      selectedInsights: [...selectedInsights],
-      newInsightName,
-    });
-    resetStateValues();
-    onClose();
-  }, [
-    linkUrl,
-    selectedInsights,
-    newInsightName,
-    setServerFunctionInput,
-    resetStateValues,
-    onClose,
-  ]);
+    // FIXME: Find the function to call in executeFunction
+    // if (serverActionContext) {
+    //   serverActionContext.executeAction(noop as ServerFunction<any>, {
+    //     url: linkUrl,
+    //     selectedInsights: [...selectedInsights],
+    //     newInsightName,
+    //   });
+    //   resetStateValues();
+    //   onClose();
+    // }
+  }, [linkUrl]);
 
   // Cleanup timeout on unmount
   useEffect(() => {

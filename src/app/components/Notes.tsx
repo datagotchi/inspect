@@ -9,7 +9,7 @@ import { Field, FieldValue, Note } from "../types";
 const Notes = () => {
   const [notes, setNotes] = useState<Note[]>();
 
-  const { user, api } = useUserContext();
+  const { api } = useUserContext();
   const { fieldDefinitions, updatedNote, setUpdatedNote } =
     useFieldTransferContext();
 
