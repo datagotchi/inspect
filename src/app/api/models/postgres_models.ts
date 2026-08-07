@@ -3,12 +3,18 @@ import { Model, snakeCaseMappers } from "objection";
 import postgresKnexInstance from "../postgres";
 
 export class PostgresBaseModel extends Model {
+  // Override static knex() so Postgres models ALWAYS use postgresKnexInstance
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  static query(...args: any[]) {
-    if (!this.knex()) {
-      this.knex(postgresKnexInstance);
+  static knex(knex?: any) {
+    if (knex) {
+      return super.knex(knex);
     }
-    return super.query(...args);
+    return postgresKnexInstance;
+  }
+
+  // Override instance-level $knex() for relation queries
+  $knex() {
+    return postgresKnexInstance;
   }
 
   static get columnNameMappers() {

@@ -1,4 +1,11 @@
 export default {
+  // Opt out of caching fetch requests in development
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
+  },
+
   // This `webpack` function is primarily used for configuring production builds (`next build`).
   // For development (`next dev --turbo`), Turbopack is used, and it respects `config.resolve.alias`.
   webpack: (config, { dev, isServer }) => {

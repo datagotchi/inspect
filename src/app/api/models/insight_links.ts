@@ -1,8 +1,9 @@
 import { Model, QueryBuilder } from "objection";
+import "../postgres";
 import { InsightLink } from "../../types";
-import { InsightModel } from "./insights";
+import { PostgresBaseModel } from "./postgres_models";
 
-export class InsightLinkModel extends Model implements InsightLink {
+export class InsightLinkModel extends PostgresBaseModel implements InsightLink {
   static tableName = "insight_links";
 
   id?: number;
@@ -20,8 +21,10 @@ export class InsightLinkModel extends Model implements InsightLink {
     },
   };
 
-  parentInsight?: InsightModel;
-  childInsight?: InsightModel;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  parentInsight?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  childInsight?: any;
 
   static modifiers = {
     selectDirectChildrenCount(builder: QueryBuilder<InsightLinkModel>) {

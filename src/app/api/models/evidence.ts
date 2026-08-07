@@ -1,10 +1,12 @@
-import { Model, QueryBuilder } from "objection";
+import { QueryBuilder } from "objection";
 
+import "../postgres";
 import { EvidenceRecord } from "../../types";
 import { SummaryModel } from "../models/summaries";
 import { InsightModel } from "./insights";
+import { PostgresBaseModel } from "./postgres_models";
 
-export class EvidenceModel extends Model implements EvidenceRecord {
+export class EvidenceModel extends PostgresBaseModel implements EvidenceRecord {
   static tableName = "evidence";
 
   id?: number;
@@ -56,7 +58,7 @@ export class EvidenceModel extends Model implements EvidenceRecord {
   static get relationMappings() {
     return {
       summary: {
-        relation: Model.BelongsToOneRelation,
+        relation: PostgresBaseModel.BelongsToOneRelation,
         modelClass: SummaryModel,
         join: {
           from: "evidence.summary_id",
@@ -64,7 +66,7 @@ export class EvidenceModel extends Model implements EvidenceRecord {
         },
       },
       insight: {
-        relation: Model.BelongsToOneRelation,
+        relation: PostgresBaseModel.BelongsToOneRelation,
         modelClass: InsightModel,
         join: {
           from: "evidence.insight_id",

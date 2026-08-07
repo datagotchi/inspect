@@ -17,11 +17,16 @@ export const createSession = async (user: User): Promise<string> => {
   expires.setDate(expires.getDate() + 30);
 
   // 3. Insert the new session into the database.
+  // await SessionModel.query().insert({
+  //   user_id: user.id!,
+  //   token: sessionToken,
+  //   expires: expires.toISOString(),
+  // });
   await SessionModel.query().insert({
     user_id: user.id!,
     token: sessionToken,
-    expires: expires.toISOString(),
-  });
+    expires: expires,
+  } as Partial<SessionModel>);
 
   return sessionToken;
 };

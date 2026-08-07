@@ -2,12 +2,18 @@ import { Model, snakeCaseMappers } from "objection";
 import libSqlKnexInstance from "../libsql";
 
 export class LibSqlBaseModel extends Model {
+  // Override static knex() so LibSQL models ALWAYS use libSqlKnexInstance
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  static query(...args: any[]) {
-    if (this.knex() !== libSqlKnexInstance) {
-      this.knex(libSqlKnexInstance);
+  static knex(knex?: any) {
+    if (knex) {
+      return super.knex(knex);
     }
-    return super.query(...args);
+    return libSqlKnexInstance;
+  }
+
+  // Override instance-level $knex() for relation queries
+  $knex() {
+    return libSqlKnexInstance;
   }
 
   static get columnNameMappers() {

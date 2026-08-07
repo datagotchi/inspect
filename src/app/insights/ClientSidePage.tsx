@@ -131,14 +131,14 @@ const ClientSidePage = ({
         <div className={styles.pageHeader}>
           <div className={styles.pageHeaderContent}>
             <div className={styles.headerTop}>
-              <div className={styles.headerInfo}>
+              {/* <div className={styles.headerInfo}>
                 <h1 className={styles.headerTitle}>My Insights</h1>
                 <p className={styles.headerSubtitle}>
                   {insights.length > 0
                     ? `${insights.length} insight${insights.length !== 1 ? "s" : ""}`
                     : "No insights yet"}
                 </p>
-              </div>
+              </div> */}
               {loggedIn && (
                 <div style={{ display: "flex", gap: "var(--spacing-2)" }}>
                   <button
