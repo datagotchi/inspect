@@ -4,7 +4,7 @@
 import { NextRequest } from "next/server";
 
 import { DELETE, DeleteSessionRouteProps } from "./[email]/route";
-import { UserModel } from "../models/users";
+import { UserLibSqlModel } from "../models/users";
 
 // Mock the UserModel from the database layer
 jest.mock("../models/users", () => ({
@@ -23,7 +23,9 @@ describe("DELETE /api/logout", () => {
     // Reset mocks before each test to ensure isolation
     jest.clearAllMocks();
     // Now, tell the stable mock what .delete() should do for each test
-    (UserModel.query as jest.Mock).mockReturnValue({ delete: mockDelete });
+    (UserLibSqlModel.query as jest.Mock).mockReturnValue({
+      delete: mockDelete,
+    });
   });
 
   it("should successfully log out and return 204", async () => {
@@ -46,7 +48,7 @@ describe("DELETE /api/logout", () => {
     const response = await DELETE(req, props);
 
     // Verify that the database query was constructed and called correctly
-    expect(UserModel.query).toHaveBeenCalledTimes(1);
+    expect(UserLibSqlModel.query).toHaveBeenCalledTimes(1);
     expect(mockDelete).toHaveBeenCalledTimes(1);
     expect(mockWhereEmail).toHaveBeenCalledWith("email", email);
     expect(mockWhereToken).toHaveBeenCalledWith("token", token);
@@ -71,7 +73,7 @@ describe("DELETE /api/logout", () => {
     const response = await DELETE(req, props);
 
     // Ensure no database call was made
-    expect(UserModel.query).not.toHaveBeenCalled();
+    expect(UserLibSqlModel.query).not.toHaveBeenCalled();
 
     // Verify the response
     expect(response.status).toBe(401);

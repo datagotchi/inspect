@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 
 import { PATCH } from "./route";
 import { getAuthUser } from "../../functions";
-import { UserModel } from "../models/users";
+import { UserLibSqlModel } from "../models/users";
 
 jest.mock("../../functions");
 
@@ -30,8 +30,8 @@ describe("PATCH /api/users", () => {
   const mockUser = { id: 1, email: "test@test.com" };
   beforeEach(() => {
     jest.clearAllMocks();
-    (UserModel.query().patchAndFetchById as jest.Mock).mockReturnThis();
-    (UserModel.query().then as jest.Mock).mockImplementation((callback) =>
+    (UserLibSqlModel.query().patchAndFetchById as jest.Mock).mockReturnThis();
+    (UserLibSqlModel.query().then as jest.Mock).mockImplementation((callback) =>
       Promise.resolve(callback(mockUser)),
     );
   });
@@ -46,8 +46,8 @@ describe("PATCH /api/users", () => {
       ...mockUser,
       email: "newemail@example.com",
     };
-    (UserModel.query().then as jest.Mock).mockImplementationOnce((callback) =>
-      Promise.resolve(callback(newMockUser)),
+    (UserLibSqlModel.query().then as jest.Mock).mockImplementationOnce(
+      (callback) => Promise.resolve(callback(newMockUser)),
     );
 
     const response = await PATCH(req);

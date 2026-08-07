@@ -31,7 +31,7 @@ export async function PATCH(
 
     const updatedNote = await NoteModel.query()
       .patch(allowedUpdates)
-      .where({ id: parseInt(id, 10), user_id: authUser.user_id })
+      .where({ id: parseInt(id, 10), user_id: authUser.id })
       .first()
       .returning("*");
 
@@ -59,9 +59,7 @@ export async function DELETE(
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    await NoteModel.query()
-      .deleteById(params.id)
-      .where("user_id", authUser.user_id);
+    await NoteModel.query().deleteById(params.id).where("user_id", authUser.id);
 
     return new NextResponse(null, { status: 204 });
   } catch (err) {

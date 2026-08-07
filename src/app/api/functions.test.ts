@@ -28,7 +28,7 @@ describe("functions", () => {
 
     const result = await getUserFromServer(
       origin,
-      { id: authUser.user_id },
+      { id: authUser.id },
       "mockToken",
     );
     expect(fetch).toHaveBeenCalledWith(`${origin}/api/users/1`, {

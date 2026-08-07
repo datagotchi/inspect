@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
-import "../libsql";
 import { createSession } from "../../../proxy/functions";
 import { User } from "../../types";
-import { UserModel } from "../models/users";
+import { UserLibSqlModel } from "../models/users";
 
 export type PostLoginSessionRequestBody = Promise<{
   email: string;
@@ -31,9 +30,7 @@ export async function POST(
     );
   }
 
-  // TODO: track sessions (token) in the db someday?
-
-  const resultRows = await UserModel.query().where(
+  const resultRows = await UserLibSqlModel.query().where(
     "email",
     email.toLocaleLowerCase().trim(),
   );
@@ -45,7 +42,7 @@ export async function POST(
       { status: 404 },
     );
   }
-  const user = resultRows[0];
+  const user = resultRows[0] as UserLibSqlModel;
 
   if (user && (await bcrypt.compare(password.trim(), user.password!))) {
     const token = await createSession(user);

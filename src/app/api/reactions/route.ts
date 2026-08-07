@@ -25,7 +25,7 @@ export async function POST(
   req: PostReactionRouteRequest,
 ): Promise<PostReactionRouteResponse> {
   const authUser = await getAuthUser(headers);
-  if (authUser && `${authUser.user_id}`.match(/^\d+$/)) {
+  if (authUser && `${authUser.id}`.match(/^\d+$/)) {
     const { insight_id, summary_id, reaction } = await req.json();
     if (reaction && (insight_id || summary_id)) {
       try {
@@ -34,7 +34,7 @@ export async function POST(
             insight_id: insight_id ? Number(insight_id) : insight_id,
             summary_id: summary_id ? Number(summary_id) : summary_id,
             reaction,
-            user_id: Number(authUser.user_id),
+            user_id: Number(authUser.id),
           })
           .onConflict(["user_id", "insight_id", "summary_id"])
           .merge({ reaction });

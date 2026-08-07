@@ -1,7 +1,8 @@
 import readline from "node:readline";
 import { createClient } from "@libsql/client";
 
-const db = createClient({ url: "file:fieldnotes.db" });
+const dbfile = process.argv[2];
+const db = createClient({ url: `file:${dbfile}` });
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -42,7 +43,7 @@ rl.on("line", async (line) => {
     } else {
       console.log("Query executed successfully.");
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error(`Error: ${err.message}`);
   }
   rl.prompt();

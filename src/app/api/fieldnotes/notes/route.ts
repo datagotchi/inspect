@@ -12,7 +12,7 @@ export async function GET() {
     }
 
     const notes = await NoteModel.query()
-      .where("user_id", authUser.user_id)
+      .where("user_id", authUser.id)
       .withGraphFetched("field_values");
 
     return NextResponse.json(notes);
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     const newNote = await NoteModel.query().insertAndFetch({
       text,
       datetime: new Date().toISOString(),
-      user_id: authUser.user_id,
+      user_id: authUser.id,
     });
 
     return NextResponse.json(newNote, { status: 201 });

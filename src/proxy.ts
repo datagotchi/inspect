@@ -87,7 +87,5 @@ export const proxy = async (req: NextRequest): Promise<NextResponse> => {
     });
   }
 
-  // TODO: include rr_token for api routes: rrToken: sessionAndUser.rr_token,
-
   return res;
 };

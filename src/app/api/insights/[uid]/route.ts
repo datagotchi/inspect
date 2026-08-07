@@ -114,7 +114,7 @@ export async function PATCH(
       if (newTitle || newIsPublic) {
         const insight = await InsightModel.query()
           .findOne("uid", uid)
-          .where("user_id", authUser.user_id);
+          .where("user_id", authUser.id);
         if (insight) {
           const insightUpdateData: Partial<Insight> = {
             updated_at: new Date().toDateString(),

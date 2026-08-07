@@ -1,8 +1,12 @@
-import { Model, QueryBuilder } from "objection";
+import { QueryBuilder } from "objection";
 
 import { User } from "../../types";
+import libSqlKnexInstance from "../libsql";
+import { LibSqlBaseModel } from "./libsql_models";
+import postgresKnexInstance from "../postgres";
+import { PostgresBaseModel } from "./postgres_models";
 
-export class UserModel extends Model implements User {
+export class UserLibSqlModel extends LibSqlBaseModel implements User {
   static tableName = "users";
 
   id?: number;
@@ -22,7 +26,7 @@ export class UserModel extends Model implements User {
   };
 
   static modifiers = {
-    selectUsername(builder: QueryBuilder<UserModel>) {
+    selectUsername(builder: QueryBuilder<UserLibSqlModel>) {
       builder.select("users.id", "users.username", "users.avatar_uri");
     },
   };
@@ -32,4 +36,38 @@ export class UserModel extends Model implements User {
   //     // followers: {from: id, to: user_id },
   //   };
   // }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static query(...args: any[]) {
+    if (!this.knex()) {
+      this.knex(libSqlKnexInstance);
+    }
+    return super.query(...args);
+  }
+}
+
+export class UserPostgresModel extends PostgresBaseModel implements User {
+  static tableName = "users";
+
+  id?: number;
+  username!: string;
+  email!: string;
+
+  static jsonSchema = {
+    type: "object",
+    required: ["id", "username", "email"],
+    properties: {
+      id: { type: "integer" },
+      username: { type: "string" },
+      email: { type: "string" },
+    },
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static query(...args: any[]) {
+    if (!this.knex()) {
+      this.knex(postgresKnexInstance);
+    }
+    return super.query(...args);
+  }
 }

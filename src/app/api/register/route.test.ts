@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { POST } from "./route";
 import { createSession } from "../../../proxy/functions";
 import { NextRequest } from "next/server";
-import { UserModel } from "../models/users";
+import { UserLibSqlModel } from "../models/users";
 import { UniqueViolationError } from "objection";
 
 jest.mock("bcryptjs");
@@ -38,8 +38,8 @@ describe("POST /register", () => {
       json: jest.fn(),
     };
     jest.clearAllMocks();
-    (UserModel.query().where as jest.Mock).mockReturnThis();
-    (UserModel.query().then as jest.Mock).mockImplementation((callback) =>
+    (UserLibSqlModel.query().where as jest.Mock).mockReturnThis();
+    (UserLibSqlModel.query().then as jest.Mock).mockImplementation((callback) =>
       Promise.resolve(callback({})),
     );
   });
@@ -60,7 +60,7 @@ describe("POST /register", () => {
       password: "password",
       enable_email_notifications: true,
     });
-    (UserModel.query().then as jest.Mock).mockImplementation((callback) =>
+    (UserLibSqlModel.query().then as jest.Mock).mockImplementation((callback) =>
       Promise.resolve(callback(localUser)),
     );
     (bcrypt.hash as jest.Mock).mockResolvedValue(encryptedPassword);
@@ -94,7 +94,7 @@ describe("POST /register", () => {
       email: "test@test.com",
       password: "password",
     });
-    (UserModel.query().where as jest.Mock).mockImplementationOnce(() => {
+    (UserLibSqlModel.query().where as jest.Mock).mockImplementationOnce(() => {
       throw new UniqueViolationError("Database error");
     });
 
@@ -114,7 +114,7 @@ describe("POST /register", () => {
       password: "password",
     });
 
-    (UserModel.query().where as jest.Mock).mockImplementationOnce(() => {
+    (UserLibSqlModel.query().where as jest.Mock).mockImplementationOnce(() => {
       throw new Error("Database error");
     });
 

@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import "../postgres";
 import { User } from "../../types";
 import { getAuthUser } from "../../functions";
-import { UserModel } from "../models/users";
+import { UserLibSqlModel } from "../models/users";
 
 export type PutUsersRouteRequestBody = Promise<{
   email: string;
@@ -28,7 +28,7 @@ export async function PATCH(
   const reqBody = await req.json();
   const authUser = await getAuthUser(headers);
   if (authUser) {
-    const user = await UserModel.query().patchAndFetchById(authUser.user_id, {
+    const user = await UserLibSqlModel.query().patchAndFetchById(authUser.id, {
       email: reqBody.email?.toLocaleLowerCase(),
       password: reqBody.password
         ? await bcrypt.hash(reqBody.password, 10)

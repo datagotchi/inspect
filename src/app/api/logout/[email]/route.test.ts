@@ -4,7 +4,7 @@
 import { NextRequest } from "next/server";
 
 import { DELETE, DeleteSessionRouteProps } from "./route";
-import { UserModel } from "@/app/api/models/users";
+import { UserLibSqlModel } from "@/app/api/models/users";
 
 // Mock the UserModel from the database layer
 jest.mock("@/app/api/models/users");
@@ -25,7 +25,7 @@ describe("DELETE /api/logout", () => {
     // Set up the mock implementation for the UserModel query.
     // This ensures that for every test, UserModel.query() returns
     // a mock query builder that can be chained.
-    (UserModel.query as jest.Mock).mockReturnValue(mockQueryBuilder);
+    (UserLibSqlModel.query as jest.Mock).mockReturnValue(mockQueryBuilder);
     // Mock the final step of the chain to resolve the promise
     // (mockQueryBuilder.where as jest.Mock).mockResolvedValueOnce(1);
   });
@@ -55,7 +55,7 @@ describe("DELETE /api/logout", () => {
     const response = await DELETE(req, props);
 
     // Verify that the database query was constructed and called correctly
-    expect(UserModel.query).toHaveBeenCalledTimes(1);
+    expect(UserLibSqlModel.query).toHaveBeenCalledTimes(1);
     expect(mockQueryBuilder.delete).toHaveBeenCalledTimes(1); // Called first
     expect(mockQueryBuilder.where).toHaveBeenNthCalledWith(1, "email", email); // Then where
     expect(mockQueryBuilder.where).toHaveBeenNthCalledWith(2, "token", token);
@@ -80,7 +80,7 @@ describe("DELETE /api/logout", () => {
     const response = await DELETE(req, props);
 
     // Ensure no database call was made
-    expect(UserModel.query).not.toHaveBeenCalled();
+    expect(UserLibSqlModel.query).not.toHaveBeenCalled();
 
     // Verify the response
     expect(response.status).toBe(401);

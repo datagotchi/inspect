@@ -1,12 +1,12 @@
 import { Model, QueryBuilder } from "objection";
 
 import { FactComment } from "../../types";
-import { UserModel } from "../models/users";
+import { UserLibSqlModel } from "../models/users";
 
 export class CommentModel extends Model implements FactComment {
   static tableName = "comments";
 
-  user!: UserModel;
+  user!: UserLibSqlModel;
   username!: string;
   id?: number;
   comment!: string;
@@ -44,7 +44,7 @@ export class CommentModel extends Model implements FactComment {
   static relationMappings = {
     user: {
       relation: Model.BelongsToOneRelation,
-      modelClass: UserModel,
+      modelClass: UserLibSqlModel,
       join: {
         from: "comments.user_id",
         to: "users.id",

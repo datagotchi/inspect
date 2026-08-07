@@ -33,7 +33,6 @@ describe("proxy/functions", () => {
   });
 
   describe("createSession", () => {
-    // FIXME: failing test
     it("should generate a token and insert a session into the database", async () => {
       const user: User = { id: 1, email: "test@example.com", username: "test" };
       const token = await createSession(user);
@@ -48,7 +47,7 @@ describe("proxy/functions", () => {
       expect(insertMock).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: user.id,
-          sessionToken: token,
+          token,
           expires: expect.any(String),
         }),
       );
@@ -67,7 +66,7 @@ describe("proxy/functions", () => {
 
       expect(result).toEqual(user);
       expect(mockSessionQuery().findOne).toHaveBeenCalledWith({
-        sessionToken: "valid-token",
+        token: "valid-token",
       });
     });
 

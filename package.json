@@ -4,7 +4,7 @@
   "type": "module",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "next dev --webpack",
+    "dev": "next dev --turbo",
     "type-check": "tsc --noEmit",
     "lint": "eslint src",
     "test": "jest",
@@ -21,34 +21,6 @@
     "db:schema": "PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p ${DATABASE_PORT} -U ${DATABASE_USER} -d inspect < schema.sql",
     "export": "next export",
     "sqlite": "node src/scripts/sqlite-cli.js"
-  },
-  "jest": {
-    "verbose": true,
-    "testEnvironment": "jsdom",
-    "testEnvironmentOptions": {
-      "runScripts": "dangerously"
-    },
-    "moduleDirectories": [
-      "src",
-      "node_modules"
-    ],
-    "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/src/$1",
-      "\\.(css)$": "<rootDir>/src/app/tests/__mocks__/styleMock.ts",
-      "^\\.\\./models/reactions$": "<rootDir>/src/app/api/models/reactions"
-    },
-    "testMatch": [
-      "**/*.test.(ts|tsx)"
-    ],
-    "transform": {
-      "^.+\\.(ts|tsx)$": [
-        "babel-jest",
-        {
-          "configFile": "./babel.config.json"
-        }
-      ]
-    },
-    "testTimeout": 20000
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",

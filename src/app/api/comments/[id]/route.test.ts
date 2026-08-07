@@ -58,9 +58,7 @@ describe("DELETE /api/comments/[id]", () => {
     (CommentModel.query().select as jest.Mock).mockReturnThis();
     (CommentModel.query().joinRelated as jest.Mock).mockReturnThis();
     (CommentModel.query().then as jest.Mock).mockImplementation((callback) =>
-      Promise.resolve(
-        callback(Number(authUser.user_id == mockComment.user_id)),
-      ),
+      Promise.resolve(callback(Number(authUser.id == mockComment.user_id))),
     );
   });
 

@@ -20,7 +20,7 @@ export type Follower = {
 };
 
 export type User = {
-  id?: number;
+  id?: number; // TODO: replace id? fields with base types without ID for creation & then plain types with id
   username: string;
   email: string;
   avatar_uri?: string;
@@ -111,10 +111,6 @@ export type CommentSelectedText = {
   commentId: number;
 };
 
-export type AuthUser = {
-  user_id: number;
-};
-
 export type WithPartial<T, K extends keyof T> = Omit<T, K> &
   Partial<Pick<T, K>>;
 
@@ -154,7 +150,7 @@ export type CookieUser = {
 
 export type Session = {
   id: number;
-  sessionToken: string;
-  userId: number;
-  expires: Date;
+  token: string;
+  user_id: number;
+  expires: Date | string;
 };

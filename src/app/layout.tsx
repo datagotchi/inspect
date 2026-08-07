@@ -24,7 +24,7 @@ const Dashboard = async ({ children }: Props): Promise<React.JSX.Element> => {
   // const user = authUser
   //   ? await getUserFromServer(
   //       origin,
-  //       { id: authUser.user_id },
+  //       { id: authUser.id },
   //       tokenCookie?.value,
   //     )
   //   : null;

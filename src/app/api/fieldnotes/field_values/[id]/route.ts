@@ -30,7 +30,7 @@ export async function PATCH(
 
     const updatedNote = await NoteModel.query()
       .patch(allowedUpdates)
-      .where({ id: parseInt(id, 10), user_id: authUser.user_id })
+      .where({ id: parseInt(id, 10), user_id: authUser.id })
       .first()
       .returning("*");
 

@@ -5,8 +5,9 @@ import { Insight, InsightEvidence, InsightLink } from "../../types";
 import { CommentModel } from "./comments";
 import { EvidenceModel } from "./evidence";
 import { ReactionModel } from "./reactions";
+import { PostgresBaseModel } from "./postgres_models";
 
-export class InsightModel extends Model implements Insight {
+export class InsightModel extends PostgresBaseModel implements Insight {
   static tableName = "insights";
 
   id?: number;

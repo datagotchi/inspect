@@ -1,8 +1,7 @@
 export default {
-  // Switched to webpack for dev mode to ensure reliable client-side source maps,
-  // which can be unstable with experimental Next.js versions.
+  // This `webpack` function is primarily used for configuring production builds (`next build`).
+  // For development (`next dev --turbo`), Turbopack is used, and it respects `config.resolve.alias`.
   webpack: (config, { dev, isServer }) => {
-    // Add aliases to prevent bundling server-side modules on the client.
     if (!isServer) {
       config.resolve.alias = {
         ...config.resolve.alias,
@@ -14,7 +13,7 @@ export default {
     return config;
   },
 
-  pageExtensions: ["ts", "tsx", "js", "jsx"], // FIXME: finish converting js(x) files to ts(x)
+  pageExtensions: ["ts", "tsx"],
   images: {
     unoptimized: true,
   },

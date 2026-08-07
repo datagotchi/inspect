@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import "../../libsql";
-import { UserModel } from "../../models/users";
+import { UserLibSqlModel } from "../../models/users";
 
 export interface DeleteSessionRouteProps {
   params: Promise<{ email: string }>;
@@ -15,7 +14,7 @@ export async function DELETE(req: NextRequest, props: DeleteSessionRouteProps) {
     const token = authHeader && authHeader.split(" ")[1];
 
     if (token) {
-      await UserModel.query()
+      await UserLibSqlModel.query()
         .delete()
         .where("email", email)
         .where("token", token);

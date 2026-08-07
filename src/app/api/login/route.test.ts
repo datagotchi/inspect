@@ -7,7 +7,7 @@ import bcrypt from "bcryptjs";
 
 import { POST } from "./route";
 import { createSession } from "../../../proxy/functions";
-import { UserModel } from "../models/users";
+import { UserLibSqlModel } from "../models/users";
 
 jest.mock("bcryptjs");
 jest.mock("../../../proxy/functions");
@@ -33,8 +33,8 @@ describe("POST /api/login", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (UserModel.query().where as jest.Mock).mockReturnThis();
-    (UserModel.query().then as jest.Mock).mockImplementation((callback) =>
+    (UserLibSqlModel.query().where as jest.Mock).mockReturnThis();
+    (UserLibSqlModel.query().then as jest.Mock).mockImplementation((callback) =>
       Promise.resolve(callback(mockUser)),
     );
   });
@@ -55,8 +55,8 @@ describe("POST /api/login", () => {
         }),
       }),
     );
-    (UserModel.query().then as jest.Mock).mockImplementationOnce((callback) =>
-      Promise.resolve(callback([localUser])),
+    (UserLibSqlModel.query().then as jest.Mock).mockImplementationOnce(
+      (callback) => Promise.resolve(callback([localUser])),
     );
     (bcrypt.compare as jest.Mock).mockResolvedValue(true);
     (createSession as jest.Mock).mockResolvedValue(token);
@@ -105,8 +105,9 @@ describe("POST /api/login", () => {
         body: JSON.stringify({ email: "bobness@gmail.com", password: "asdf" }),
       }),
     );
-    (UserModel.query().then as jest.Mock).mockImplementationOnce((callback) =>
-      Promise.resolve(callback([{ id: 1, password: "hashedpassword" }])),
+    (UserLibSqlModel.query().then as jest.Mock).mockImplementationOnce(
+      (callback) =>
+        Promise.resolve(callback([{ id: 1, password: "hashedpassword" }])),
     );
     (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
@@ -123,8 +124,8 @@ describe("POST /api/login", () => {
         body: JSON.stringify({ email: "test@example.com", password: "asdf" }),
       }),
     );
-    (UserModel.query().then as jest.Mock).mockImplementationOnce((callback) =>
-      Promise.resolve(callback([])),
+    (UserLibSqlModel.query().then as jest.Mock).mockImplementationOnce(
+      (callback) => Promise.resolve(callback([])),
     );
 
     const res = await POST(req);

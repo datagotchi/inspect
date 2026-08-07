@@ -29,9 +29,9 @@ export async function DELETE(
           InsightLinkModel.query()
             .select("insight_links.id")
             .joinRelated("parentInsight")
-            .where("parentInsight.user_id", authUser.user_id)
+            .where("parentInsight.user_id", authUser.id)
             .joinRelated("childInsight")
-            .where("childInsight.user_id", authUser.user_id),
+            .where("childInsight.user_id", authUser.id),
         );
       if (numberDeleted > 0) {
         return NextResponse.json({ statusText: "success" });

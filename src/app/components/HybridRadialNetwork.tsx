@@ -90,6 +90,7 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
         "transform",
         (d) => `rotate(${(d.x * 180) / Math.PI - 90}) translate(${d.y},0)`,
       );
+    // .attr("fill", (d) => (d.children ? "#2ecc71" : "#3498db"));
 
     node
       .append("circle")

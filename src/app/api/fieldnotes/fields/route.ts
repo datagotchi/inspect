@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server.js";
 import { raw } from "objection";
 
-import "../../libsql";
 import { FieldModel } from "../models/Fields";
 
 export type GetFieldsResponse = NextResponse<

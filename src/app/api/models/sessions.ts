@@ -1,23 +1,25 @@
 import { Model } from "objection";
-import { UserModel } from "./users";
-import { Session } from "../../types";
 
-export class SessionModel extends Model implements Session {
+import { UserLibSqlModel } from "./users";
+import { Session } from "../../types";
+import { LibSqlBaseModel } from "./libsql_models";
+
+export class SessionModel extends LibSqlBaseModel implements Session {
   id!: number;
-  sessionToken!: string;
-  userId!: number;
+  token!: string;
+  user_id!: number;
   expires!: Date;
 
-  user?: UserModel;
+  user?: UserLibSqlModel;
 
   static tableName = "sessions";
 
   static relationMappings = () => ({
     user: {
       relation: Model.BelongsToOneRelation,
-      modelClass: UserModel,
+      modelClass: UserLibSqlModel,
       join: {
-        from: "sessions.userId",
+        from: "sessions.user_id",
         to: "users.id",
       },
     },
@@ -25,31 +27,13 @@ export class SessionModel extends Model implements Session {
 
   static jsonSchema = {
     type: "object",
-    required: ["sessionToken", "userId", "expires"],
+    required: ["token", "user_id", "expires"],
 
     properties: {
       id: { type: "integer" },
-      sessionToken: { type: "string", minLength: 1 },
-      userId: { type: "integer" },
-      expires: { type: "string", format: "date-time" },
+      token: { type: "string", minLength: 1 },
+      user_id: { type: "integer" },
+      expires: { type: ["string"] },
     },
   };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  $parseJson(json: any, opt: any) {
-    json = super.$parseJson(json, opt);
-    if (json.expires && typeof json.expires === "string") {
-      json.expires = new Date(json.expires);
-    }
-    return json;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  $formatJson(json: any) {
-    json = super.$formatJson(json);
-    if (json.expires instanceof Date) {
-      json.expires = json.expires.toISOString();
-    }
-    return json;
-  }
 }

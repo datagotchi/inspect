@@ -21,7 +21,7 @@ export async function GET(req: NextRequest): Promise<GetInsightsRouteResponse> {
 
   if (authUser) {
     const baseQuery = InsightModel.query()
-      .where("insights.user_id", authUser.user_id)
+      .where("insights.user_id", authUser.id!)
       .where("insights.title", "ilike", `%${searchQuery}%`)
       .orderBy("insights.updated_at", "desc"); // important for paging
 
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest): Promise<GetInsightsRouteResponse> {
       .offset(offset)
       .limit(limit);
 
-    const finalQuery = InsightModel.query()
+    const insights = (await InsightModel.query()
       .withGraphJoined(
         `[
       ${includeParents ? "parents.parentInsight," : ""}
@@ -41,9 +41,9 @@ export async function GET(req: NextRequest): Promise<GetInsightsRouteResponse> {
         { joinOperation: "leftJoin" }, // Use leftJoin to preserve all root insights
       )
       .whereIn("insights.id", paginatedInsightIdsSubquery) // Filter by the paginated IDs
-      .orderBy("insights.updated_at", "desc"); // Maintain the order
+      .orderBy("insights.updated_at", "desc")) as InsightModel[]; // Maintain the order
 
-    const insights = await finalQuery;
+    // const insights = (await finalQuery) as InsightModel[];
 
     return NextResponse.json(insights);
   }
@@ -84,13 +84,13 @@ export async function POST(
     }
 
     // First create the insight without evidence
-    const newInsight = await InsightModel.query()
+    const newInsight = (await InsightModel.query()
       .insert({
-        user_id: authUser.user_id,
+        user_id: authUser.id,
         uid,
         title,
       })
-      .withGraphFetched("evidence");
+      .withGraphFetched("evidence")) as InsightModel;
 
     // Then add evidence if provided
     if (citations && citations.length > 0) {
@@ -103,9 +103,9 @@ export async function POST(
       );
 
       // Fetch the insight again with evidence
-      const insightWithEvidence = await InsightModel.query()
+      const insightWithEvidence = (await InsightModel.query()
         .findById(newInsight.id!)
-        .withGraphFetched("evidence");
+        .withGraphFetched("evidence")) as InsightModel | undefined;
 
       return NextResponse.json(insightWithEvidence || newInsight);
     }

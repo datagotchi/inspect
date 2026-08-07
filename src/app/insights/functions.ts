@@ -7,20 +7,22 @@ export const getInsights = async (
   queryParams?: URLSearchParams,
 ): Promise<Insight[] | boolean> => {
   if (token) {
-    const response = (await fetch(
-      `${origin}/api/insights${queryParams ? "?" + queryParams.toString() : ""}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "x-access-token": token,
-        },
+    const insightsApiUrl = `${origin}/api/insights${queryParams ? "?" + queryParams.toString() : ""}`;
+
+    const response = (await fetch(insightsApiUrl, {
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-token": token,
       },
-    )) as GetInsightsRouteResponse;
+    })) as GetInsightsRouteResponse;
 
     if (response.status == 200) {
       return (await response.json()) as Insight[];
     } else {
-      throw new Error((await response.json()).message);
+      throw new Error(
+        "Error fetching insights: ",
+        (await response.json()).statusText,
+      );
     }
   }
 

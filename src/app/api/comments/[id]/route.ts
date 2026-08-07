@@ -25,7 +25,7 @@ export async function DELETE(
         CommentModel.query()
           .select("comments.id")
           .joinRelated("user")
-          .where("comments.user_id", authUser.user_id),
+          .where("comments.user_id", authUser.id),
       );
     if (rowCount > 0) {
       return NextResponse.json({ statusText: "success" });

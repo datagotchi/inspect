@@ -1,7 +1,9 @@
-import { Model, QueryBuilder } from "objection";
-import { Field } from "../../../types";
+import { QueryBuilder } from "objection";
 
-export class FieldModel extends Model implements Field {
+import { Field } from "../../../types";
+import { LibSqlBaseModel } from "../../models/libsql_models";
+
+export class FieldModel extends LibSqlBaseModel implements Field {
   static tableName = "fields";
 
   id?: number;
