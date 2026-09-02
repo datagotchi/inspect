@@ -8,7 +8,7 @@ export class SessionModel extends LibSqlBaseModel implements Session {
   id!: number;
   token!: string;
   user_id!: number;
-  expires!: Date;
+  expires!: string;
 
   user?: UserLibSqlModel;
 

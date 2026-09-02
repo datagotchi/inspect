@@ -5,7 +5,7 @@ import { NoteModel } from "../../models/notes";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const authUser = await getAuthUser(() => Promise.resolve(req.headers));
@@ -13,7 +13,7 @@ export async function PATCH(
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await context.params;
     const changes = await req.json();
 
     // We only allow patching the 'text' and 'datetime' fields for now.
@@ -50,7 +50,7 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const user = await getAuthUser(() => Promise.resolve(req.headers));
@@ -61,7 +61,7 @@ export async function DELETE(
     // We might add a check here in the future to ensure the user owns the note
     // associated with this field value before allowing deletion.
 
-    await FieldValueModel.query().deleteById(params.id);
+    await FieldValueModel.query().deleteById((await context.params).id);
 
     return new NextResponse(null, { status: 204 });
   } catch (err) {

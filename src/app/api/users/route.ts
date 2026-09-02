@@ -28,12 +28,15 @@ export async function PATCH(
   const reqBody = await req.json();
   const authUser = await getAuthUser(headers);
   if (authUser) {
-    const user = await UserLibSqlModel.query().patchAndFetchById(authUser.id, {
-      email: reqBody.email?.toLocaleLowerCase(),
-      password: reqBody.password
-        ? await bcrypt.hash(reqBody.password, 10)
-        : undefined,
-    });
+    const user = (await UserLibSqlModel.query().patchAndFetchById(
+      authUser.id!,
+      {
+        email: reqBody.email?.toLocaleLowerCase(),
+        password: reqBody.password
+          ? await bcrypt.hash(reqBody.password, 10)
+          : undefined,
+      },
+    )) as UserLibSqlModel;
     return NextResponse.json(user);
   }
   return NextResponse.json({ statusText: "Unauthorized" }, { status: 401 });

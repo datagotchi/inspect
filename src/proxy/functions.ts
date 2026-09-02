@@ -25,7 +25,7 @@ export const createSession = async (user: User): Promise<string> => {
   await SessionModel.query().insert({
     user_id: user.id!,
     token: sessionToken,
-    expires: expires,
+    expires: expires.toDateString(),
   } as Partial<SessionModel>);
 
   return sessionToken;

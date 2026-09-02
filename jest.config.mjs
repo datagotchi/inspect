@@ -11,9 +11,11 @@ const customJestConfig = {
   testEnvironment: "jest-environment-jsdom",
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    "^d3$": "<rootDir>/node_modules/d3/dist/d3.min.js",
     "\\.(css)$": "<rootDir>/src/app/tests/__mocks__/styleMock.ts",
     "^\\.\\./models/reactions$": "<rootDir>/src/app/api/models/reactions",
   },
+  testMatch: ["**/*.test.(ts|tsx)"],
   verbose: true,
   testTimeout: 20000,
 };

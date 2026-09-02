@@ -7,19 +7,20 @@ import Field from "../Field";
 
 // Mock the external dependencies
 const mockApi = {
-  updateFieldValue: jest.fn(),
+  updateFieldValue: jest.fn().mockResolvedValue({ value: "new value" }),
+  fnToken: "test-token",
 };
 const mockSetNewNote = jest.fn();
 const mockSetUpdatedNote = jest.fn();
 const mockDeleteThisField = jest.fn();
 
-jest.mock("../contexts/useUserContext", () => ({
+jest.mock("../../contexts/useUserContext", () => ({
   useUserContext: () => ({
     api: mockApi,
   }),
 }));
 
-jest.mock("../contexts/useFieldTransferContext", () => ({
+jest.mock("../../contexts/useFieldTransferContext", () => ({
   useFieldTransferContext: () => ({
     setNewNote: mockSetNewNote,
     newNote: { field_values: [{ id: 1, value: "initial" }] },

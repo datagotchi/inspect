@@ -27,7 +27,7 @@ export async function DELETE(
           EvidenceModel.query()
             .select("evidence.id")
             .joinRelated("insight")
-            .where("insight.user_id", authUser.id),
+            .where("insight.user_id", authUser.id!),
         );
       if (numberDeleted > 0) {
         return NextResponse.json({ statusText: "success" });

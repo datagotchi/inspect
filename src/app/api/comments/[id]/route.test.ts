@@ -6,7 +6,8 @@ import { NextRequest } from "next/server";
 import { DELETE, DeleteCommentRouteProps } from "./route";
 import { CommentModel } from "../../models/comments";
 import { getAuthUser } from "../../../functions";
-import { AuthUser } from "../../../types";
+import { User } from "@/app/types";
+// import { AuthUser } from "../../../types";
 
 jest.mock("next/headers", () => ({
   headers: jest.fn(),
@@ -38,7 +39,7 @@ jest.mock("../../models/comments", () => {
 describe("DELETE /api/comments/[id]", () => {
   let req: Pick<NextRequest, "json">;
   let props: DeleteCommentRouteProps;
-  let authUser: AuthUser;
+  let authUser: Partial<User>;
   const mockComment = { user_id: 123 };
 
   beforeEach(() => {
@@ -49,7 +50,7 @@ describe("DELETE /api/comments/[id]", () => {
     props = {
       params: Promise.resolve({ id: "1" }),
     };
-    authUser = { user_id: 123 };
+    authUser = { id: 123 };
     (getAuthUser as jest.Mock).mockResolvedValue(authUser);
 
     (CommentModel.query().deleteById as jest.Mock).mockReturnThis();

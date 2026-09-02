@@ -19,9 +19,9 @@ export const getInsights = async (
     if (response.status == 200) {
       return (await response.json()) as Insight[];
     } else {
+      const err = await response.json();
       throw new Error(
-        "Error fetching insights: ",
-        (await response.json()).statusText,
+        `Error fetching insights: ${err.message || err.statusText || ""}`,
       );
     }
   }

@@ -17,7 +17,9 @@ export async function POST(req: NextRequest) {
       field_id,
       value,
     };
-    const newFieldValue = await FieldValueModel.query().insertAndFetch(body);
+    const newFieldValue = await FieldValueModel.query().insertAndFetch(
+      body as Partial<FieldValueModel>,
+    );
 
     return NextResponse.json(newFieldValue, { status: 201 });
   } catch (err) {

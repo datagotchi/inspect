@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import * as d3 from "d3";
 import { HierarchyPointNode } from "d3-hierarchy";
-import { Insight } from "../types";
+import { Insight, InsightLink } from "../types";
 
 interface CrossLink {
   sourceId: string;
@@ -38,7 +38,10 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
 
         if (item.children && item.children.length > 0) {
           const childNodes = item.children
-            .map((link: any) => link.childInsight || link)
+            .map(
+              (link: InsightLink) =>
+                link.childInsight || (link as unknown as Insight),
+            )
             .filter((c): c is Insight => !!c && typeof c === "object");
           populateMap(childNodes);
         }
@@ -70,10 +73,13 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
     const getChildren = (d: Partial<Insight>) => {
       if (!d.children || d.children.length === 0) return null;
       return d.children
-        .map((link: any) => {
+        .map((link: InsightLink) => {
+          const fallbackUid = (link as unknown as Partial<Insight>).uid;
           const childObj = link.childInsight
             ? insightMap.get(link.childInsight.uid!) || link.childInsight
-            : insightMap.get(link.uid!) || link;
+            : fallbackUid
+              ? insightMap.get(fallbackUid) || (link as unknown as Insight)
+              : undefined;
           return childObj;
         })
         .filter((i): i is Insight => !!i && !!i.title);

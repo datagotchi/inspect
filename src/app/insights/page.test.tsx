@@ -33,8 +33,7 @@ describe("InsightsPage", () => {
     const mockHeaders = {
       get: jest.fn().mockImplementation((header) => {
         if (header == "x-origin") return "test-origin";
-        if (header == "x-authUser")
-          return JSON.stringify({ user_id: mockUser.id });
+        if (header == "x-authUser") return JSON.stringify({ id: mockUser.id });
       }),
     };
 

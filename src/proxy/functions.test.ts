@@ -9,6 +9,7 @@ import { User } from "../app/types";
 // Mock the SessionModel to isolate the functions from the database
 jest.mock("../app/api/models/sessions", () => {
   const mockQueryBuilder = {
+    insert: jest.fn().mockReturnThis(),
     insertGraph: jest.fn().mockReturnThis(),
     findOne: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
@@ -18,6 +19,7 @@ jest.mock("../app/api/models/sessions", () => {
   const MockSessionModelConstructor = jest.fn();
   Object.assign(MockSessionModelConstructor, {
     query: jest.fn(() => mockQueryBuilder),
+    knex: jest.fn(),
   });
 
   return {
@@ -42,11 +44,11 @@ describe("proxy/functions", () => {
       expect(token.length).toBe(96); // 48 bytes in hex
 
       // Check that the session was inserted
-      const insertMock = mockSessionQuery().insertGraph;
+      const insertMock = mockSessionQuery().insert;
       expect(insertMock).toHaveBeenCalledTimes(1);
       expect(insertMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          userId: user.id,
+          user_id: user.id,
           token,
           expires: expect.any(String),
         }),

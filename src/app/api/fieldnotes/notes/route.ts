@@ -12,7 +12,7 @@ export async function GET() {
     }
 
     const notes = await NoteModel.query()
-      .where("user_id", authUser.id)
+      .where("user_id", authUser.id!)
       .withGraphFetched("field_values");
 
     return NextResponse.json(notes);

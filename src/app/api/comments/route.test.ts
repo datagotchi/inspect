@@ -32,7 +32,7 @@ jest.mock("../../functions", () => ({
 }));
 
 describe("POST /api/comments", () => {
-  const mockAuthUser = { user_id: 1, name: "Test User" };
+  const mockAuthUser = { id: 1, name: "Test User" };
   const mockComment = {
     comment: "hi",
     user_id: 1,

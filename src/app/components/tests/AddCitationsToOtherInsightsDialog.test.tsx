@@ -73,8 +73,8 @@ describe("AddCitationsToOtherInsightsDialog", () => {
           selectedCitations={
             mockSelectedCitations as unknown as InsightEvidence[]
           }
-          // setServerFunctionInput={setServerFunctionInput}
-          // setActiveServerFunction={jest.fn()}
+          setServerFunctionInput={setServerFunctionInput}
+          setActiveServerFunction={jest.fn()}
         />,
         { container: document.getElementById("root")! },
       );
@@ -105,8 +105,8 @@ describe("AddCitationsToOtherInsightsDialog", () => {
           selectedCitations={
             mockSelectedCitations as unknown as InsightEvidence[]
           }
-          // setServerFunctionInput={setServerFunctionInput}
-          // setActiveServerFunction={setActiveServerFunction}
+          setServerFunctionInput={setServerFunctionInput}
+          setActiveServerFunction={setActiveServerFunction}
         />,
         { container: document.getElementById("root")! },
       );
@@ -166,8 +166,8 @@ describe("AddCitationsToOtherInsightsDialog", () => {
           selectedCitations={
             mockSelectedCitations as unknown as InsightEvidence[]
           }
-          // setActiveServerFunction={jest.fn()}
-          // setServerFunctionInput={jest.fn()}
+          setActiveServerFunction={jest.fn()}
+          setServerFunctionInput={jest.fn()}
         />,
         { container: document.getElementById("root")! },
       );
@@ -200,8 +200,8 @@ describe("AddCitationsToOtherInsightsDialog", () => {
           selectedCitations={
             mockSelectedCitations as unknown as InsightEvidence[]
           }
-          // setServerFunctionInput={jest.fn()}
-          // setActiveServerFunction={jest.fn()}
+          setServerFunctionInput={jest.fn()}
+          setActiveServerFunction={jest.fn()}
         />,
         { container: document.getElementById("root")! },
       );
@@ -220,8 +220,8 @@ describe("AddCitationsToOtherInsightsDialog", () => {
           selectedCitations={
             mockSelectedCitations as unknown as InsightEvidence[]
           }
-          // setActiveServerFunction={jest.fn()}
-          // setServerFunctionInput={jest.fn()}
+          setActiveServerFunction={jest.fn()}
+          setServerFunctionInput={jest.fn()}
         />,
         { container: document.getElementById("root")! },
       );

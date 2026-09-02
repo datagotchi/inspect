@@ -22,7 +22,7 @@ jest.mock("../models/users", () => {
   });
 
   return {
-    UserModel: MockInsightModelConstructor,
+    UserLibSqlModel: MockInsightModelConstructor,
   };
 });
 
@@ -37,7 +37,7 @@ describe("PATCH /api/users", () => {
   });
 
   it("should update user information if authenticated", async () => {
-    (getAuthUser as jest.Mock).mockResolvedValue({ user_id: 1 });
+    (getAuthUser as jest.Mock).mockResolvedValue({ id: 1 });
     const req = new NextRequest("http://localhost", {
       method: "PATCH",
       body: JSON.stringify({ email: "newemail@example.com" }),

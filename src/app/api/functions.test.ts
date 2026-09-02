@@ -22,7 +22,7 @@ describe("functions", () => {
 
   it("getUserFromServer should fetch user data from the server", async () => {
     const origin = "http://localhost";
-    const authUser = { user_id: 1 };
+    const authUser = { id: 1 };
     const mockResponse = { id: 1, name: "John Doe" };
     mockFetchJsonResponse.mockResolvedValue(mockResponse);
 

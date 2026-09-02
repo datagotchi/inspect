@@ -24,8 +24,6 @@ const InsightsPage = async (): Promise<React.JSX.Element> => {
   insightSearchParams.sort();
   const insights = await getInsights(origin, token, insightSearchParams);
 
-  console.log("*** insights: ", insights); // works: several insights
-
   if (insights && Array.isArray(insights)) {
     return (
       <ClientSidePage

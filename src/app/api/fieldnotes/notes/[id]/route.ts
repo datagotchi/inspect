@@ -6,15 +6,15 @@ import { getAuthUser } from "../../../../functions";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const authUser = await getAuthUser(headers);
-    if (!authUser) {
+    if (!authUser || !authUser.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const changes = await req.json();
 
     // We only allow patching the 'text' and 'datetime' fields for now.
@@ -51,15 +51,17 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const authUser = await getAuthUser(headers);
-    if (!authUser) {
+    if (!authUser || !authUser.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    await NoteModel.query().deleteById(params.id).where("user_id", authUser.id);
+    const { id } = await params;
+
+    await NoteModel.query().deleteById(id).where("user_id", authUser.id);
 
     return new NextResponse(null, { status: 204 });
   } catch (err) {

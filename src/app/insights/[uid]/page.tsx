@@ -64,7 +64,7 @@ const InsightPage = async ({
     const currentUser = authUser
       ? await getUserFromServer(
           origin ?? "",
-          { id: authUser.id },
+          { id: authUser.id! },
           (await cookies()).get("token")?.value,
         )
       : null;

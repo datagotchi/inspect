@@ -73,7 +73,7 @@ describe("field_values routes", () => {
         json: jest.fn().mockResolvedValue({ value: "bar" }),
       } as unknown as NextRequest;
 
-      const res = await PATCH(req, { params: { id: "1" } });
+      const res = await PATCH(req, { params: Promise.resolve({ id: "1" }) });
 
       expect(FieldValueModel.query().patch).toHaveBeenCalledWith({
         value: "bar",
@@ -98,7 +98,7 @@ describe("field_values routes", () => {
         },
       } as unknown as NextRequest;
 
-      const res = await DELETE(req, { params: { id: "1" } });
+      const res = await DELETE(req, { params: Promise.resolve({ id: "1" }) });
       expect(FieldValueModel.query().where).toHaveBeenCalledWith({
         note_id: "1",
       });

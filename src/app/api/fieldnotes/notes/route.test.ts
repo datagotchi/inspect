@@ -104,7 +104,7 @@ describe("notes routes", () => {
         json: jest.fn().mockResolvedValue(updates),
       } as unknown as NextRequest;
 
-      const res = await PATCH(req, { params: { id: noteId } });
+      const res = await PATCH(req, { params: Promise.resolve({ id: noteId }) });
 
       expect(NoteModel.query().patch).toHaveBeenCalledWith(updates);
       expect(NoteModel.query().where).toHaveBeenCalledWith({
@@ -123,7 +123,7 @@ describe("notes routes", () => {
         json: jest.fn().mockResolvedValue({ text: "update" }),
       } as unknown as NextRequest;
 
-      const res = await PATCH(req, { params: { id: "999" } });
+      const res = await PATCH(req, { params: Promise.resolve({ id: "999" }) });
       expect(res.status).toBe(404);
     });
   });
@@ -134,7 +134,7 @@ describe("notes routes", () => {
       (NoteModel.query().deleteById as jest.Mock).mockResolvedValue(1);
 
       const res = await DELETE({} as NextRequest, {
-        params: { id: noteId },
+        params: Promise.resolve({ id: noteId }),
       });
 
       expect(NoteModel.query().deleteById).toHaveBeenCalledWith(noteId);

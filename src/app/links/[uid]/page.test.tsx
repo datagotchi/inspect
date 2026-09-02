@@ -10,7 +10,7 @@ jest.mock("next/headers", () => ({
     get: jest.fn((key) => {
       if (key == "x-origin") return "http://localhost";
       if (key == "x-url") return "http://localhost/test-url";
-      if (key == "x-authUser") return JSON.stringify({ user_id: "123" });
+      if (key == "x-authUser") return JSON.stringify({ id: "123" });
     }),
   })),
   cookies: jest.fn(() => ({
