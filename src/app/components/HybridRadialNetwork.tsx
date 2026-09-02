@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import * as d3 from "d3";
 import { HierarchyPointNode } from "d3-hierarchy";
-import { Fact } from "../types";
+import { Fact, Insight, InsightLink } from "../types";
 
 interface CrossLink {
   sourceId: string;
@@ -51,39 +51,49 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
     populateMap(data);
 
     // Create synthetic root containing top-level root insights
-    // const rootData: Partial<Insight> & { uid: string; title: string } = {
-    //   uid: "synthetic-root",
-    //   title: "All My Insights",
-    //   // children: data
-    //   //   .filter(
-    //   //     (i) =>
-    //   //       !i.parents ||
-    //   //       i.parents.length === 0 ||
-    //   //       !i.parents.some(
-    //   //         (p) => p.parentInsight && insightMap.has(p.parentInsight.uid!),
-    //   //       ),
-    //   //   )
-    //   //   .map((i) => ({
-    //   //     childInsight: i,
-    //   //     child_id: i.id!,
-    //   //     parent_id: 0,
-    //   //   })),
-    // };
+    const rootData: Partial<Fact> /*& { uid: string; title: string }*/ = {
+      uid: "synthetic-root",
+      title: "All My Insights",
+      // children: data
+      //   .filter(
+      //     (i) =>
+      //       !i.parents ||
+      //       i.parents.length === 0 ||
+      //       !i.parents.some(
+      //         (p) => p.parentInsight && insightMap.has(p.parentInsight.uid!),
+      //       ),
+      //   )
+      //   .map((i) => ({
+      //     childInsight: i,
+      //     child_id: i.id!,
+      //     parent_id: 0,
+      //   })),
+    };
 
-    // const getChildren = (d: Partial<Insight>) => {
-    //   if (!d.children || d.children.length === 0) return null;
-    //   return d.children
-    //     .map((link: InsightLink) => {
-    //       const fallbackUid = (link as unknown as Partial<Insight>).uid;
-    //       const childObj = link.childInsight
-    //         ? insightMap.get(link.childInsight.uid!) || link.childInsight
-    //         : fallbackUid
-    //           ? insightMap.get(fallbackUid) || (link as unknown as Insight)
-    //           : undefined;
-    //       return childObj;
-    //     })
-    //     .filter((i): i is Insight => !!i && !!i.title);
-    // };
+    const getChildren = (d: Partial<Fact>) => {
+      // if (!d.children || d.children.length === 0) return null;
+
+      if (!d.children && !d.root_id) return null;
+      if (d.children) {
+        return d.children
+          .map((link: InsightLink) => {
+            const fallbackUid = (link as unknown as Partial<Insight>).uid;
+            const childObj = link.childInsight
+              ? insightMap.get(link.childInsight.uid!) || link.childInsight
+              : fallbackUid
+                ? insightMap.get(fallbackUid) || (link as unknown as Insight)
+                : undefined;
+            return childObj;
+          })
+          .filter((i: Insight): i is Insight => !!i && !!i.title);
+      } else if (d.root_id) {
+        // TODO:
+        // get this node
+        // get its children by recursing
+        // return combined nodes
+        return [];
+      }
+    };
 
     const width = 1000;
     const radius = width / 2;
