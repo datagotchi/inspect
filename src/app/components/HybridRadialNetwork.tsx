@@ -108,7 +108,8 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
 
     const insightMap = new Map<string, Insight>();
 
-    const populateMap = (items: Fact[]) => {
+    const populateMap = (input: Fact[] | Fact) => {
+      const items = Array.isArray(input) ? input : [input];
       for (const item of items) {
         if (item.uid && !insightMap.has(item.uid)) {
           insightMap.set(item.uid, item);

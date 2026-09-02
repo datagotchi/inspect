@@ -1,5 +1,3 @@
-"use server";
-
 import React from "react";
 import { cookies, headers } from "next/headers";
 
@@ -18,11 +16,12 @@ const WorkflowsPage = async (): Promise<React.JSX.Element> => {
     ? await getUserFromServer(origin, { id: authUser.id! }, token)
     : null;
 
-  const insightSearchParams = new URLSearchParams(
+  const workflowSearchParams = new URLSearchParams(
     "offset=0&limit=20&parents=true&children=true&evidence=true",
   );
-  insightSearchParams.sort();
-  const workflows = await getWorkflows(origin, token, insightSearchParams);
+  workflowSearchParams.sort();
+
+  const workflows = await getWorkflows(origin, token, workflowSearchParams);
 
   if (workflows && Array.isArray(workflows)) {
     return (
@@ -34,7 +33,7 @@ const WorkflowsPage = async (): Promise<React.JSX.Element> => {
   }
   return (
     <span>
-      No insights available for anonymous users. Please Login or Register.
+      No workflows available for anonymous users. Please Login or Register.
     </span>
   );
 };
