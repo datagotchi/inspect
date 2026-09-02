@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import * as d3 from "d3";
 import { HierarchyPointNode } from "d3-hierarchy";
-import { Insight, InsightLink } from "../types";
+import { Fact } from "../types";
 
 interface CrossLink {
   sourceId: string;
@@ -10,7 +10,7 @@ interface CrossLink {
 }
 
 interface HybridNetworkProps {
-  data: Insight[];
+  data: Fact[];
   crossLinks: CrossLink[];
 }
 
@@ -28,62 +28,62 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
     }
 
     // Populate insightMap recursively
-    const insightMap = new Map<string, Insight>();
+    const insightMap = new Map<string, Fact>();
 
-    const populateMap = (items: Insight[]) => {
+    const populateMap = (items: Fact[]) => {
       for (const item of items) {
         if (item.uid && !insightMap.has(item.uid)) {
           insightMap.set(item.uid, item);
         }
 
-        if (item.children && item.children.length > 0) {
-          const childNodes = item.children
-            .map(
-              (link: InsightLink) =>
-                link.childInsight || (link as unknown as Insight),
-            )
-            .filter((c): c is Insight => !!c && typeof c === "object");
-          populateMap(childNodes);
-        }
+        // if (item.children && item.children.length > 0) {
+        //   const childNodes = item.children
+        //     .map(
+        //       (link: InsightLink) =>
+        //         link.childInsight || (link as unknown as Insight),
+        //     )
+        //     .filter((c): c is Insight => !!c && typeof c === "object");
+        //   populateMap(childNodes);
+        // }
       }
     };
 
     populateMap(data);
 
     // Create synthetic root containing top-level root insights
-    const rootData: Partial<Insight> & { uid: string; title: string } = {
-      uid: "synthetic-root",
-      title: "All My Insights",
-      children: data
-        .filter(
-          (i) =>
-            !i.parents ||
-            i.parents.length === 0 ||
-            !i.parents.some(
-              (p) => p.parentInsight && insightMap.has(p.parentInsight.uid!),
-            ),
-        )
-        .map((i) => ({
-          childInsight: i,
-          child_id: i.id!,
-          parent_id: 0,
-        })),
-    };
+    // const rootData: Partial<Insight> & { uid: string; title: string } = {
+    //   uid: "synthetic-root",
+    //   title: "All My Insights",
+    //   // children: data
+    //   //   .filter(
+    //   //     (i) =>
+    //   //       !i.parents ||
+    //   //       i.parents.length === 0 ||
+    //   //       !i.parents.some(
+    //   //         (p) => p.parentInsight && insightMap.has(p.parentInsight.uid!),
+    //   //       ),
+    //   //   )
+    //   //   .map((i) => ({
+    //   //     childInsight: i,
+    //   //     child_id: i.id!,
+    //   //     parent_id: 0,
+    //   //   })),
+    // };
 
-    const getChildren = (d: Partial<Insight>) => {
-      if (!d.children || d.children.length === 0) return null;
-      return d.children
-        .map((link: InsightLink) => {
-          const fallbackUid = (link as unknown as Partial<Insight>).uid;
-          const childObj = link.childInsight
-            ? insightMap.get(link.childInsight.uid!) || link.childInsight
-            : fallbackUid
-              ? insightMap.get(fallbackUid) || (link as unknown as Insight)
-              : undefined;
-          return childObj;
-        })
-        .filter((i): i is Insight => !!i && !!i.title);
-    };
+    // const getChildren = (d: Partial<Insight>) => {
+    //   if (!d.children || d.children.length === 0) return null;
+    //   return d.children
+    //     .map((link: InsightLink) => {
+    //       const fallbackUid = (link as unknown as Partial<Insight>).uid;
+    //       const childObj = link.childInsight
+    //         ? insightMap.get(link.childInsight.uid!) || link.childInsight
+    //         : fallbackUid
+    //           ? insightMap.get(fallbackUid) || (link as unknown as Insight)
+    //           : undefined;
+    //       return childObj;
+    //     })
+    //     .filter((i): i is Insight => !!i && !!i.title);
+    // };
 
     const width = 1000;
     const radius = width / 2;
@@ -106,7 +106,7 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
     svg.call(zoomBehavior);
 
     const treeLayout = d3
-      .tree<Partial<Insight>>()
+      .tree<Partial<Fact>>()
       .size([2 * Math.PI, radius - 150])
       .separation((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth);
 
@@ -135,8 +135,8 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
         "d",
         d3
           .linkRadial<
-            d3.HierarchyLink<Partial<Insight>>,
-            HierarchyPointNode<Partial<Insight>>
+            d3.HierarchyLink<Partial<Fact>>,
+            HierarchyPointNode<Partial<Fact>>
           >()
           .angle((d) => d.x)
           .radius((d) => d.y),

@@ -4,12 +4,15 @@ import { headers } from "next/headers";
 import "../postgres";
 import { Workflow } from "@/app/types";
 import { getAuthUser } from "@/app/functions";
+import { WorkflowModel } from "../models/workflows";
 
-export type GetInsightsRouteResponse = NextResponse<
+export type GetWorkflowsRouteResponse = NextResponse<
   Workflow[] | { statusText: string }
 >;
 
-export async function GET(req: NextRequest): Promise<GetInsightsRouteResponse> {
+export async function GET(
+  req: NextRequest,
+): Promise<GetWorkflowsRouteResponse> {
   const authUser = await getAuthUser(headers);
   const searchQuery = req.nextUrl.searchParams.get("query") || "";
   const offset = Number(req.nextUrl.searchParams.get("offset") || 0);
@@ -33,7 +36,7 @@ export async function GET(req: NextRequest): Promise<GetInsightsRouteResponse> {
       .limit(limit);
 
     // 2. Use withGraphFetched instead of withGraphJoined to fetch ALL child rows accurately
-    const insights = (await WorkflowModel.query()
+    const workflows = (await WorkflowModel.query()
       .withGraphFetched(
         `[
       ${includeParents ? "parents.parentInsight," : ""}
@@ -44,18 +47,9 @@ export async function GET(req: NextRequest): Promise<GetInsightsRouteResponse> {
       .whereIn("insights.id", paginatedInsightIdsSubquery)
       .orderBy("insights.updated_at", "desc")) as WorkflowModel[];
 
-    // 3. Clean up null graph mapping objects so empty child nodes don't render blank boxes
-    const cleanedInsights = insights.map((insight) => ({
-      ...insight,
-      children: (insight.children || []).filter(
-        (c) => c && c.childInsight !== null,
-      ),
-      parents: (insight.parents || []).filter(
-        (p) => p && p.parentInsight !== null,
-      ),
-    })) as unknown as Workflow[];
+    // TODO: 3. Clean up null graph mapping objects so empty child nodes don't render blank boxes
 
-    return NextResponse.json(cleanedInsights);
+    return NextResponse.json(workflows);
   }
   return NextResponse.json({ statusText: "Unauthorized" }, { status: 401 });
 }

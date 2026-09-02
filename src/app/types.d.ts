@@ -155,6 +155,11 @@ export type Session = {
   expires: Date | string;
 };
 
-export type Workflow = {
+export type Workflow = Fact & {
+  root_id?: number;
+};
+
+export type WorkflowNode = {
   id: number;
+  workflow_id: number;
 };
