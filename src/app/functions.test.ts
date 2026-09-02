@@ -119,7 +119,7 @@ describe("functions", () => {
     it("should delete a comment", async () => {
       mockFetch.mockResolvedValueOnce({ status: 200, rowCount: 1 });
 
-      const result = await deleteComment({ id: 1 }, "token");
+      const result = await deleteComment({ id: "1" }, "token");
       expect(mockFetch).toHaveBeenCalledWith("/api/comments/1", {
         method: "DELETE",
         headers: {
@@ -201,12 +201,12 @@ describe("functions", () => {
       (headers as jest.Mock).mockResolvedValueOnce({
         get: () =>
           JSON.stringify({
-            user_id: 2,
+            id: 2,
           }),
       });
       const result = await getAuthUser(headers);
       expect(result).toBeTruthy();
-      expect(result!.user_id).toBe(2);
+      expect(result!.id).toBe(2);
     });
 
     it("should return null when they are NOT logged in", async () => {

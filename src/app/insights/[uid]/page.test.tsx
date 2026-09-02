@@ -17,7 +17,7 @@ describe("GET /insights/uid SSR page", () => {
       if (key == "x-origin") {
         return "origin";
       } else if (key == "x-authUser") {
-        return JSON.stringify({ user_id: 1 });
+        return JSON.stringify({ id: 1 });
       }
     }),
   };

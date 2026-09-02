@@ -1,0 +1,67 @@
+name: Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ">=22.0.0"
+      - name: Install dependencies
+        run: yarn install
+      - name: Run type-check
+        run: yarn type-check
+
+  lint:
+    name: ESLint
+    needs: type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ">=22.0.0"
+      - name: Install dependencies
+        run: yarn install
+      - name: Run eslint
+        run: yarn lint
+
+  test:
+    name: Jest Tests
+    needs: type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ">=22.0.0"
+      - name: Install dependencies
+        run: yarn install
+      - name: Run jest tests
+        run: yarn test
+
+  e2e:
+    name: Playwright E2E Tests
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ">=22.0.0"
+      - name: Install dependencies
+        run: yarn install
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+      - name: Build Next.js app
+        run: yarn build-prod
+      - name: Run Playwright tests
+        run: yarn e2e

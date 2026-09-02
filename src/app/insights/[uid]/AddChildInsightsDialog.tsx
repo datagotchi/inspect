@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 
-import { Fact, Insight } from "../../types";
+import { Fact, Insight, ServerFunction } from "../../types";
 import FactsTable from "../../components/FactsTable";
 import { potentialInsightsWithoutLoops } from "./functions";
 import { GetInsightsRouteResponse } from "../../api/insights/route";
@@ -17,6 +17,8 @@ import {
   ModalButton,
   ModalContentSection,
 } from "../../components/Modal";
+import ServerActionContext from "../../contexts/ServerActionContext";
+import { addChildrenToInsight } from "../../components/SelectedCitationsAPI";
 
 export type ServerFunctionInputSchemaForChildInsights = {
   insight: Insight;
@@ -29,16 +31,6 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   insight: Insight;
-  setServerFunctionInput: (
-    value: ServerFunctionInputSchemaForChildInsights | undefined,
-  ) => void;
-  setActiveServerFunction: (
-    value:
-      | {
-          function: ServerFunctionInputSchemaForChildInsights;
-        }
-      | undefined,
-  ) => void;
 }
 
 const AddChildInsightsDialog = ({
@@ -46,8 +38,6 @@ const AddChildInsightsDialog = ({
   isOpen,
   onClose,
   insight,
-  setServerFunctionInput,
-  setActiveServerFunction,
 }: Props): React.JSX.Element => {
   const [dataFilter, setDataFilter] = useState<string>("");
   const [childInsights, setChildInsights] = useState<Insight[] | undefined>();
@@ -56,6 +46,7 @@ const AddChildInsightsDialog = ({
   );
   const [newInsightName, setNewInsightName] = useState<string>("");
   const [activeTab, setActiveTab] = useState("existing");
+  const serverActionContext = useContext(ServerActionContext);
 
   useEffect(() => {
     fetch(
@@ -72,34 +63,39 @@ const AddChildInsightsDialog = ({
       });
   }, [insight]);
 
-  const resetStateValues = () => {
+  const resetStateValues = useCallback(() => {
     setSelectedChildInsights([]);
     setDataFilter("");
     setNewInsightName("");
     setActiveTab("existing");
-  };
+  }, []);
 
   const handleClose = useCallback(() => {
-    setServerFunctionInput(undefined);
-    setActiveServerFunction(undefined);
     resetStateValues();
     onClose();
-  }, [setActiveServerFunction, setServerFunctionInput, onClose]);
+  }, [resetStateValues, onClose]);
 
   const handleSubmit = useCallback(() => {
-    setServerFunctionInput({
-      insight,
-      children: selectedChildInsights,
-      newInsightName,
-    });
+    if (serverActionContext) {
+      serverActionContext.executeAction(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        addChildrenToInsight as ServerFunction<any>,
+        {
+          parentInsight: insight,
+          children: selectedChildInsights,
+          newChildInsightName: newInsightName,
+        },
+      );
+    }
     resetStateValues();
     onClose();
   }, [
+    serverActionContext,
+    resetStateValues,
+    onClose,
     insight,
     selectedChildInsights,
     newInsightName,
-    setServerFunctionInput,
-    onClose,
   ]);
 
   const queryFunctionForAddChildInsightDialog = async (search: string) => {

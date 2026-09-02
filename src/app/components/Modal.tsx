@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useRef } from "react";
 import styles from "../../styles/components/modal.module.css";
 
 interface ModalProps {
@@ -82,19 +82,19 @@ export const Modal: React.FC<ModalProps> = ({
   closeOnEscape = true,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  // const [isVisible, setIsVisible] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      setIsVisible(true);
-      // Focus the modal for accessibility
-      setTimeout(() => {
-        modalRef.current?.focus();
-      }, 100);
-    } else {
-      setIsVisible(false);
-    }
-  }, [isOpen]);
+  // useEffect(() => {
+  //   if (isOpen) {
+  //     setIsVisible(true);
+  //     // Focus the modal for accessibility
+  //     setTimeout(() => {
+  //       modalRef.current?.focus();
+  //     }, 100);
+  //   } else {
+  //     setIsVisible(false);
+  //   }
+  // }, [isOpen]);
 
   const handleBackdropClick = useCallback(
     (event: React.MouseEvent) => {
@@ -118,7 +118,7 @@ export const Modal: React.FC<ModalProps> = ({
     onClose();
   }, [onClose]);
 
-  if (!isVisible) {
+  if (!isOpen) {
     return null;
   }
 

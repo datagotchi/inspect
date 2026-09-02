@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
-import "../../../api/db";
+import "../../postgres";
 import { InsightLinkModel } from "../../models/insight_links";
 import { getAuthUser } from "../../../functions";
 
@@ -18,7 +18,7 @@ export async function DELETE(
   props: DeleteChildInsightRouteProps,
 ): Promise<DeleteChildInsightRouteResponse> {
   const authUser = await getAuthUser(headers);
-  if (authUser) {
+  if (authUser && authUser.id) {
     const params = await props.params;
     const id = Number(params.id);
     if (id && typeof id == "number") {
@@ -29,16 +29,16 @@ export async function DELETE(
           InsightLinkModel.query()
             .select("insight_links.id")
             .joinRelated("parentInsight")
-            .where("parentInsight.user_id", authUser.user_id)
+            .where("parentInsight.user_id", authUser.id)
             .joinRelated("childInsight")
-            .where("childInsight.user_id", authUser.user_id),
+            .where("childInsight.user_id", authUser.id),
         );
       if (numberDeleted > 0) {
         return NextResponse.json({ statusText: "success" });
       }
       // return 404 either because deleteById returns 0 affected
       // meaning the evidence doesn't exist
-      // OR it's someone else'se and returning 404 instead of 403 for security reasons
+      // OR it's someone else's and returning 404 instead of 403 for security reasons
       return NextResponse.json(
         { statusText: "Child insight with specified id not found" },
         { status: 404 },

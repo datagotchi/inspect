@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
-import "../../api/db";
+import "../postgres";
 import { Insight, InsightEvidence } from "../../types";
 import { getAuthUser } from "../../functions";
 import { InsightModel } from "../models/insights";
@@ -20,32 +20,43 @@ export async function GET(req: NextRequest): Promise<GetInsightsRouteResponse> {
   const includeEvidence = Boolean(req.nextUrl.searchParams.get("evidence"));
 
   if (authUser) {
+    // 1. Fetch ONLY root-level insights (insights with no parents in insight_links)
     const baseQuery = InsightModel.query()
-      .where("insights.user_id", authUser.user_id)
-      .where("insights.title", "ilike", `%${searchQuery}%`)
-      .orderBy("insights.updated_at", "desc"); // important for paging
+      .where("insights.user_id", authUser.id!)
+      .whereNotExists(InsightModel.relatedQuery("parents"))
+      .whereRaw("LOWER(insights.title) LIKE LOWER(?)", [`%${searchQuery}%`])
+      .orderBy("insights.updated_at", "desc");
 
     const paginatedInsightIdsSubquery = baseQuery
-      .clone() // Clone is crucial to not modify baseQuery
+      .clone()
       .select("insights.id")
       .offset(offset)
       .limit(limit);
 
-    const finalQuery = InsightModel.query()
-      .withGraphJoined(
+    // 2. Use withGraphFetched instead of withGraphJoined to fetch ALL child rows accurately
+    const insights = (await InsightModel.query()
+      .withGraphFetched(
         `[
       ${includeParents ? "parents.parentInsight," : ""}
       ${includeChildren ? "children.childInsight.evidence," : ""}
       ${includeEvidence ? "evidence" : ""}
     ]`,
-        { joinOperation: "leftJoin" }, // Use leftJoin to preserve all root insights
       )
-      .whereIn("insights.id", paginatedInsightIdsSubquery) // Filter by the paginated IDs
-      .orderBy("insights.updated_at", "desc"); // Maintain the order
+      .whereIn("insights.id", paginatedInsightIdsSubquery)
+      .orderBy("insights.updated_at", "desc")) as InsightModel[];
 
-    const insights = await finalQuery;
+    // 3. Clean up null graph mapping objects so empty child nodes don't render blank boxes
+    const cleanedInsights = insights.map((insight) => ({
+      ...insight,
+      children: (insight.children || []).filter(
+        (c) => c && c.childInsight !== null,
+      ),
+      parents: (insight.parents || []).filter(
+        (p) => p && p.parentInsight !== null,
+      ),
+    })) as unknown as Insight[];
 
-    return NextResponse.json(insights);
+    return NextResponse.json(cleanedInsights);
   }
   return NextResponse.json({ statusText: "Unauthorized" }, { status: 401 });
 }
@@ -84,13 +95,13 @@ export async function POST(
     }
 
     // First create the insight without evidence
-    const newInsight = await InsightModel.query()
+    const newInsight = (await InsightModel.query()
       .insert({
-        user_id: authUser.user_id,
+        user_id: authUser.id,
         uid,
         title,
       })
-      .withGraphFetched("evidence");
+      .withGraphFetched("evidence")) as InsightModel;
 
     // Then add evidence if provided
     if (citations && citations.length > 0) {
@@ -103,9 +114,9 @@ export async function POST(
       );
 
       // Fetch the insight again with evidence
-      const insightWithEvidence = await InsightModel.query()
+      const insightWithEvidence = (await InsightModel.query()
         .findById(newInsight.id!)
-        .withGraphFetched("evidence");
+        .withGraphFetched("evidence")) as InsightModel | undefined;
 
       return NextResponse.json(insightWithEvidence || newInsight);
     }

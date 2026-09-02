@@ -1,4 +1,4 @@
-import React from "react";
+// import React from "react";
 
 import {
   ADD_CITATIONS_TO_OTHER_INSIGHTS_DIALOG_ID,
@@ -36,15 +36,15 @@ export const openAddCitationsToOtherInsightsDialog = () => {
   (dialog as HTMLDialogElement).showModal();
 };
 
-export const getShowConfirmationFunction =
-  <T>(
-    setServerFunctionInput: React.Dispatch<React.SetStateAction<T | undefined>>,
-  ) =>
-  (input?: T) => {
-    if (input && confirm("Are you sure?")) {
-      setServerFunctionInput(input);
-    }
-  };
+// export const getShowConfirmationFunction =
+//   <T>(
+//     setServerFunctionInput: React.Dispatch<React.SetStateAction<T | undefined>>,
+//   ) =>
+//   (input?: T) => {
+//     if (input && confirm("Are you sure?")) {
+//       setServerFunctionInput(input);
+//     }
+//   };
 
 // API calls
 export type doDeleteInsightCitationsSchema = {

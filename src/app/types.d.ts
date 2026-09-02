@@ -20,9 +20,9 @@ export type Follower = {
 };
 
 export type User = {
-  id?: number;
-  username?: string;
-  email?: string;
+  id?: number; // TODO: replace id? fields with base types without ID for creation & then plain types with id
+  username: string;
+  email: string;
   avatar_uri?: string;
   token?: string;
   enable_email_notifications?: boolean;
@@ -53,11 +53,11 @@ export type Link = Fact & {
 };
 
 export type EvidenceRecord = {
+  id?: number;
   summary_id?: number;
 };
 
 export type InsightEvidence = EvidenceRecord & {
-  id?: number;
   summary_id: number;
   summary: Link;
   insight_id: number;
@@ -68,6 +68,7 @@ export type InsightEvidence = EvidenceRecord & {
 };
 
 export type Insight = Fact & {
+  description?: string;
   evidence?: InsightEvidence[];
   is_public?: boolean;
   username?: string;
@@ -110,10 +111,6 @@ export type CommentSelectedText = {
   commentId: number;
 };
 
-export type AuthUser = {
-  user_id: number;
-};
-
 export type WithPartial<T, K extends keyof T> = Omit<T, K> &
   Partial<Pick<T, K>>;
 
@@ -124,4 +121,36 @@ export type InsightLink = {
 
   parentInsight?: Insight;
   childInsight?: Insight;
+};
+
+export type Field = {
+  id?: number;
+  name: string;
+  use_count?: number;
+};
+
+export type FieldValue = {
+  id?: number;
+  field_id?: number;
+  value: string;
+};
+
+export type Note = {
+  id?: number;
+  text: string;
+  field_values?: (FieldValue & Field)[];
+  datetime?: string;
+  emoji?: string;
+};
+
+export type CookieUser = {
+  email: string;
+  token: string;
+};
+
+export type Session = {
+  id: number;
+  token: string;
+  user_id: number;
+  expires: Date | string;
 };

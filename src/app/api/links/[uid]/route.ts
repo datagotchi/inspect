@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
-import "../../../api/db";
+import "../../postgres";
 import { getPageHeaderImageUrl } from "./functions";
 import { SummaryModel } from "../../models/summaries";
 

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import parse from "html-react-parser";
 
 import InsertLinkDialog from "./InsertLinkDialog";
@@ -16,20 +16,20 @@ const RichTextEditor = ({ html, setHtml }: Props) => {
     offset: 0,
   });
 
-  const nodeIsIncluded = useCallback((nodes: Node[], node: Node) => {
-    for (let i = 0; i < nodes.length; i++) {
-      if (nodes[i] == node) {
-        return true;
-      }
-      if (nodes[i].nodeType == Node.ELEMENT_NODE) {
-        const childNodes = (nodes[i] as Element).childNodes;
-        if (nodeIsIncluded(Array.from(childNodes), node)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }, []);
+  // const nodeIsIncluded = useCallback((nodes: Node[], node: Node): boolean => {
+  //   for (let i = 0; i < nodes.length; i++) {
+  //     if (nodes[i] == node) {
+  //       return true;
+  //     }
+  //     if (nodes[i].nodeType == Node.ELEMENT_NODE) {
+  //       const childNodes = (nodes[i] as Element).childNodes;
+  //       if (nodeIsIncluded(Array.from(childNodes), node)) {
+  //         return true;
+  //       }
+  //     }
+  //   }
+  //   return false;
+  // }, []);
 
   const insertLink = () => {
     const dialog = document.getElementById(

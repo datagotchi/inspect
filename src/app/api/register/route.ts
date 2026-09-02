@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { UniqueViolationError } from "objection";
 
-import "../../api/db";
 import { User } from "../../types";
-import { getEncryptedToken } from "../../../middleware/functions";
-import { UserModel } from "../models/users";
+import { createSession } from "../../../proxy/functions";
+import { UserLibSqlModel, UserPostgresModel } from "../models/users";
 
 export type RegisterPostRouteRequestBody = Promise<{
   username: string;
@@ -37,22 +36,23 @@ export async function POST(
   const encryptedPassword = await bcrypt.hash(password, 10);
 
   try {
-    const user = await UserModel.query().insert({
+    const newUser = (await UserLibSqlModel.query().insert({
       username,
       email: email.toLocaleLowerCase().trim(),
       password: encryptedPassword,
+    })) as UserLibSqlModel;
+
+    const token = await createSession(newUser);
+    newUser.token = token;
+
+    await UserPostgresModel.query().insert({
+      id: newUser.id,
+      username: newUser.username,
+      email: newUser.email,
     });
 
-    const token = getEncryptedToken(user);
-
-    await UserModel.query()
-      .patch({
-        token,
-      })
-      .where("id", user.id!);
-
-    user.token = token;
-    return NextResponse.json(user, { status: 201 });
+    delete newUser.password;
+    return NextResponse.json(newUser, { status: 201 });
   } catch (error) {
     if (
       error instanceof UniqueViolationError &&

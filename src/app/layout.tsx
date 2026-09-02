@@ -1,5 +1,4 @@
 import React from "react";
-import Script from "next/script";
 import { cookies } from "next/headers";
 import { CookiesProvider } from "next-client-cookies/server";
 import Image from "next/image";
@@ -10,6 +9,7 @@ import "bootstrap/dist/css/bootstrap.css";
 import "../styles/index.css";
 import LoginRegisterLinks from "./components/LoginRegisterLinks";
 import ThemeSwitcher from "./components/ThemeSwitcher";
+import BootstrapClient from "./components/BootstrapClient";
 // import { getUserFromServer } from "./api/functions";
 
 interface Props {
@@ -24,17 +24,16 @@ const Dashboard = async ({ children }: Props): Promise<React.JSX.Element> => {
   // const user = authUser
   //   ? await getUserFromServer(
   //       origin,
-  //       { id: authUser.user_id },
+  //       { id: authUser.id },
   //       tokenCookie?.value,
   //     )
   //   : null;
 
   return (
     <html>
-      <head>
-        <Script src="/bootstrap.bundle.js" />
-      </head>
+      <head></head>
       <body className="bg-secondary min-h-screen">
+        <BootstrapClient />
         {/* Header - Parent Level */}
         <header className="bg-inverse border-b border-primary shadow-sm sticky top-0 z-header">
           <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">

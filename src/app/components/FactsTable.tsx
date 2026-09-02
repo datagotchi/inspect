@@ -436,7 +436,7 @@ const FactsTable = ({
                               </Link>
                             ))}
                           {selectRows && fact.title}
-                          {/* FIXME: updates several times until reactions is an empty array */}
+                          {/* TODO: updates several times until reactions is an empty array */}
                           <span className="ml-2 text-muted">
                             {fact.reactions &&
                               fact.reactions.map((r) => r.reaction).join("")}
@@ -534,7 +534,7 @@ const FactsTable = ({
                                     return submitReaction(
                                       {
                                         reaction,
-                                        // FIXME: update this submitReaction logic
+                                        // TODO: update this submitReaction logic
                                         summary_id: fact.summary_id,
                                         insight_id: fact.insight_id,
                                       },

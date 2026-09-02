@@ -5,6 +5,7 @@ import "@testing-library/jest-dom";
 import Comment from "../Comment";
 import { FactComment } from "../../types";
 import { deleteComment } from "../../functions";
+import useUser from "../../hooks/useUser";
 
 // Mock next/image
 jest.mock("next/image", () => (props: any) => {
@@ -15,11 +16,7 @@ jest.mock("next/image", () => (props: any) => {
 jest.mock("html-react-parser", () => (html: string) => <span>{html}</span>);
 
 // Mock useUser hook
-jest.mock("../../hooks/useUser", () => () => ({
-  token: "mock-token",
-  loggedIn: true,
-  user_id: 2,
-}));
+jest.mock("../../hooks/useUser");
 
 // Mock deleteComment function, starting by mocking the entire file
 jest.mock("../../functions");
@@ -29,20 +26,30 @@ const mockRemoveCommentFunc = jest.fn();
 const comment: FactComment = {
   id: 1,
   comment: "<b>Hello</b> world!",
-  user_id: 2,
-  user: { avatar_uri: undefined, username: "Test" },
+  user_id: 1,
+  user: { avatar_uri: undefined, username: "Test", email: "test@test.com" },
 };
 
 describe("Comment component", () => {
   const mockDeleteComment = deleteComment as jest.Mock;
   beforeEach(() => {
     jest.clearAllMocks();
+    (useUser as jest.Mock).mockReturnValue({
+      token: "mock-token",
+      loggedIn: true,
+      user_id: 2, // Default mock for most tests
+    });
   });
 
   it("renders comment text and avatar", () => {
-    const localComment = {
+    const localComment: FactComment = {
       ...comment,
-      user: { ...comment.user, avatar_uri: "asdf" },
+      user: {
+        ...comment.user,
+        avatar_uri: "asdf",
+        username: "Test",
+        email: "test@test.com",
+      },
     };
     render(
       <Comment
@@ -65,6 +72,11 @@ describe("Comment component", () => {
   });
 
   it("shows delete button if current user is the comment author", () => {
+    (useUser as jest.Mock).mockReturnValue({
+      token: "mock-token",
+      loggedIn: true,
+      user_id: 1,
+    });
     render(
       <Comment comment={comment} removeCommentFunc={mockRemoveCommentFunc} />,
     );
@@ -72,6 +84,11 @@ describe("Comment component", () => {
   });
 
   it("calls deleteComment and removeCommentFunc when delete button is clicked", async () => {
+    (useUser as jest.Mock).mockReturnValue({
+      token: "mock-token",
+      loggedIn: true,
+      user_id: 1,
+    });
     mockDeleteComment.mockResolvedValueOnce({});
     render(
       <Comment comment={comment} removeCommentFunc={mockRemoveCommentFunc} />,
@@ -81,7 +98,13 @@ describe("Comment component", () => {
     fireEvent.click(button);
 
     // Wait for deleteComment to be called
-    expect(mockDeleteComment).toHaveBeenCalledWith(comment, "mock-token");
+    expect(mockDeleteComment).toHaveBeenCalledWith(
+      {
+        ...comment,
+        id: String(comment.id),
+      },
+      "mock-token",
+    );
 
     // Wait for removeCommentFunc to be called after promise resolves
     await Promise.resolve();
@@ -89,9 +112,14 @@ describe("Comment component", () => {
   });
 
   it("renders with null avatar_uri but a username", () => {
-    const localCommentNoAvatar = {
+    const localCommentNoAvatar: FactComment = {
       ...comment,
-      user: { ...comment.user, avatar_uri: undefined, username: "Test User" },
+      user: {
+        ...comment.user,
+        avatar_uri: undefined,
+        username: "Test User",
+        email: "test@test.com",
+      },
     };
     render(
       <Comment

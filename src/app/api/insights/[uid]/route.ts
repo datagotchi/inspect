@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
-import "../../../api/db";
+import "../../postgres";
 import { InsightModel } from "../../models/insights";
 import { Insight, InsightEvidence } from "../../../types";
 import { getAuthUser } from "../../../functions";
@@ -47,7 +47,7 @@ export async function GET(
     children: {
       childInsight: includeNestedEvidenceTotals
         ? {
-            // FIXME: separate the CTE modifier into its own API to, e.g., enable users to request aggegate counts after seeing direct counts
+            // TODO: separate the CTE modifier into its own API to, e.g., enable users to request aggegate counts after seeing direct counts
             $modify: ["selectTotalEvidenceCount"],
             // title: true,
             // children: { childInsight: true },
@@ -66,7 +66,7 @@ export async function GET(
     evidence: {
       $modify: [
         "selectDisplayAndSummaryJoinColumn",
-        // FIXME: pagination of evidence does not work because of modifier formatting:
+        // TODO: pagination of evidence does not work because of modifier formatting:
         // ["selectPagedEvidence", evidenceOffset, evidenceLimit],
       ],
       summary: { source: true, comments: { user: true }, reactions: true },
@@ -114,7 +114,7 @@ export async function PATCH(
       if (newTitle || newIsPublic) {
         const insight = await InsightModel.query()
           .findOne("uid", uid)
-          .where("user_id", authUser.user_id);
+          .where("user_id", authUser.id!);
         if (insight) {
           const insightUpdateData: Partial<Insight> = {
             updated_at: new Date().toDateString(),

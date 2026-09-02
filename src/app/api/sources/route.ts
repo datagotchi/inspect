@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import "../../api/db";
+import "../postgres";
 import { Source } from "../../types";
 import { SourceModel } from "../models/sources";
 

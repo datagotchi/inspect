@@ -1,18 +1,20 @@
 import { Model, QueryBuilder } from "objection";
 
 import { FactComment } from "../../types";
-import { UserModel } from "../models/users";
+import { UserLibSqlModel } from "../models/users";
 
 export class CommentModel extends Model implements FactComment {
   static tableName = "comments";
 
-  user!: UserModel;
+  user!: UserLibSqlModel;
   username!: string;
   id?: number;
   comment!: string;
   summary_id?: number;
   insight_id?: number;
   user_id?: number;
+  created_at?: string;
+  updated_at?: string;
 
   static jsonSchema = {
     type: "object",
@@ -42,11 +44,20 @@ export class CommentModel extends Model implements FactComment {
   static relationMappings = {
     user: {
       relation: Model.BelongsToOneRelation,
-      modelClass: UserModel,
+      modelClass: UserLibSqlModel,
       join: {
         from: "comments.user_id",
         to: "users.id",
       },
     },
   };
+
+  $beforeInsert() {
+    this.created_at = new Date().toISOString();
+    this.updated_at = new Date().toISOString();
+  }
+
+  $beforeUpdate() {
+    this.updated_at = new Date().toISOString();
+  }
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { verifyTokenAndGetUser } from "./proxy/functions"; // You'll need to create this
 import { cookies, headers } from "next/headers";
-import { decryptToken } from "./middleware/functions";
 
 export const ANONYMOUS_REGEXES = [
   "^/_next",
@@ -22,17 +22,17 @@ export const ANONYMOUS_REGEXES = [
   "^/api/articles",
 ];
 
-export const middleware = async (req: NextRequest): Promise<NextResponse> => {
+export const proxy = async (req: NextRequest): Promise<NextResponse> => {
   const cookiesCollection = await cookies();
   const tokenCookie = cookiesCollection.has("token")
     ? cookiesCollection.get("token")?.value
     : "";
   const headersObject = await headers();
   const token = headersObject.get("x-access-token") || tokenCookie;
-  let authUser;
+  let authUser = null;
   // TODO: figure out why x-access-token is sometimes the 'undefined' string
   if (token && token !== "undefined") {
-    authUser = decryptToken(token);
+    authUser = await verifyTokenAndGetUser(token);
   }
   const anonymousPathMatch = ANONYMOUS_REGEXES.find((regex) =>
     req.nextUrl.pathname.match(new RegExp(regex)),
@@ -49,6 +49,19 @@ export const middleware = async (req: NextRequest): Promise<NextResponse> => {
   let origin = req.nextUrl.origin;
   let url = req.nextUrl.href;
 
+  // TODO: get the "Real" host and protocol from Nginx headers
+  /* TODO: meaning update the nginx config with: 
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host; # This is the magic line
+        proxy_set_header X-Forwarded-Proto $scheme; # This tells it "https"
+    }
+  */
+  // const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+  // const protocol = req.headers.get("x-forwarded-proto") || "http";
+
+  // const origin = `${protocol}://${host}`;
+  // const url = `${origin}${req.nextUrl.pathname}${req.nextUrl.search}`;
   if (process.env.NODE_ENV === "production") {
     origin = origin.replace(
       /http:\/\/localhost:3000/,
@@ -66,7 +79,7 @@ export const middleware = async (req: NextRequest): Promise<NextResponse> => {
 
   if (authUser) {
     res.headers.set("x-authUser", JSON.stringify(authUser));
-  } else if (token && token !== "undefined") {
+  } else if (token && token !== "undefined" && !anonymousPathMatch) {
     // Clear invalid token from cookies
     res.cookies.set("token", "", {
       expires: new Date(0),

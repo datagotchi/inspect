@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 
 import { PATCH } from "./route";
 import { getAuthUser } from "../../functions";
-import { UserModel } from "../models/users";
+import { UserLibSqlModel } from "../models/users";
 
 jest.mock("../../functions");
 
@@ -22,7 +22,7 @@ jest.mock("../models/users", () => {
   });
 
   return {
-    UserModel: MockInsightModelConstructor,
+    UserLibSqlModel: MockInsightModelConstructor,
   };
 });
 
@@ -30,14 +30,14 @@ describe("PATCH /api/users", () => {
   const mockUser = { id: 1, email: "test@test.com" };
   beforeEach(() => {
     jest.clearAllMocks();
-    (UserModel.query().patchAndFetchById as jest.Mock).mockReturnThis();
-    (UserModel.query().then as jest.Mock).mockImplementation((callback) =>
+    (UserLibSqlModel.query().patchAndFetchById as jest.Mock).mockReturnThis();
+    (UserLibSqlModel.query().then as jest.Mock).mockImplementation((callback) =>
       Promise.resolve(callback(mockUser)),
     );
   });
 
   it("should update user information if authenticated", async () => {
-    (getAuthUser as jest.Mock).mockResolvedValue({ user_id: 1 });
+    (getAuthUser as jest.Mock).mockResolvedValue({ id: 1 });
     const req = new NextRequest("http://localhost", {
       method: "PATCH",
       body: JSON.stringify({ email: "newemail@example.com" }),
@@ -46,8 +46,8 @@ describe("PATCH /api/users", () => {
       ...mockUser,
       email: "newemail@example.com",
     };
-    (UserModel.query().then as jest.Mock).mockImplementationOnce((callback) =>
-      Promise.resolve(callback(newMockUser)),
+    (UserLibSqlModel.query().then as jest.Mock).mockImplementationOnce(
+      (callback) => Promise.resolve(callback(newMockUser)),
     );
 
     const response = await PATCH(req);

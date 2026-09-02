@@ -22,3 +22,13 @@
 
 /* Import legacy styles (to be migrated) */
 @import "./legacy/legacy-styles.css";
+
+.easy-edit-button {
+  font-size: 16px;
+}
+.fieldTable td {
+  vertical-align: top;
+}
+.fieldTable {
+  margin-left: 1em;
+}

@@ -44,7 +44,7 @@ const Linkpage = async ({ params }: PageProps): Promise<React.JSX.Element> => {
   const currentUser = authUser
     ? await getUserFromServer(
         origin ?? "",
-        { id: authUser.user_id },
+        { id: authUser.id! },
         (await cookies()).get("token")?.value,
       )
     : null;

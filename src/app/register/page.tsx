@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 import useUser from "../hooks/useUser";
 import { handleRegister } from "./RegisterPageFunctions";
@@ -9,12 +9,8 @@ const RegisterPage = (): React.JSX.Element => {
   const [email, setEmail] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [returnParam, setReturnParm] = useState<string>();
-  useEffect(() => {
-    setReturnParm(
-      new URLSearchParams(document.location.search).get("return") || undefined,
-    );
-  }, []);
+  const returnParam =
+    new URLSearchParams(document.location.search).get("return") || undefined;
   const { setLoggedIn, setToken } = useUser();
 
   return (

@@ -1,33 +1,29 @@
-import CopyPlugin from "copy-webpack-plugin";
-
 export default {
-  webpack: (config, { webpack, dev }) => {
-    config.plugins.push(
-      new webpack.IgnorePlugin({
-        resourceRegExp: /^pg-native$|^cloudflare:sockets$/,
-      }),
-    );
+  // Opt out of caching fetch requests in development
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
+  },
 
-    config.plugins.push(
-      new CopyPlugin({
-        patterns: [
-          {
-            from: "node_modules/bootstrap/dist/js/bootstrap.bundle.js",
-            to: "../public/",
-          },
-        ],
-      }),
-    );
+  // This `webpack` function is primarily used for configuring production builds (`next build`).
+  // For development (`next dev --turbo`), Turbopack is used, and it respects `config.resolve.alias`.
+  webpack: (config, { dev, isServer }) => {
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "pg-native": false,
+        "cloudflare:sockets": false,
+      };
+    }
 
     return config;
   },
+
   pageExtensions: ["ts", "tsx"],
-  experimental: {
-    forceSwcTransforms: true,
-  },
   images: {
     unoptimized: true,
   },
   productionBrowserSourceMaps: true,
-  serverExternalPackages: ["knex"],
+  serverExternalPackages: ["knex", "@libsql/client"],
 };

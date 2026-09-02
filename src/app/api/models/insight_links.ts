@@ -1,13 +1,15 @@
 import { Model, QueryBuilder } from "objection";
+import "../postgres";
 import { InsightLink } from "../../types";
-import { InsightModel } from "./insights";
+import { PostgresBaseModel } from "./postgres_models";
 
-export class InsightLinkModel extends Model implements InsightLink {
+export class InsightLinkModel extends PostgresBaseModel implements InsightLink {
   static tableName = "insight_links";
 
   id?: number;
   parent_id!: number;
   child_id!: number;
+  created_at?: string;
 
   static jsonSchema = {
     type: "object",
@@ -19,8 +21,10 @@ export class InsightLinkModel extends Model implements InsightLink {
     },
   };
 
-  parentInsight?: InsightModel;
-  childInsight?: InsightModel;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  parentInsight?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  childInsight?: any;
 
   static modifiers = {
     selectDirectChildrenCount(builder: QueryBuilder<InsightLinkModel>) {
@@ -49,5 +53,9 @@ export class InsightLinkModel extends Model implements InsightLink {
         },
       },
     };
+  }
+
+  $beforeInsert() {
+    this.created_at = new Date().toISOString();
   }
 }

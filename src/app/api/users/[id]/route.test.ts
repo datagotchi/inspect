@@ -4,7 +4,7 @@
 import { NextRequest } from "next/server";
 
 import { GET, DELETE } from "./route";
-import { UserModel } from "../../models/users";
+import { UserLibSqlModel } from "../../models/users";
 import { getAuthUser } from "../../../functions";
 
 jest.mock("../../../functions");
@@ -29,19 +29,19 @@ jest.mock("../../models/users", () => {
 describe("GET /api/users/[id]", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (UserModel.query().findById as jest.Mock).mockReturnThis();
-    (UserModel.query().then as jest.Mock).mockImplementation((callback) =>
+    (UserLibSqlModel.query().findById as jest.Mock).mockReturnThis();
+    (UserLibSqlModel.query().then as jest.Mock).mockImplementation((callback) =>
       Promise.resolve(callback({})),
     );
   });
   it("should return user information if user exists", async () => {
     const mockUser = { id: 1, name: "John Doe", followers: [] };
-    (UserModel.query().then as jest.Mock).mockImplementationOnce((callback) =>
-      Promise.resolve(callback(mockUser)),
+    (UserLibSqlModel.query().then as jest.Mock).mockImplementationOnce(
+      (callback) => Promise.resolve(callback(mockUser)),
     );
 
     const req = new NextRequest("http://localhost");
-    const props = { params: Promise.resolve({ id: 1 }) };
+    const props = { params: Promise.resolve({ id: "1" }) };
 
     const response = await GET(req, props);
     const json = await response.json();
@@ -51,11 +51,11 @@ describe("GET /api/users/[id]", () => {
   });
 
   it("should return 404 if user does not exist", async () => {
-    (UserModel.query().then as jest.Mock).mockImplementationOnce((callback) =>
-      Promise.resolve(callback(null)),
+    (UserLibSqlModel.query().then as jest.Mock).mockImplementationOnce(
+      (callback) => Promise.resolve(callback(null)),
     );
     const req = new NextRequest("http://localhost");
-    const props = { params: Promise.resolve({ id: 1 }) };
+    const props = { params: Promise.resolve({ id: "1" }) };
 
     const response = await GET(req, props);
     const json = await response.json();
@@ -68,15 +68,15 @@ describe("GET /api/users/[id]", () => {
 describe("DELETE /api/users/[id]", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (UserModel.query().deleteById as jest.Mock).mockReturnThis();
-    (UserModel.query().then as jest.Mock).mockImplementation((callback) =>
+    (UserLibSqlModel.query().deleteById as jest.Mock).mockReturnThis();
+    (UserLibSqlModel.query().then as jest.Mock).mockImplementation((callback) =>
       Promise.resolve(callback({})),
     );
     (getAuthUser as jest.Mock).mockResolvedValue({ user_id: 1 });
   });
   it("should delete user if authenticated user matches request user id", async () => {
     const req = new NextRequest("http://localhost");
-    const props = { params: Promise.resolve({ id: 1 }) };
+    const props = { params: Promise.resolve({ id: "1" }) };
 
     const response = await DELETE(req, props);
     const json = await response.json();
@@ -87,7 +87,7 @@ describe("DELETE /api/users/[id]", () => {
 
   it("should return 403 if authenticated user does not match request user id", async () => {
     const req = new NextRequest("http://localhost");
-    const props = { params: Promise.resolve({ id: 2 }) };
+    const props = { params: Promise.resolve({ id: "2" }) };
 
     const response = await DELETE(req, props);
     const json = await response.json();
@@ -100,7 +100,7 @@ describe("DELETE /api/users/[id]", () => {
     (getAuthUser as jest.Mock).mockResolvedValueOnce(null);
 
     const req = new NextRequest("http://localhost");
-    const props = { params: Promise.resolve({ id: 1 }) };
+    const props = { params: Promise.resolve({ id: "1" }) };
 
     const response = await DELETE(req, props);
     const json = await response.json();
@@ -110,8 +110,8 @@ describe("DELETE /api/users/[id]", () => {
   });
 
   it("should return 500 if there is a server error", async () => {
-    (UserModel.query().then as jest.Mock).mockReset();
-    (UserModel.query().then as jest.Mock).mockImplementationOnce(() =>
+    (UserLibSqlModel.query().then as jest.Mock).mockReset();
+    (UserLibSqlModel.query().then as jest.Mock).mockImplementationOnce(() =>
       Promise.reject(new Error("Database error")),
     );
     const req = new NextRequest("http://localhost", {
@@ -119,7 +119,7 @@ describe("DELETE /api/users/[id]", () => {
         "x-authUser": JSON.stringify({ user_id: "1" }),
       },
     });
-    const props = { params: Promise.resolve({ id: 1 }) };
+    const props = { params: Promise.resolve({ id: "1" }) };
 
     const response = await DELETE(req, props);
     expect(response.status).toBe(500);

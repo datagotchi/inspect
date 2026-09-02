@@ -9,13 +9,13 @@ import {
 } from "./api/comments/route";
 import { PostRequestRouteRequestBody } from "./api/reactions/route";
 import {
-  AuthUser,
   FactComment,
   FactReaction,
   Indexable,
   Insight,
   InsightEvidence,
   Link,
+  User,
 } from "./types";
 import { SortDir } from "./components/FactsTable";
 
@@ -144,7 +144,7 @@ export const getDisabledInsightIds = (
 
 export const getAuthUser = async (headers: () => Promise<ReadonlyHeaders>) => {
   const authUserString = (await headers()).get("x-authUser");
-  return authUserString ? (JSON.parse(authUserString) as AuthUser) : null;
+  return authUserString ? (JSON.parse(authUserString) as User) : null;
 };
 
 export const getColumnName = (

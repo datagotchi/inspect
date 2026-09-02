@@ -113,7 +113,7 @@ const insightPageHasCitation = async (
   await expect(page.getByRole("heading", { name: insightTitle })).toBeVisible();
 
   const citationsTable: Locator = page.locator("#body > table.facts-table");
-  // FIXME: works in debug, not otherwise -- wait or something?
+  // TODO: works in debug, not otherwise -- wait or something?
   await expect(citationsTable).toBeVisible();
   const bodyTableRow = citationsTable
     .locator("tbody > tr")

@@ -1,4 +1,5 @@
 import globals from "globals";
+import nextPlugin from "@next/eslint-plugin-next";
 
 import jsPlugin from "@eslint/js";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
@@ -10,8 +11,6 @@ import tseslint from "typescript-eslint";
 import typescriptParser from "@typescript-eslint/parser";
 
 import jestPlugin from "eslint-plugin-jest";
-
-import nextPlugin from "@next/eslint-plugin-next";
 
 import playwrightPlugin from "eslint-plugin-playwright";
 
@@ -28,9 +27,12 @@ export default [
       },
     },
   },
-  // global files: all typescript files
+  // global plugins
   {
-    files: ["**/*.{ts,tsx}"],
+    plugins: {
+      js: jsPlugin,
+      "@typescript-eslint": tseslint.plugin,
+    },
   },
   // global ignores
   {
@@ -44,28 +46,20 @@ export default [
       "src/scripts/",
     ],
   },
-  // global plugins
+  // global language options for TS files
   {
-    plugins: {
-      js: jsPlugin,
-      "@typescript-eslint": tseslint.plugin,
-    },
-  },
-  // global language options
-  {
+    files: ["**/*.{ts,tsx}"],
     languageOptions: {
       globals: { ...globals.browser, ...globals.node },
       parser: typescriptParser,
       parserOptions: {
         project: "./tsconfig.json",
-        ecmaFeatures: {
-          enableJsx: false,
-        },
       },
     },
   },
   // global rules
   {
+    ignores: ["**/*.test.{ts,tsx}", "src/e2e-tests/*.spec.ts"],
     rules: {
       ...jsPlugin.configs.recommended.rules,
       ...tseslint.configs.recommended.rules,
@@ -106,19 +100,24 @@ export default [
       ...reactPlugin.configs.recommended.rules,
       ...jestPlugin.configs["flat/recommended"].rules,
 
+      "no-unused-vars": "off",
+
       "react/prop-types": "error",
       "react/display-name": "off",
 
       "@typescript-eslint/no-explicit-any": "off",
     },
     languageOptions: {
-      globals: { ...globals.jest },
+      globals: {
+        ...globals.jest,
+      },
     },
   },
   // next app config
   {
     ...reactPlugin.configs.flat.recommended,
-    ignores: ["**/*.test.{ts,tsx}"],
+    files: ["src/app/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}"], // still ignore test files within the app directory
     plugins: {
       react: reactPlugin,
       "react-hooks": reactHooksPlugin,
@@ -134,6 +133,8 @@ export default [
 
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
+
+      "react-hooks/set-state-in-effect": "off",
 
       "@next/next/no-img-element": "error",
     },

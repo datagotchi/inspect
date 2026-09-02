@@ -63,7 +63,7 @@ describe("DELETE", () => {
   it("returns 401 if user is not authenticated", async () => {
     (getAuthUser as jest.Mock).mockResolvedValue(null);
 
-    const res = await DELETE(mockReq, { params: Promise.resolve({ id: 1 }) });
+    const res = await DELETE(mockReq, { params: Promise.resolve({ id: "1" }) });
     expect(res.status).toBe(401);
     expect(await res.json()).toEqual({ statusText: "Unauthorized" });
   });
@@ -82,7 +82,6 @@ describe("DELETE", () => {
     (getAuthUser as jest.Mock).mockResolvedValue({ user_id: 123 });
 
     const res = await DELETE(mockReq, {
-      // @ts-expect-error -- invalid id is the point of this test
       params: Promise.resolve({ id: "abc" }),
     });
     expect(res.status).toBe(400);
@@ -105,7 +104,7 @@ describe("DELETE", () => {
         ),
     );
 
-    const res = await DELETE(mockReq, { params: Promise.resolve({ id: 1 }) });
+    const res = await DELETE(mockReq, { params: Promise.resolve({ id: "1" }) });
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
       statusText: "Child insight with specified id not found",
@@ -119,7 +118,7 @@ describe("DELETE", () => {
       (callback) => Promise.resolve(callback(0)),
     );
 
-    const res = await DELETE(mockReq, { params: Promise.resolve({ id: 3 }) });
+    const res = await DELETE(mockReq, { params: Promise.resolve({ id: "3" }) });
 
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
@@ -130,7 +129,7 @@ describe("DELETE", () => {
   it("deletes child insight and returns success", async () => {
     (getAuthUser as jest.Mock).mockResolvedValue({ user_id: 123 });
 
-    const res = await DELETE(mockReq, { params: Promise.resolve({ id: 1 }) });
+    const res = await DELETE(mockReq, { params: Promise.resolve({ id: "1" }) });
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ statusText: "success" });

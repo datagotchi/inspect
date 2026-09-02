@@ -73,8 +73,8 @@ describe("AddChildInsightsDialog", () => {
         isOpen={true}
         onClose={handleClose}
         insight={mockInsight as any}
-        setServerFunctionInput={setServerFunctionInput}
-        setActiveServerFunction={setActiveServerFunction}
+        // setServerFunctionInput={setServerFunctionInput}
+        // setActiveServerFunction={setActiveServerFunction}
       />,
     );
   }

@@ -126,7 +126,7 @@ describe("POST /api/evidence", () => {
       } as unknown as typeof ForeignKeyViolationError,
     });
 
-    // FIXME: test fails due to uncaught promise rejection
+    // TODO: test fails due to uncaught promise rejection
     const res = await POST(req);
 
     expect(res.status).toBe(409);

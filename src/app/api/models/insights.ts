@@ -1,19 +1,23 @@
 import { Model, QueryBuilder, ref } from "objection";
-import knex from "../db";
 
+import "../postgres";
 import { Insight, InsightEvidence, InsightLink } from "../../types";
 import { CommentModel } from "./comments";
 import { EvidenceModel } from "./evidence";
 import { ReactionModel } from "./reactions";
+import { PostgresBaseModel } from "./postgres_models";
 
-export class InsightModel extends Model implements Insight {
+export class InsightModel extends PostgresBaseModel implements Insight {
   static tableName = "insights";
 
   id?: number;
   uid?: string;
   title!: string;
+  description!: string;
   is_public!: boolean;
   user_id!: number;
+  created_at?: string;
+  updated_at?: string;
 
   static jsonSchema = {
     type: "object",
@@ -43,6 +47,7 @@ export class InsightModel extends Model implements Insight {
       builder.select("insights.id");
     },
     selectTotalEvidenceCount(builder: QueryBuilder<InsightModel>) {
+      const raw = builder.knex().raw;
       builder
         .withRecursive("insightHierarchy", (qb) => {
           // Anchor member: Select the current insight's ID and evidence count
@@ -52,7 +57,7 @@ export class InsightModel extends Model implements Insight {
             InsightModel.relatedQuery<EvidenceModel>("evidence")
               .count("id")
               .as("evidenceCount"),
-            knex.raw("1 as depth"),
+            raw("1 as depth"),
           )
             .from("insights")
             .where("insights.id", ref("insights.id")); // Reference the ID of the 'root' insight for which the modifier was called
@@ -66,17 +71,17 @@ export class InsightModel extends Model implements Insight {
                   .for("child_insights")
                   .count("id")
                   .as("evidenceCount"), // Count evidence for the child insight
-                knex.raw("ih.depth + 1 as depth"),
+                raw("ih.depth + 1 as depth"),
               )
               .from("insights as child_insights") // Alias to distinguish from parent insights
               .join("insight_links as il", "child_insights.id", "il.child_id") // Join child insights with the link table
               .join("insightHierarchy as ih", "il.parent_id", "ih.id") // Join link table with the recursive CTE (finding parents of current children)
-              .where(knex.raw("ih.depth < 5")),
+              .where(raw("ih.depth < 5")),
           );
         })
         .select(
           "insights.*", // Select all columns from the current insight
-          knex.raw(
+          raw(
             "COALESCE(SUM(insightHierarchy.evidenceCount), 0) AS totalEvidenceCount",
           ),
         )
@@ -139,5 +144,14 @@ export class InsightModel extends Model implements Insight {
         },
       },
     };
+  }
+
+  $beforeInsert() {
+    this.created_at = new Date().toISOString();
+    this.updated_at = new Date().toISOString();
+  }
+
+  $beforeUpdate() {
+    this.updated_at = new Date().toISOString();
   }
 }

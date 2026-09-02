@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-import "../../api/db";
+import "../postgres";
 import { FactComment } from "../../types";
 import { getAuthUser } from "../../functions";
 import { CommentModel } from "../models/comments";
@@ -25,14 +25,14 @@ export async function POST(
   req: PostCommentRequest,
 ): Promise<PostCommentResponse> {
   const authUser = await getAuthUser(headers);
-  if (authUser && `${authUser.user_id}`.match(/^\d+$/)) {
+  if (authUser && `${authUser.id}`.match(/^\d+$/)) {
     const { insight_id, summary_id, comment } = await req.json();
     if (comment && (insight_id || summary_id)) {
       const commentToInsert = {
         insight_id: insight_id ? Number(insight_id) : insight_id,
         summary_id: summary_id ? Number(summary_id) : summary_id,
         comment,
-        user_id: authUser.user_id,
+        user_id: authUser.id,
       };
       try {
         const newComment = await CommentModel.query()

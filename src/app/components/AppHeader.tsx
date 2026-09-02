@@ -1,16 +1,14 @@
 "use client";
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React from "react";
 
 const AppHeader = (): React.JSX.Element => {
-  const [origin, setOrigin] = useState<string>();
-  useEffect(() => setOrigin(window.location.origin), []);
   return (
     <div id="header">
       <div
         style={{ textAlign: "center" }}
         className="pointer"
-        onClick={() => open(origin, "_self")}
+        onClick={() => open(window.location.origin, "_self")}
       >
         <Image
           src="/images/icon.png"

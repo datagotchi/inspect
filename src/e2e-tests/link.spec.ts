@@ -227,7 +227,7 @@ test.describe("Link page", () => {
       await dialogSubmitButton.click();
       await expect(dialog).toBeHidden();
 
-      // FIXME: original commentInput is overwritten
+      // TODO: original commentInput is overwritten
       // const commentText = /Check this out: Insight: .+/;
       const commentText = /Insight: .+/;
       await expect(commentInput).toHaveText(commentText);
@@ -269,7 +269,7 @@ test.describe("Link page", () => {
       await dialogSubmitButton.click();
       await expect(dialog).toBeHidden();
 
-      // FIXME: original commentInput is overwritten
+      // TODO: original commentInput is overwritten
       // const commentText = /Check this out: Link: .+/;
       const commentText = /Link: .+/;
       await expect(commentInput).toHaveText(commentText);

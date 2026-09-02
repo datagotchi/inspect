@@ -15,7 +15,7 @@ const InsightsPage = async (): Promise<React.JSX.Element> => {
 
   const authUser = await getAuthUser(headers);
   const currentUser = authUser
-    ? await getUserFromServer(origin, { id: authUser.user_id }, token)
+    ? await getUserFromServer(origin, { id: authUser.id! }, token)
     : null;
 
   const insightSearchParams = new URLSearchParams(
@@ -27,7 +27,7 @@ const InsightsPage = async (): Promise<React.JSX.Element> => {
   if (insights && Array.isArray(insights)) {
     return (
       <ClientSidePage
-        insights={insights.filter((i) => i.user_id == authUser?.user_id)}
+        insights={insights.filter((i) => i.userId == authUser?.id)}
         currentUser={currentUser || null}
       />
     );

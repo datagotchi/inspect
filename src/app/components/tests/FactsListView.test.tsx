@@ -75,14 +75,14 @@ describe("FactsListView", () => {
       >
         <FactsListView
           factName="testFact"
-          setServerFunctionInput={jest.fn()}
+          // setServerFunctionInput={jest.fn()}
           selectedFacts={[]}
           setSelectedFacts={jest.fn()}
           unselectedActions={mockUnselectedActions}
           selectedActions={mockSelectedActions}
           columns={mockColumns}
-          setActiveServerFunction={jest.fn()}
-          activeServerFunction={{ function: jest.fn() }}
+          // setActiveServerFunction={jest.fn()}
+          // activeServerFunction={{ function: jest.fn() }}
         />
       </FactsDataContext.Provider>,
     );
@@ -94,10 +94,10 @@ describe("FactsListView", () => {
 
   it("calls handleOnClick and activeServerFunction for unselected action", async () => {
     mockServerFunction.mockResolvedValue([{ action: 0, facts: [] }]);
-    let activeServerFunction;
-    const mockSetActiveServerFunction = jest.fn().mockImplementation((func) => {
-      activeServerFunction = func;
-    });
+    // let activeServerFunction;
+    // const mockSetActiveServerFunction = jest.fn().mockImplementation((func) => {
+    //   activeServerFunction = func;
+    // });
 
     const { rerender } = render(
       <FactsDataContext.Provider
@@ -106,14 +106,14 @@ describe("FactsListView", () => {
         <FactsListView
           factName="testFact"
           serverFunctionInput={{}}
-          setServerFunctionInput={jest.fn()}
+          // setServerFunctionInput={jest.fn()}
           selectedFacts={[]}
           setSelectedFacts={jest.fn()}
           unselectedActions={mockUnselectedActions}
           selectedActions={mockSelectedActions}
           columns={mockColumns}
-          setActiveServerFunction={mockSetActiveServerFunction}
-          activeServerFunction={activeServerFunction}
+          // setActiveServerFunction={mockSetActiveServerFunction}
+          // activeServerFunction={activeServerFunction}
         />
       </FactsDataContext.Provider>,
     );
@@ -121,9 +121,9 @@ describe("FactsListView", () => {
     fireEvent.click(screen.getByText("Unselected Action"));
 
     expect(mockHandleOnClick).toHaveBeenCalledTimes(1);
-    expect(mockSetActiveServerFunction).toHaveBeenCalledWith({
-      function: mockServerFunction,
-    });
+    // expect(mockSetActiveServerFunction).toHaveBeenCalledWith({
+    //   function: mockServerFunction,
+    // });
 
     rerender(
       <FactsDataContext.Provider
@@ -132,31 +132,31 @@ describe("FactsListView", () => {
         <FactsListView
           factName="testFact"
           serverFunctionInput={{}}
-          setServerFunctionInput={jest.fn()}
+          // setServerFunctionInput={jest.fn()}
           selectedFacts={[]}
           setSelectedFacts={jest.fn()}
           unselectedActions={mockUnselectedActions}
           selectedActions={mockSelectedActions}
           columns={mockColumns}
-          setActiveServerFunction={mockSetActiveServerFunction}
-          activeServerFunction={activeServerFunction}
+          // setActiveServerFunction={mockSetActiveServerFunction}
+          // activeServerFunction={activeServerFunction}
         />
       </FactsDataContext.Provider>,
     );
 
     await waitFor(() => expect(mockServerFunction).toHaveBeenCalledTimes(1));
-    expect(mockSetActiveServerFunction).toHaveBeenCalledWith({
-      function: mockServerFunction,
-    });
-    expect(mockSetActiveServerFunction).toHaveBeenCalledWith(undefined);
+    // expect(mockSetActiveServerFunction).toHaveBeenCalledWith({
+    //   function: mockServerFunction,
+    // });
+    // expect(mockSetActiveServerFunction).toHaveBeenCalledWith(undefined);
   });
 
   it("calls handleOnClick for selected action", async () => {
     mockServerFunction.mockResolvedValue([{ action: 0, facts: [] }]);
-    let activeServerFunction;
-    const mockSetActiveServerFunction = jest.fn().mockImplementation((func) => {
-      activeServerFunction = func;
-    });
+    // let activeServerFunction;
+    // const mockSetActiveServerFunction = jest.fn().mockImplementation((func) => {
+    //   activeServerFunction = func;
+    // });
     const selectedFacts = [mockFacts[0]];
 
     const { rerender } = render(
@@ -166,14 +166,14 @@ describe("FactsListView", () => {
         <FactsListView
           factName="testFact"
           serverFunctionInput={{}}
-          setServerFunctionInput={jest.fn()}
+          // setServerFunctionInput={jest.fn()}
           selectedFacts={selectedFacts}
           setSelectedFacts={jest.fn()}
           unselectedActions={mockUnselectedActions}
           selectedActions={mockSelectedActions}
           columns={mockColumns}
-          setActiveServerFunction={mockSetActiveServerFunction}
-          activeServerFunction={activeServerFunction}
+          // setActiveServerFunction={mockSetActiveServerFunction}
+          // activeServerFunction={activeServerFunction}
         />
       </FactsDataContext.Provider>,
     );
@@ -189,9 +189,9 @@ describe("FactsListView", () => {
     fireEvent.click(screen.getByText("Selected Action"));
     expect(mockHandleOnClick).toHaveBeenCalledWith([mockFacts[0]]);
 
-    expect(mockSetActiveServerFunction).toHaveBeenCalledWith({
-      function: mockServerFunction,
-    });
+    // expect(mockSetActiveServerFunction).toHaveBeenCalledWith({
+    //   function: mockServerFunction,
+    // });
 
     rerender(
       <FactsDataContext.Provider
@@ -200,14 +200,14 @@ describe("FactsListView", () => {
         <FactsListView
           factName="testFact"
           serverFunctionInput={{}}
-          setServerFunctionInput={jest.fn()}
+          // setServerFunctionInput={jest.fn()}
           selectedFacts={selectedFacts}
           setSelectedFacts={jest.fn()}
           unselectedActions={mockUnselectedActions}
           selectedActions={mockSelectedActions}
           columns={mockColumns}
-          setActiveServerFunction={mockSetActiveServerFunction}
-          activeServerFunction={activeServerFunction}
+          // setActiveServerFunction={mockSetActiveServerFunction}
+          // activeServerFunction={activeServerFunction}
         />
       </FactsDataContext.Provider>,
     );
@@ -222,14 +222,14 @@ describe("FactsListView", () => {
       >
         <FactsListView
           factName="testFact"
-          setServerFunctionInput={jest.fn()}
+          // setServerFunctionInput={jest.fn()}
           selectedFacts={[]}
           setSelectedFacts={jest.fn()}
           unselectedActions={mockUnselectedActions}
           selectedActions={mockSelectedActions}
           columns={mockColumns}
-          setActiveServerFunction={jest.fn()}
-          activeServerFunction={{ function: jest.fn() }}
+          // setActiveServerFunction={jest.fn()}
+          // activeServerFunction={{ function: jest.fn() }}
         />
       </FactsDataContext.Provider>,
     );

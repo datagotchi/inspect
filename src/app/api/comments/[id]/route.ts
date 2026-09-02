@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
-import "../../../api/db";
+import "../../postgres";
 import { getAuthUser } from "../../../functions";
 import { CommentModel } from "../../models/comments";
 
@@ -25,7 +25,7 @@ export async function DELETE(
         CommentModel.query()
           .select("comments.id")
           .joinRelated("user")
-          .where("comments.user_id", authUser.user_id),
+          .where("comments.user_id", authUser.id!),
       );
     if (rowCount > 0) {
       return NextResponse.json({ statusText: "success" });

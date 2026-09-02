@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
-import "../../../api/db";
+import "../../postgres";
 import { User } from "../../../types";
 import { getAuthUser } from "../../../functions";
-import { UserModel } from "../../models/users";
+import { UserLibSqlModel, UserPostgresModel } from "../../models/users";
 
 export interface GetUserRouteProps {
   params: Promise<{ id: string }>;
@@ -18,7 +18,9 @@ export async function GET(
 ): Promise<GetUserRouteResponse> {
   const params = await props.params;
   const { id } = params;
-  const user = await UserModel.query().findById(id);
+  const user = (await UserLibSqlModel.query().findById(
+    id,
+  )) as UserPostgresModel;
   //.withGraphJoined("followers");
 
   if (!user) {
@@ -40,10 +42,10 @@ export async function DELETE(
   const requestUserId = Number(params.id);
   const authUser = await getAuthUser(headers);
   if (authUser) {
-    if (authUser.user_id === requestUserId) {
+    if (authUser.id === requestUserId) {
       return (
-        UserModel.query()
-          .deleteById(authUser.user_id)
+        UserLibSqlModel.query()
+          .deleteById(authUser.id)
           .then(() => {
             return NextResponse.json({ statusText: "success" });
           })

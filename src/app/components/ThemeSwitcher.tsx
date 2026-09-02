@@ -7,12 +7,28 @@ interface ThemeSwitcherProps {
   className?: string;
 }
 
+type ThemeState = {
+  theme: string;
+  spacing: string;
+  radius: string;
+  shadow: string;
+  isOpen: boolean;
+};
 const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ className = "" }) => {
-  const [currentTheme, setCurrentTheme] = useState<string>("");
-  const [currentSpacing, setCurrentSpacing] = useState<string>("");
-  const [currentRadius, setCurrentRadius] = useState<string>("");
-  const [currentShadow, setCurrentShadow] = useState<string>("");
-  const [isOpen, setIsOpen] = useState(false);
+  const [themeState, setThemeState] = useState<ThemeState>(() => {
+    // This function only runs once on the client during initialization
+    if (typeof window === "undefined") {
+      // Return a default state for server-side rendering
+      return { theme: "", spacing: "", radius: "", shadow: "", isOpen: false };
+    }
+    return {
+      theme: localStorage.getItem("theme") || "",
+      spacing: localStorage.getItem("spacing") || "",
+      radius: localStorage.getItem("radius") || "",
+      shadow: localStorage.getItem("shadow") || "",
+      isOpen: localStorage.getItem("themeSwitcherOpen") === "true",
+    };
+  });
 
   const themes = [
     { name: "Default (Blue)", class: "" },
@@ -43,24 +59,6 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ className = "" }) => {
     { name: "Subtle", class: "shadow-subtle" },
     { name: "Bold", class: "shadow-bold" },
   ];
-
-  useEffect(() => {
-    // Load saved preferences from localStorage
-    const savedTheme = localStorage.getItem("theme") || "";
-    const savedSpacing = localStorage.getItem("spacing") || "";
-    const savedRadius = localStorage.getItem("radius") || "";
-    const savedShadow = localStorage.getItem("shadow") || "";
-    const savedIsOpen = localStorage.getItem("themeSwitcherOpen") === "true";
-
-    setCurrentTheme(savedTheme);
-    setCurrentSpacing(savedSpacing);
-    setCurrentRadius(savedRadius);
-    setCurrentShadow(savedShadow);
-    setIsOpen(savedIsOpen);
-
-    // Apply saved theme to body
-    applyTheme(savedTheme, savedSpacing, savedRadius, savedShadow);
-  }, []);
 
   const applyTheme = (
     theme: string,
@@ -95,28 +93,59 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ className = "" }) => {
     if (shadow && shadow !== "") body.classList.add(shadow);
   };
 
+  useEffect(() => {
+    // Load saved preferences from localStorage
+    const savedTheme = localStorage.getItem("theme") || "";
+    const savedSpacing = localStorage.getItem("spacing") || "";
+    const savedRadius = localStorage.getItem("radius") || "";
+    const savedShadow = localStorage.getItem("shadow") || "";
+    const savedIsOpen =
+      localStorage.getItem("themeSwitcherOpen") === "true" || false;
+
+    setThemeState({
+      theme: savedTheme,
+      spacing: savedSpacing,
+      radius: savedRadius,
+      shadow: savedShadow,
+      isOpen: savedIsOpen,
+    });
+  }, []);
+
+  useEffect(() => {
+    // Apply theme to body whenever it changes
+    applyTheme(
+      themeState.theme,
+      themeState.spacing,
+      themeState.radius,
+      themeState.shadow,
+    );
+  }, [
+    themeState.theme,
+    themeState.spacing,
+    themeState.radius,
+    themeState.shadow,
+  ]);
+
+  const { theme, spacing, radius, shadow, isOpen } = themeState;
+
   const handleThemeChange = (themeClass: string) => {
-    setCurrentTheme(themeClass);
+    setThemeState((prevState) => ({ ...prevState, theme: themeClass }));
     localStorage.setItem("theme", themeClass);
-    applyTheme(themeClass, currentSpacing, currentRadius, currentShadow);
   };
 
   const handleSpacingChange = (spacingClass: string) => {
-    setCurrentSpacing(spacingClass);
+    setThemeState((prevState) => ({ ...prevState, spacing: spacingClass }));
     localStorage.setItem("spacing", spacingClass);
-    applyTheme(currentTheme, spacingClass, currentRadius, currentShadow);
   };
 
   const handleRadiusChange = (radiusClass: string) => {
-    setCurrentRadius(radiusClass);
+    setThemeState((prevState) => ({ ...prevState, radius: radiusClass }));
     localStorage.setItem("radius", radiusClass);
-    applyTheme(currentTheme, currentSpacing, radiusClass, currentShadow);
   };
 
   const handleShadowChange = (shadowClass: string) => {
-    setCurrentShadow(shadowClass);
+    setThemeState((prevState) => ({ ...prevState, shadow: shadowClass }));
     localStorage.setItem("shadow", shadowClass);
-    applyTheme(currentTheme, currentSpacing, currentRadius, shadowClass);
   };
 
   return (
@@ -124,7 +153,7 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ className = "" }) => {
       <button
         onClick={() => {
           const newIsOpen = !isOpen;
-          setIsOpen(newIsOpen);
+          setThemeState((prevState) => ({ ...prevState, isOpen: newIsOpen }));
           localStorage.setItem("themeSwitcherOpen", newIsOpen.toString());
         }}
         className={styles.dropdownButton}
@@ -164,7 +193,7 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ className = "" }) => {
                     key={theme.class}
                     onClick={() => handleThemeChange(theme.class)}
                     className={`btn btn-sm ${
-                      currentTheme === theme.class
+                      themeState.theme === theme.class
                         ? "btn-primary"
                         : theme.class === "theme-dark"
                           ? "btn-secondary"
@@ -188,9 +217,7 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ className = "" }) => {
                     key={option.class}
                     onClick={() => handleSpacingChange(option.class)}
                     className={`btn btn-sm ${
-                      currentSpacing === option.class
-                        ? "btn-primary"
-                        : "btn-ghost"
+                      spacing === option.class ? "btn-primary" : "btn-ghost"
                     }`}
                   >
                     {option.name}
@@ -210,9 +237,7 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ className = "" }) => {
                     key={option.class}
                     onClick={() => handleRadiusChange(option.class)}
                     className={`btn btn-sm ${
-                      currentRadius === option.class
-                        ? "btn-primary"
-                        : "btn-ghost"
+                      radius === option.class ? "btn-primary" : "btn-ghost"
                     }`}
                   >
                     {option.name}
@@ -232,9 +257,7 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ className = "" }) => {
                     key={option.class}
                     onClick={() => handleShadowChange(option.class)}
                     className={`btn btn-sm ${
-                      currentShadow === option.class
-                        ? "btn-primary"
-                        : "btn-ghost"
+                      shadow === option.class ? "btn-primary" : "btn-ghost"
                     }`}
                   >
                     {option.name}
@@ -247,13 +270,13 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ className = "" }) => {
           <div className="mt-4 p-3 bg-secondary rounded-md">
             <p className="text-sm text-secondary">
               <strong>Current Theme:</strong>{" "}
-              {themes.find((t) => t.class === currentTheme)?.name || "Default"}
-              {currentSpacing &&
-                ` + ${spacingOptions.find((s) => s.class === currentSpacing)?.name}`}
-              {currentRadius &&
-                ` + ${radiusOptions.find((r) => r.class === currentRadius)?.name}`}
-              {currentShadow &&
-                ` + ${shadowOptions.find((sh) => sh.class === currentShadow)?.name}`}
+              {themes.find((t) => t.class === theme)?.name || "Default"}
+              {spacing &&
+                ` + ${spacingOptions.find((s) => s.class === spacing)?.name}`}
+              {radius &&
+                ` + ${radiusOptions.find((r) => r.class === radius)?.name}`}
+              {shadow &&
+                ` + ${shadowOptions.find((sh) => sh.class === shadow)?.name}`}
             </p>
           </div>
         </div>
