@@ -8,74 +8,72 @@ import {
   // FLVResponse,
   // Insight,
   // InsightEvidence,
-  ServerFunction,
+  // ServerFunction,
   User,
   Workflow,
+  WorkflowNode,
 } from "../types";
 // import useUser from "../hooks/useUser";
-// import ActionDialog, {
+// import {
+//   ActionDialog,
 //   ServerFunctionInputSchemaForSavedLinks,
 // } from "../components/SaveLinkDialog";
 import CurrentUserContext from "../contexts/CurrentUserContext";
-import { createWorkflow, WorkflowsAPISchema } from "../components/WorkflowsAPI";
-import useUser from "../hooks/useUser";
-import Link from "next/link";
 // import { createLink } from "../hooks/functions";
-// import {
-//   createInsights,
-//   deleteInsights,
-//   publishInsights,
-//   InsightsAPISchema,
-// } from "../components/InsightsAPI";
+import {} from // createInsights,
+// deleteInsights,
+// publishInsights,
+// InsightsAPISchema,
+"../components/InsightsAPI";
 // import {
 //   addCitationsToInsight,
 //   createInsightFromCitations,
 // } from "../components/SelectedCitationsAPI";
+import HybridRadialNetwork from "../components/HybridRadialNetwork";
 // import { ServerFunctionInputSchemaForChildInsights } from "./[uid]/AddChildInsightsDialog";
 
-const ClientSidePage = ({
-  workflows,
+const WorkflowPage = ({
+  nodes,
   currentUser,
 }: {
-  workflows: Workflow[];
+  nodes: WorkflowNode[];
   currentUser: User | null;
 }): React.JSX.Element => {
   // const { token } = useUser();
   // const [liveData, setLiveData] = useState(insights);
   // const [selectedInsights, setSelectedInsights] = useState<Insight[]>([]); // This will be used by HybridRadialNetwork
-  const selectedWorkflows: Workflow[] = [];
-  // const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
+  const selectedInsights: Workflow[] = [];
+  const [/*isActionDialogOpen, */ setIsActionDialogOpen] = useState(false);
   // const [dialogConfig, setDialogConfig] = useState<{
   //   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   //   serverFunction: ServerFunction<any>;
-  //   // input:
-  //   //   | ServerFunctionInputSchemaForChildInsights
-  //   //   | ServerFunctionInputSchemaForSavedLinks;
+  //   input:
+  //     | ServerFunctionInputSchemaForChildInsights
+  //     | ServerFunctionInputSchemaForSavedLinks;
   //   title: string;
-  //   // isLinkSave?: boolean;
+  //   isLinkSave?: boolean;
   // } | null>(null);
-  const { token, user_id } = useUser();
 
-  const promptForNewWorkflowName = async () => {
-    const name = prompt("New workflow:");
-    if (name) {
+  const promptForNewWorkflowName = () => {
+    const title = prompt("New insight:");
+    if (title) {
       // setDialogConfig({
       //   title: "Create New Workflow",
-      //   serverFunction: async (input: WorkflowsAPISchema, token: string) => {
+      //   serverFunction: async (input: InsightsAPISchema, token: string) => {
       //     if (token) {
-      //       return createWorkflow(input, token);
+      //       return createInsights(input, token);
       //     }
       //     return Promise.resolve([]);
       //   },
-      //   // input: {
-      //   //   workflows: [{ name, citations: [] }],
-      //   // },
+      //   input: {
+      //     // insights: [{ title, citations: [] }] as unknown as Insight[],
+      //   },
       // });
       // setIsActionDialogOpen(true);
-      await createWorkflow({ workflow: { name, user_id: user_id! } }, token!);
-      window.location.reload(); // TODO: rerender
     }
   };
+
+  // const createLinkAndAddToInsights = async (
   //   input: ServerFunctionInputSchemaForSavedLinks,
   //   token: string,
   // ): Promise<FLVResponse[]> => {
@@ -131,18 +129,19 @@ const ClientSidePage = ({
   return (
     <div className={styles.pageContainer}>
       <div className={styles.mainContent}>
+        {/* Page Header - Overall Page Level */}
         <div className={styles.pageHeader}>
           <div className={styles.pageHeaderContent}>
             <div className={styles.headerTop}>
-              <div className={styles.headerInfo}>
-                <h1 className={styles.headerTitle}>My Workflows</h1>
+              {/* <div className={styles.headerInfo}>
+                <h1 className={styles.headerTitle}>My Insights</h1>
                 <p className={styles.headerSubtitle}>
-                  {workflows.length > 0
-                    ? `${workflows.length} workflow${workflows.length !== 1 ? "s" : ""}`
-                    : "No workflows yet"}
+                  {insights.length > 0
+                    ? `${insights.length} insight${insights.length !== 1 ? "s" : ""}`
+                    : "No insights yet"}
                 </p>
-              </div>
-              {loggedIn && (
+              </div> */}
+              {/* {loggedIn && (
                 <div style={{ display: "flex", gap: "var(--spacing-2)" }}>
                   <button
                     onClick={promptForNewWorkflowName}
@@ -155,8 +154,25 @@ const ClientSidePage = ({
                       Create New Workflow
                     </span>
                   </button>
+                  <button
+                    onClick={() => {
+                      // setDialogConfig({
+                      //   title: "Save Link",
+                      //   serverFunction: createLinkAndAddToInsights,
+                      //   input: {}, // Input will be provided by the dialog
+                      //   isLinkSave: true,
+                      // });
+                      // setIsActionDialogOpen(true);
+                    }}
+                    className={cardStyles.addButton}
+                    aria-label="Save Link"
+                    title="Save Link"
+                  >
+                    <span className={cardStyles.addButtonIcon}>🔗</span>
+                    <span className={cardStyles.addButtonText}>Save Link</span>
+                  </button>
                 </div>
-              )}
+              )} */}
             </div>
           </div>
         </div>
@@ -166,28 +182,28 @@ const ClientSidePage = ({
             <div className={cardStyles.contentCardHeader}>
               <div className={cardStyles.hierarchyIndicator}>
                 <span className={cardStyles.hierarchyIcon}>📋</span>
-                Workflows List
+                Insights List
               </div>
-              {loggedIn && selectedWorkflows.length > 0 && (
+              {loggedIn && selectedInsights.length > 0 && (
                 <div className={cardStyles.sectionActions}>
-                  {/* <button
+                  <button
                     onClick={() => {
-                      setDialogConfig({
-                        title: "Publish Insights",
-                        serverFunction: async (
-                          input: InsightsAPISchema,
-                          token: string,
-                        ) => {
-                          if (token) {
-                            return publishInsights(input, token);
-                          }
-                          return Promise.resolve([]);
-                        },
-                        input: {
-                          // insights: selectedInsights,
-                        },
-                      });
-                      setIsActionDialogOpen(true);
+                      // setDialogConfig({
+                      //   title: "Publish Insights",
+                      //   serverFunction: async (
+                      //     input: InsightsAPISchema,
+                      //     token: string,
+                      //   ) => {
+                      //     if (token) {
+                      //       return publishInsights(input, token);
+                      //     }
+                      //     return Promise.resolve([]);
+                      //   },
+                      //   input: {
+                      //     // insights: selectedInsights,
+                      //   },
+                      // });
+                      // setIsActionDialogOpen(true);
                     }}
                     className={cardStyles.addButton}
                     aria-label="Publish Selected"
@@ -195,12 +211,12 @@ const ClientSidePage = ({
                   >
                     <span className={cardStyles.addButtonIcon}>📢</span>
                     <span className={cardStyles.addButtonText}>Publish</span>
-                  </button> */}
+                  </button>
                   <button
                     onClick={() => {
                       if (
-                        selectedWorkflows &&
-                        selectedWorkflows.length > 0 &&
+                        selectedInsights &&
+                        selectedInsights.length > 0 &&
                         confirm("Are you sure?")
                       ) {
                         // setDialogConfig({
@@ -232,16 +248,15 @@ const ClientSidePage = ({
               )}
             </div>
             <div className={cardStyles.contentCardBody}>
-              <ol>
-                {workflows.map((wf) => (
-                  <li key={`wf: ${wf.id}`}>
-                    <Link href={`/workflows/${wf.id}`}>{wf.name}</Link>
-                  </li>
-                ))}
-              </ol>
+              <HybridRadialNetwork
+                data={nodes}
+                crossLinks={[]}
+                // onSelectionChange={setSelectedInsights}
+              />
             </div>
           </div>
 
+          {/* Child Level - Dialogs */}
           {/* {dialogConfig && (
             <ActionDialog
               isOpen={isActionDialogOpen}
@@ -263,4 +278,4 @@ const ClientSidePage = ({
   );
 };
 
-export default ClientSidePage;
+export default WorkflowPage;

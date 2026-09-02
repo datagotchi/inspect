@@ -156,10 +156,12 @@ export type Session = {
 };
 
 export type Workflow = Fact & {
+  name: string;
+  user_id: number;
   root_id?: number;
 };
 
-export type WorkflowNode = {
-  id: number;
+export type WorkflowNode = Fact & {
   workflow_id: number;
+  children?: WorkflowNode[];
 };

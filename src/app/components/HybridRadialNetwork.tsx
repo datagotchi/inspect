@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useRef, useEffect, useState } from "react";
 import * as d3 from "d3";
 import { HierarchyPointNode } from "d3-hierarchy";
@@ -11,12 +13,12 @@ interface CrossLink {
 
 interface HybridNetworkProps {
   data: Fact[];
-  crossLinks: CrossLink[];
+  crossLinks?: CrossLink[];
 }
 
 const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
   data,
-  crossLinks,
+  crossLinks = [],
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [totalNodeCount, setTotalNodeCount] = useState<number>(0);
@@ -30,7 +32,8 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
     // Populate insightMap recursively
     const insightMap = new Map<string, Fact>();
 
-    const populateMap = (items: Fact[]) => {
+    const populateMap = (input: Fact[] | Fact) => {
+      const items = Array.isArray(input) ? input : [input];
       for (const item of items) {
         if (item.uid && !insightMap.has(item.uid)) {
           insightMap.set(item.uid, item);
