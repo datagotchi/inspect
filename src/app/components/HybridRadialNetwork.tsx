@@ -13,7 +13,7 @@ interface CrossLink {
 }
 
 interface HybridNetworkProps {
-  data: Insight[];
+  data: Fact[];
   crossLinks: CrossLink[];
   onNodeClick?: (insight: Insight) => void;
 }
@@ -108,21 +108,21 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
 
     const insightMap = new Map<string, Insight>();
 
-    const populateMap = (items: Insight[]) => {
+    const populateMap = (items: Fact[]) => {
       for (const item of items) {
         if (item.uid && !insightMap.has(item.uid)) {
           insightMap.set(item.uid, item);
         }
 
-        if (item.children && item.children.length > 0) {
-          const childNodes = item.children
-            .map(
-              (link: InsightLink) =>
-                link.childInsight || (link as unknown as Insight),
-            )
-            .filter((c): c is Insight => !!c && typeof c === "object");
-          populateMap(childNodes);
-        }
+        // if (item.children && item.children.length > 0) {
+        //   const childNodes = item.children
+        //     .map(
+        //       (link: InsightLink) =>
+        //         link.childInsight || (link as unknown as Insight),
+        //     )
+        //     .filter((c): c is Insight => !!c && typeof c === "object");
+        //   populateMap(childNodes);
+        // }
       }
     };
 
