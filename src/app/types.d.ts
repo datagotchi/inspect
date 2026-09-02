@@ -154,3 +154,7 @@ export type Session = {
   user_id: number;
   expires: Date | string;
 };
+
+export type Workflow = {
+  id: number;
+};
