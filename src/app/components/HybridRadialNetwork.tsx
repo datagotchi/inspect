@@ -125,9 +125,10 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
         //   populateMap(childNodes);
         // }
       }
-    };
+    });
 
-    populateMap(data);
+    const childVisited = new Set<number>();
+    const crossLinks: { sourceId: number; targetId: number }[] = [];
 
     const resolveChild = (link: InsightLink): Insight | undefined => {
       const fallbackUid = (link as unknown as Partial<Insight>).uid;
@@ -196,6 +197,18 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
         addLink(insight.uid, child.uid, "hierarchy");
         if (!existed) walk(child, depth + 1);
       }
+    });
+
+    // Root nodes are nodes that were never registered as primary children
+    const rootNodes = Array.from(nodeMap.values()).filter(
+      (node) => !childVisited.has(node.id!),
+    );
+
+    // 3. Synthetic Root wrapper for multi-root graphs
+    const syntheticRoot = {
+      id: -1,
+      title: "Root",
+      childrenNodes: rootNodes,
     };
 
     for (const root of roots) {
@@ -875,6 +888,4 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
       </div>
     </div>
   );
-};
-
-export default HybridRadialNetwork;
+}

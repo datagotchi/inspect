@@ -37,9 +37,8 @@ export type Fact = Indexable & {
   id?: number;
   uid?: string;
   title?: string;
-  reactions?: FactReaction[];
-  comments?: FactComment[];
-  evidence?: EvidenceRecord[];
+  parent_id?: number | null; // Direct parent reference
+  user_id?: number;
   created_at?: string;
   updated_at?: string;
 };
@@ -67,9 +66,20 @@ export type InsightEvidence = EvidenceRecord & {
   source: Source;
 };
 
+export type InsightLink = {
+  id?: number;
+  child_id: number;
+  parent_id: number;
+
+  parentInsight?: Insight;
+  childInsight?: Insight;
+};
+
 export type Insight = Fact & {
   description?: string;
   evidence?: InsightEvidence[];
+  reactions?: FactReaction[];
+  comments?: FactComment[];
   is_public?: boolean;
   username?: string;
   avatar_uri?: string;
@@ -114,15 +124,6 @@ export type CommentSelectedText = {
 export type WithPartial<T, K extends keyof T> = Omit<T, K> &
   Partial<Pick<T, K>>;
 
-export type InsightLink = {
-  id?: number;
-  child_id: number;
-  parent_id: number;
-
-  parentInsight?: Insight;
-  childInsight?: Insight;
-};
-
 export type Field = {
   id?: number;
   name: string;
@@ -155,13 +156,27 @@ export type Session = {
   expires: Date | string;
 };
 
-export type Workflow = Fact & {
+export type Workflow = {
+  id: number;
   name: string;
-  user_id: number;
-  root_id?: number;
+  user: User;
+  nodes: WorkflowNode[];
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type WorkflowNodeLink = {
+  id?: number;
+  child_id: number;
+  parent_id: number;
+
+  parentNode?: WorkflowNode;
+  childNode?: WorkflowNode;
 };
 
 export type WorkflowNode = Fact & {
-  workflow_id: number;
-  children?: WorkflowNode[];
+  workflow_id?: number;
+  workflow?: Workflow;
+  parents?: WorkflowNodeLink[];
+  children?: WorkflowNodeLink[];
 };

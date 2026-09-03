@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import "../postgres";
 import { Workflow } from "@/app/types";
 import { getAuthUser } from "@/app/functions";
-import { WorkflowModel } from "../models/workflows";
+import { WorkflowOJSModel } from "../models/workflows";
 
 export type GetWorkflowsRouteResponse = NextResponse<
   Workflow[] | { statusText: string }
@@ -14,36 +14,23 @@ export async function GET(
   req: NextRequest,
 ): Promise<GetWorkflowsRouteResponse> {
   const authUser = await getAuthUser(headers);
-  // const searchQuery = req.nextUrl.searchParams.get("query") || "";
+
+  if (!authUser) {
+    return NextResponse.json({ statusText: "Unauthorized" }, { status: 401 });
+  }
+
   const offset = Number(req.nextUrl.searchParams.get("offset") || 0);
   const limit = Number(req.nextUrl.searchParams.get("limit") || 20);
 
-  if (authUser) {
-    const baseQuery = WorkflowModel.query().where(
-      "workflows.user_id",
-      authUser.id!,
-    );
-    // .whereNotExists(WorkflowModel.relatedQuery("parents"))
-    // .whereRaw("LOWER(insights.title) LIKE LOWER(?)", [`%${searchQuery}%`])
-    // .orderBy("insights.updated_at", "desc");
+  // Fetch workflows paginated, eager-loading ONLY the user info (no nodes)
+  const workflows = (await WorkflowOJSModel.query()
+    .where("workflows.user_id", authUser.id!)
+    .withGraphFetched("user")
+    .orderBy("created_at", "desc")
+    .offset(offset)
+    .limit(limit)) as WorkflowOJSModel[];
 
-    const paginatedInsightIdsSubquery = baseQuery
-      .clone()
-      .select("workflows.id")
-      .offset(offset)
-      .limit(limit);
-
-    // 2. Use withGraphFetched instead of withGraphJoined to fetch ALL child rows accurately
-    const workflows = (await WorkflowModel.query().whereIn(
-      "workflows.id",
-      paginatedInsightIdsSubquery,
-    )) as WorkflowModel[];
-
-    // TODO: 3. Clean up null graph mapping objects so empty child nodes don't render blank boxes
-
-    return NextResponse.json(workflows);
-  }
-  return NextResponse.json({ statusText: "Unauthorized" }, { status: 401 });
+  return NextResponse.json(workflows);
 }
 
 export type PostWorkflowsRouteRequestBody = Promise<{
@@ -79,11 +66,11 @@ export async function POST(
     }
 
     // First create the insight without evidence
-    const newWorkflow = (await WorkflowModel.query().insert({
+    const newWorkflow = (await WorkflowOJSModel.query().insert({
       user_id: authUser.id,
       // uid,
       name,
-    })) as WorkflowModel;
+    })) as WorkflowOJSModel;
 
     return NextResponse.json(newWorkflow);
   } catch (error) {

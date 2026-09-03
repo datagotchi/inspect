@@ -1,40 +1,31 @@
 import React from "react";
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 
-import { getUserFromServer } from "../api/functions";
 import { getAuthUser } from "../functions";
 import { getWorkflows } from "./functions";
 import ClientSidePage from "./ClientSidePage";
+import { getUserFromServer } from "../api/functions";
 
 const WorkflowsPage = async (): Promise<React.JSX.Element> => {
-  const origin = (await headers()).get("x-origin") || "";
-  const tokenCookie = (await cookies()).get("token");
-  const token = tokenCookie ? tokenCookie.value : undefined;
-
+  // 1. Resolve auth user
   const authUser = await getAuthUser(headers);
-  const currentUser = authUser
-    ? await getUserFromServer(origin, { id: authUser.id! }, token)
-    : null;
 
-  const workflowSearchParams = new URLSearchParams(
-    "offset=0&limit=20&parents=true&children=true&evidence=true",
-  );
-  workflowSearchParams.sort();
-
-  const workflows = await getWorkflows(origin, token, workflowSearchParams);
-
-  if (workflows && Array.isArray(workflows)) {
+  if (!authUser?.id) {
     return (
-      <ClientSidePage
-        workflows={workflows.filter((w) => w.userId == authUser?.id)}
-        currentUser={currentUser || null}
-      />
+      <span>
+        No workflows available for anonymous users. Please Login or Register.
+      </span>
     );
   }
+
+  // 2. Fetch full user & user workflows in parallel directly on the server
+  const [currentUser, workflows] = await Promise.all([
+    getUserFromServer(authUser.id),
+    getWorkflows({ userId: authUser.id, offset: 0, limit: 20 }),
+  ]);
+
   return (
-    <span>
-      No workflows available for anonymous users. Please Login or Register.
-    </span>
+    <ClientSidePage workflows={workflows} currentUser={currentUser || null} />
   );
 };
 

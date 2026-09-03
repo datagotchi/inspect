@@ -1,37 +1,15 @@
 "use client";
 
+import React from "react";
+import Link from "next/link";
+
 import styles from "../../styles/components/main-insights-page.module.css";
 import cardStyles from "../../styles/components/card.module.css";
-import React, { useState } from "react";
 
-import {
-  // FLVResponse,
-  // Insight,
-  // InsightEvidence,
-  ServerFunction,
-  User,
-  Workflow,
-} from "../types";
-// import useUser from "../hooks/useUser";
-// import ActionDialog, {
-//   ServerFunctionInputSchemaForSavedLinks,
-// } from "../components/SaveLinkDialog";
+import { User, Workflow } from "../types";
 import CurrentUserContext from "../contexts/CurrentUserContext";
-import { createWorkflow, WorkflowsAPISchema } from "../components/WorkflowsAPI";
+import { createWorkflow } from "../components/WorkflowsAPI";
 import useUser from "../hooks/useUser";
-import Link from "next/link";
-// import { createLink } from "../hooks/functions";
-// import {
-//   createInsights,
-//   deleteInsights,
-//   publishInsights,
-//   InsightsAPISchema,
-// } from "../components/InsightsAPI";
-// import {
-//   addCitationsToInsight,
-//   createInsightFromCitations,
-// } from "../components/SelectedCitationsAPI";
-// import { ServerFunctionInputSchemaForChildInsights } from "./[uid]/AddChildInsightsDialog";
 
 const ClientSidePage = ({
   workflows,
@@ -40,94 +18,19 @@ const ClientSidePage = ({
   workflows: Workflow[];
   currentUser: User | null;
 }): React.JSX.Element => {
-  // const { token } = useUser();
-  // const [liveData, setLiveData] = useState(insights);
-  // const [selectedInsights, setSelectedInsights] = useState<Insight[]>([]); // This will be used by HybridRadialNetwork
-  const selectedWorkflows: Workflow[] = [];
-  // const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
-  // const [dialogConfig, setDialogConfig] = useState<{
-  //   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  //   serverFunction: ServerFunction<any>;
-  //   // input:
-  //   //   | ServerFunctionInputSchemaForChildInsights
-  //   //   | ServerFunctionInputSchemaForSavedLinks;
-  //   title: string;
-  //   // isLinkSave?: boolean;
-  // } | null>(null);
   const { token, user_id } = useUser();
+  const selectedWorkflows: Workflow[] = [];
 
   const promptForNewWorkflowName = async () => {
     const name = prompt("New workflow:");
     if (name) {
-      // setDialogConfig({
-      //   title: "Create New Workflow",
-      //   serverFunction: async (input: WorkflowsAPISchema, token: string) => {
-      //     if (token) {
-      //       return createWorkflow(input, token);
-      //     }
-      //     return Promise.resolve([]);
-      //   },
-      //   // input: {
-      //   //   workflows: [{ name, citations: [] }],
-      //   // },
-      // });
-      // setIsActionDialogOpen(true);
-      await createWorkflow({ workflow: { name, user_id: user_id! } }, token!);
-      window.location.reload(); // TODO: rerender
+      await createWorkflow({ name, user_id: user_id! }, token!);
+      window.location.reload(); // TODO: trigger router refresh/rerender instead of hard reload
     }
   };
-  //   input: ServerFunctionInputSchemaForSavedLinks,
-  //   token: string,
-  // ): Promise<FLVResponse[]> => {
-  //   const responses: FLVResponse[] = [];
-  //   if (!token) {
-  //     throw new Error("Authentication token is required");
-  //   }
-
-  //   try {
-  //     const link = await createLink(input.url!, token);
-
-  //     if (input.newInsightName) {
-  //       const response = await createInsightFromCitations(
-  //         input.newInsightName,
-  //         [{ summary_id: link.id } as InsightEvidence],
-  //         token,
-  //       );
-  //       responses.push(response);
-  //     }
-
-  //     if (input.selectedInsights && input.selectedInsights.length > 0) {
-  //       await Promise.all(
-  //         input.selectedInsights.map(async (insight) => {
-  //           try {
-  //             await addCitationsToInsight(
-  //               {
-  //                 insight,
-  //                 evidence: [{ summary_id: link.id } as InsightEvidence],
-  //               },
-  //               token,
-  //             );
-  //             // TODO: does not update the insight in prod
-  //             responses.push({ action: 0, facts: [insight] });
-  //           } catch (error) {
-  //             console.error(
-  //               `Failed to add citation to insight ${insight.uid}:`,
-  //               error,
-  //             );
-  //             throw error;
-  //           }
-  //         }),
-  //       );
-  //     }
-  //   } catch (error) {
-  //     console.error("Error in createLinkAndAddToInsights:", error);
-  //     throw error;
-  //   }
-
-  //   return responses;
-  // };
 
   const loggedIn = !!currentUser;
+
   return (
     <div className={styles.pageContainer}>
       <div className={styles.mainContent}>
@@ -170,32 +73,6 @@ const ClientSidePage = ({
               </div>
               {loggedIn && selectedWorkflows.length > 0 && (
                 <div className={cardStyles.sectionActions}>
-                  {/* <button
-                    onClick={() => {
-                      setDialogConfig({
-                        title: "Publish Insights",
-                        serverFunction: async (
-                          input: InsightsAPISchema,
-                          token: string,
-                        ) => {
-                          if (token) {
-                            return publishInsights(input, token);
-                          }
-                          return Promise.resolve([]);
-                        },
-                        input: {
-                          // insights: selectedInsights,
-                        },
-                      });
-                      setIsActionDialogOpen(true);
-                    }}
-                    className={cardStyles.addButton}
-                    aria-label="Publish Selected"
-                    title="Publish Selected"
-                  >
-                    <span className={cardStyles.addButtonIcon}>📢</span>
-                    <span className={cardStyles.addButtonText}>Publish</span>
-                  </button> */}
                   <button
                     onClick={() => {
                       if (
@@ -203,22 +80,7 @@ const ClientSidePage = ({
                         selectedWorkflows.length > 0 &&
                         confirm("Are you sure?")
                       ) {
-                        // setDialogConfig({
-                        //   title: "Delete Insights",
-                        //   serverFunction: async (
-                        //     input: InsightsAPISchema,
-                        //     token: string,
-                        //   ) => {
-                        //     if (token) {
-                        //       return deleteInsights(input, token);
-                        //     }
-                        //     return Promise.resolve([]);
-                        //   },
-                        //   input: {
-                        //     // insights: selectedInsights,
-                        //   },
-                        // });
-                        // setIsActionDialogOpen(true);
+                        // TODO: Implement multi-workflow delete handler
                       }
                     }}
                     className={cardStyles.addButton}
@@ -241,22 +103,6 @@ const ClientSidePage = ({
               </ol>
             </div>
           </div>
-
-          {/* {dialogConfig && (
-            <ActionDialog
-              isOpen={isActionDialogOpen}
-              onClose={() => {
-                setIsActionDialogOpen(false);
-                // setDialogConfig(null);
-              }}
-              // title={dialogConfig.title}
-              // isLinkSave={dialogConfig.isLinkSave}
-              potentialInsightsFromServer={insights.filter(
-                (insight) => insight.user_id === currentUser?.id,
-              )}
-              id={""}
-            />
-          )} */}
         </CurrentUserContext.Provider>
       </div>
     </div>
