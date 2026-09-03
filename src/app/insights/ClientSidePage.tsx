@@ -27,7 +27,7 @@ import {
   addCitationsToInsight,
   createInsightFromCitations,
 } from "../components/SelectedCitationsAPI";
-import HybridRadialNetwork from "../components/HybridRadialNetwork";
+import { HybridRadialNetwork } from "@/app/components/HybridRadialNetwork";
 import { ServerFunctionInputSchemaForChildInsights } from "./[uid]/AddChildInsightsDialog";
 
 const ClientSidePage = ({
@@ -246,11 +246,7 @@ const ClientSidePage = ({
               )}
             </div>
             <div className={cardStyles.contentCardBody}>
-              <HybridRadialNetwork
-                data={insights}
-                crossLinks={[]}
-                // onSelectionChange={setSelectedInsights}
-              />
+              <HybridRadialNetwork data={insights} />
             </div>
           </div>
 

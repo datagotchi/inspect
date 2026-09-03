@@ -142,7 +142,9 @@ export const getDisabledInsightIds = (
   return [];
 };
 
-export const getAuthUser = async (headers: () => Promise<ReadonlyHeaders>) => {
+export const getAuthUser = async (
+  headers: () => Promise<ReadonlyHeaders>,
+): Promise<User | null> => {
   const authUserString = (await headers()).get("x-authUser");
   return authUserString ? (JSON.parse(authUserString) as User) : null;
 };
