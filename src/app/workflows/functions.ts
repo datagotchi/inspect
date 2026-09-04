@@ -19,12 +19,11 @@ export const getWorkflows = async ({
   try {
     const workflows = await WorkflowOJSModel.query()
       .where("workflows.user_id", userId)
-      .withGraphFetched("user") // Eagerly populates the full User object
+      .withGraphFetched("user")
       .orderBy("created_at", "desc")
       .offset(offset)
       .limit(limit);
 
-    // Serialization step for Next.js Server Components passing props to Client Components
     return JSON.parse(JSON.stringify(workflows)) as Workflow[];
   } catch (error) {
     console.error("Error fetching workflows in SSR:", error);
@@ -40,7 +39,7 @@ export const getWorkflow = async (
     const workflow = await WorkflowOJSModel.query()
       .findById(id)
       .where("user_id", userId)
-      .withGraphFetched("user") // Populates user object on single fetch too
+      .withGraphFetched("[user, nodes.[parents, children]]")
       .first();
 
     if (!workflow) return null;

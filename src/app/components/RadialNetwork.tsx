@@ -199,12 +199,10 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
       }
     });
 
-    // Root nodes are nodes that were never registered as primary children
     const rootNodes = Array.from(nodeMap.values()).filter(
-      (node) => !childVisited.has(node.id!),
+      (node) => node.id && !childVisited.has(node.id),
     );
 
-    // 3. Synthetic Root wrapper for multi-root graphs
     const syntheticRoot = {
       id: -1,
       title: "Root",
@@ -298,6 +296,7 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
       .attr("preserveAspectRatio", "xMidYMid meet");
 
     svg.selectAll("*").remove();
+    svg.attr("viewBox", [-radius, -radius, width, width]);
 
     const zoomGroup = svg.append("g").attr("class", "zoom-container");
 
