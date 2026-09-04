@@ -14,12 +14,14 @@ export const ANONYMOUS_REGEXES = [
   "^/login",
   "^/register",
   "^/confirm",
+  "^/workflows",
   "^/api/links",
   "^/api/insights",
   "^/api/register",
   "^/api/login",
   "^/api/users/[0-9]+$",
   "^/api/articles",
+  "^/api/workflows",
 ];
 
 export const proxy = async (req: NextRequest): Promise<NextResponse> => {

@@ -26,11 +26,7 @@ describe("functions", () => {
     const mockResponse = { id: 1, name: "John Doe" };
     mockFetchJsonResponse.mockResolvedValue(mockResponse);
 
-    const result = await getUserFromServer(
-      origin,
-      { id: authUser.id },
-      "mockToken",
-    );
+    const result = await getUserFromServer(authUser.id);
     expect(fetch).toHaveBeenCalledWith(`${origin}/api/users/1`, {
       headers: {
         "Content-Type": "application/json",
