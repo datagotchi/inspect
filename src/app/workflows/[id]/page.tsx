@@ -3,11 +3,11 @@ import React from "react";
 
 import { getWorkflow } from "../functions";
 import ClientSidePage from "./ClientSidePage";
-import { getAuthUser } from "@/app/functions"; // or verifyAuthToken directly
+import { getAuthUser } from "@/app/functions";
 
 interface PageProps {
   params: Promise<{
-    id: string; // ✅ Fixed: Next.js params are always strings
+    id: string;
   }>;
 }
 
@@ -17,7 +17,7 @@ const WorkflowPage = async ({
   const { id } = await params;
   const workflowId = parseInt(id, 10);
 
-  const authUser = await getAuthUser(headers); // Adjust according to how getAuthUser works
+  const authUser = await getAuthUser(headers);
 
   if (!authUser?.id) {
     return (
@@ -27,16 +27,13 @@ const WorkflowPage = async ({
     );
   }
 
-  // ✅ Fixed: pass (workflowId, userId) directly to DB function
   const workflow = await getWorkflow(workflowId, authUser.id);
 
   if (!workflow) {
     return <span>Workflow not found.</span>;
   }
 
-  return (
-    <ClientSidePage nodes={workflow.nodes || []} workflowId={workflow.id} />
-  );
+  return <ClientSidePage workflow={workflow} />;
 };
 
 export default WorkflowPage;

@@ -6,21 +6,20 @@ import { useRouter } from "next/navigation";
 import styles from "../../../styles/components/main-insights-page.module.css";
 import cardStyles from "../../../styles/components/card.module.css";
 
-import { HybridRadialNetwork } from "@/app/components/HybridRadialNetwork";
-import { WorkflowNode } from "@/app/types";
-import { createWorkflowNode } from "@/app/components/WorkflowsAPI";
+import { Workflow, WorkflowNode } from "@/app/types";
+import {
+  createWorkflowLink,
+  createWorkflowNode,
+} from "@/app/components/WorkflowsAPI";
 import useUser from "@/app/hooks/useUser";
+import { WorkflowCanvas } from "@/app/components/WorkflowCanvas";
 
 interface Props {
-  workflowId: number;
-  nodes: WorkflowNode[];
+  workflow: Workflow;
 }
 
-export default function WorkflowClientPage({
-  workflowId,
-  nodes: initialNodes,
-}: Props) {
-  const [nodes, setNodes] = useState<WorkflowNode[]>(initialNodes);
+export default function ClientSidePae({ workflow }: Props) {
+  const [nodes, setNodes] = useState<WorkflowNode[]>(workflow.nodes);
   const [isCreating, setIsCreating] = useState(false);
   const { token } = useUser();
   const router = useRouter();
@@ -31,7 +30,7 @@ export default function WorkflowClientPage({
 
     setIsCreating(true);
     try {
-      const newNode = await createWorkflowNode(workflowId, { label }, token);
+      const newNode = await createWorkflowNode(workflow.id, { label }, token);
 
       if (newNode) {
         // Optimistically append the new node to local state
@@ -58,6 +57,9 @@ export default function WorkflowClientPage({
             <div className={styles.headerTop}>
               <div className={styles.headerInfo}>
                 <h1 className={styles.headerTitle}>Workflow Canvas</h1>
+                <p className={styles.headerSubtitle}>
+                  Workflow: <strong>{workflow.name}</strong>
+                </p>
                 <p className={styles.headerSubtitle}>
                   {hasNodes
                     ? `${nodes.length} node${nodes.length !== 1 ? "s" : ""}`
@@ -95,7 +97,19 @@ export default function WorkflowClientPage({
             style={{ width: "100%", height: "600px", minHeight: "400px" }}
           >
             {hasNodes ? (
-              <HybridRadialNetwork data={nodes} />
+              <WorkflowCanvas
+                data={nodes}
+                onLinkNodes={async (parent_id, child_id) => {
+                  const link = await createWorkflowLink(
+                    workflow.id,
+                    { parent_id, child_id },
+                    token,
+                  );
+                  if (link) {
+                    router.refresh();
+                  }
+                }}
+              />
             ) : (
               <div
                 style={{

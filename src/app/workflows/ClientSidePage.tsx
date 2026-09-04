@@ -10,6 +10,7 @@ import { User, Workflow } from "../types";
 import CurrentUserContext from "../contexts/CurrentUserContext";
 import { createWorkflow } from "../components/WorkflowsAPI";
 import useUser from "../hooks/useUser";
+import { useRouter } from "next/navigation";
 
 const ClientSidePage = ({
   workflows,
@@ -19,13 +20,14 @@ const ClientSidePage = ({
   currentUser: User | null;
 }): React.JSX.Element => {
   const { token, user_id } = useUser();
+  const router = useRouter();
   const selectedWorkflows: Workflow[] = [];
 
   const promptForNewWorkflowName = async () => {
     const name = prompt("New workflow:");
     if (name) {
       await createWorkflow({ name, user_id: user_id! }, token!);
-      window.location.reload(); // TODO: trigger router refresh/rerender instead of hard reload
+      router.refresh();
     }
   };
 

@@ -174,7 +174,8 @@ export type WorkflowNodeLink = {
   childNode?: WorkflowNode;
 };
 
-export type WorkflowNode = Fact & {
+export type WorkflowNode = {
+  id: number;
   workflow_id?: number;
   workflow?: Workflow;
   parents?: WorkflowNodeLink[];

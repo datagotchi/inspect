@@ -29,7 +29,7 @@ import {} from // createInsights,
 //   addCitationsToInsight,
 //   createInsightFromCitations,
 // } from "../components/SelectedCitationsAPI";
-import { HybridRadialNetwork } from "@/app/components/HybridRadialNetwork";
+import { RadialNetwork } from "@/app/components/RadialNetwork";
 // import { ServerFunctionInputSchemaForChildInsights } from "./[uid]/AddChildInsightsDialog";
 
 const WorkflowPage = ({
@@ -248,7 +248,7 @@ const WorkflowPage = ({
               )}
             </div>
             <div className={cardStyles.contentCardBody}>
-              <HybridRadialNetwork data={nodes} />
+              <RadialNetwork data={nodes} />
             </div>
           </div>
 
