@@ -5,14 +5,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/app/functions";
 import { headers } from "next/headers";
 
-interface Props {
-  params: Promise<{ id: number }>;
-}
-
-export async function GET(req: NextRequest, { params }: Props) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const authUser = await getAuthUser(headers);
   if (authUser) {
-    const workflowId = (await params).id;
+    const workflowId = Number((await params).id);
     if (workflowId) {
       const workflow = await WorkflowOJSModel.query().findOne({
         id: workflowId,

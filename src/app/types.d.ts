@@ -41,6 +41,8 @@ export type Fact = Indexable & {
   user_id?: number;
   created_at?: string;
   updated_at?: string;
+  reactions?: FactReaction[];
+  comments?: FactComment[];
 };
 
 export type Link = Fact & {
@@ -78,8 +80,6 @@ export type InsightLink = {
 export type Insight = Fact & {
   description?: string;
   evidence?: InsightEvidence[];
-  reactions?: FactReaction[];
-  comments?: FactComment[];
   is_public?: boolean;
   username?: string;
   avatar_uri?: string;
