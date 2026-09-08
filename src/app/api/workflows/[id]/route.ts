@@ -12,21 +12,39 @@ export async function GET(
   const authUser = await getAuthUser(headers);
   if (authUser) {
     const workflowId = Number((await params).id);
-    if (workflowId) {
-      const workflow = await WorkflowOJSModel.query().findOne({
-        id: workflowId,
-        user_id: authUser.id,
-      });
+    const workflow = await WorkflowOJSModel.query().findOne({
+      id: workflowId,
+      user_id: authUser.id,
+    });
 
-      if (workflow) {
-        return NextResponse.json(workflow);
-      }
-
-      return NextResponse.json(
-        { error: "Workflow not found" },
-        { status: 404 },
-      );
+    if (workflow) {
+      return NextResponse.json(workflow);
     }
+
+    return NextResponse.json({ error: "Workflow not found" }, { status: 404 });
+  }
+  return NextResponse.json({ statusText: "Unauthorized" }, { status: 401 });
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const authUser = await getAuthUser(headers);
+  if (authUser) {
+    const workflowId = Number((await params).id);
+    const workflow = await WorkflowOJSModel.query()
+      .delete()
+      .where("id", workflowId)
+      .where("user_id", authUser.id!)
+      .returning("*")
+      .first();
+
+    if (workflow) {
+      return NextResponse.json(workflow);
+    }
+
+    return NextResponse.json({ error: "Workflow not found" }, { status: 404 });
   }
   return NextResponse.json({ statusText: "Unauthorized" }, { status: 401 });
 }
