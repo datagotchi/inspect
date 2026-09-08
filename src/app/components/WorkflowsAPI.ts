@@ -1,6 +1,11 @@
 import { WorkflowOJSModel } from "../api/models/workflows";
 import { PostInsightsRouteResponse } from "../api/insights/route";
-import { FLVResponse, WorkflowNode, WorkflowNodeLink } from "../types";
+import {
+  FLVResponse,
+  Workflow,
+  WorkflowNode,
+  WorkflowNodeLink,
+} from "../types";
 
 export const createWorkflow = (
   workflow: Partial<WorkflowOJSModel>,
@@ -25,6 +30,28 @@ export const createWorkflow = (
         ({
           action: 1,
           facts: [createdWf],
+        }) as FLVResponse,
+    );
+
+export const deleteWorkflow = async (workflow: Workflow, token: string) =>
+  fetch(`/api/workflows/${workflow.id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "x-access-token": token,
+    },
+  })
+    .then((response: Response | PostInsightsRouteResponse) => {
+      if (!response.ok) {
+        throw new Error(response.statusText);
+      }
+      return response.json();
+    })
+    .then(
+      (deletedWf: WorkflowOJSModel) =>
+        ({
+          action: -1,
+          facts: [deletedWf],
         }) as FLVResponse,
     );
 

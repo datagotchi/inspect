@@ -8,7 +8,7 @@ import cardStyles from "../../styles/components/card.module.css";
 
 import { User, Workflow } from "../types";
 import CurrentUserContext from "../contexts/CurrentUserContext";
-import { createWorkflow } from "../components/WorkflowsAPI";
+import { createWorkflow, deleteWorkflow } from "../components/WorkflowsAPI";
 import useUser from "../hooks/useUser";
 import { useRouter } from "next/navigation";
 
@@ -99,7 +99,17 @@ const ClientSidePage = ({
               <ol>
                 {workflows.map((wf) => (
                   <li key={`wf: ${wf.id}`}>
-                    <Link href={`/workflows/${wf.id}`}>{wf.name}</Link>
+                    <Link href={`/workflows/${wf.id}`}>{wf.name}</Link>{" "}
+                    <button
+                      onClick={async () => {
+                        if (confirm("Are you sure?")) {
+                          await deleteWorkflow(wf, token!);
+                          router.refresh();
+                        }
+                      }}
+                    >
+                      X
+                    </button>
                   </li>
                 ))}
               </ol>
