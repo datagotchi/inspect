@@ -1,9 +1,23 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useRef, useEffect, useState } from "react";
 import * as d3 from "d3";
-
 import { WorkflowNode } from "@/app/types";
+
+import {
+  CanvasNode,
+  CrossLink,
+  processWorkflowLayout,
+  calculatePrimaryPath,
+  calculateSecondaryPath,
+  createNodeDragBehavior,
+  createConnectorHandleDragBehavior,
+  CARD_WIDTH,
+  CARD_HEIGHT,
+  CANVAS_WIDTH,
+  CANVAS_HEIGHT,
+} from "./WorkflowHelpers";
 
 interface WorkflowCanvasProps {
   data: WorkflowNode[];
@@ -18,255 +32,121 @@ export function WorkflowCanvas({
   const [totalNodeCount, setTotalNodeCount] = useState<number>(0);
 
   useEffect(() => {
-    if (!data || data.length === 0 || !svgRef.current) {
+    if (!svgRef.current) return;
+
+    const layout = processWorkflowLayout(data);
+    if (!layout) {
       setTotalNodeCount(0);
+      d3.select(svgRef.current).selectAll("*").remove();
       return;
     }
 
-    // 1. Build Node Lookup & Traversal Structure
-    const nodeMap = new Map<number, WorkflowNode & { childrenNodes: any[] }>();
-    data.forEach((item) => {
-      if (item.id) nodeMap.set(item.id, { ...item, childrenNodes: [] });
-    });
-
-    const childVisited = new Set<number>();
-    const crossLinks: { sourceId: number; targetId: number }[] = [];
-
-    data.forEach((item) => {
-      if (!item.id) return;
-      const parentNode = nodeMap.get(item.id)!;
-
-      if (Array.isArray(item.children)) {
-        item.children.forEach((link) => {
-          const childId = link.child_id;
-          if (childId && nodeMap.has(childId)) {
-            if (!childVisited.has(childId)) {
-              parentNode.childrenNodes.push(nodeMap.get(childId));
-              childVisited.add(childId);
-            } else {
-              crossLinks.push({ sourceId: item.id, targetId: childId });
-            }
-          }
-        });
-      }
-    });
-
-    const rootNodes = Array.from(nodeMap.values()).filter(
-      (node) => !childVisited.has(node.id),
-    );
-
-    const syntheticRoot = {
-      id: -1,
-      title: "Root",
-      childrenNodes: rootNodes,
-    };
-
-    const getChildren = (d: any) =>
-      d.childrenNodes && d.childrenNodes.length > 0 ? d.childrenNodes : null;
-
-    const width = 1000;
-    const height = 800;
-    const cardWidth = 160;
-    const cardHeight = 70;
+    const { realNodes, crossLinks, root, d3NodeMap } = layout;
+    setTotalNodeCount(realNodes.length);
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
-    svg.attr("viewBox", [0, 0, width, height]);
+    svg.attr("viewBox", [0, 0, CANVAS_WIDTH, CANVAS_HEIGHT]);
 
     const zoomGroup = svg.append("g").attr("class", "zoom-container");
-
     const zoomBehavior = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.2, 3])
-      .on("zoom", (event) => zoomGroup.attr("transform", event.transform));
-
+      .on("zoom", (e) => zoomGroup.attr("transform", e.transform));
     svg.call(zoomBehavior);
 
-    const hierarchyRoot = d3.hierarchy(syntheticRoot, getChildren);
-
-    // Increased horizontal/vertical node size and separation to prevent stacking
-    const treeLayout = d3
-      .tree<any>()
-      .nodeSize([240, 160])
-      .separation((a, b) => (a.parent === b.parent ? 1.2 : 1.8));
-
-    const root = treeLayout(hierarchyRoot);
-    const realNodes = root.descendants().filter((d) => d.depth > 0);
-    setTotalNodeCount(realNodes.length);
-
-    // Initial offset positions to center the tree in the SVG viewport
-    realNodes.forEach((d) => {
-      d.x = d.x + width / 2 - cardWidth / 2;
-      d.y = d.y + 100;
-    });
-
-    // Helper functions for link paths
-    const getPrimaryPath = (d: any) => {
-      const sourceX = d.source.x + cardWidth / 2;
-      const sourceY = d.source.y + cardHeight;
-      const targetX = d.target.x + cardWidth / 2;
-      const targetY = d.target.y;
-      const midY = (sourceY + targetY) / 2;
-      return `M${sourceX},${sourceY} C${sourceX},${midY} ${targetX},${midY} ${targetX},${targetY}`;
-    };
-
-    const d3NodeMap = new Map(
-      realNodes.filter((d) => d.data.id).map((d) => [d.data.id, d]),
-    );
-
-    const getSecondaryPath = (d: { sourceId: number; targetId: number }) => {
-      const source = d3NodeMap.get(d.sourceId);
-      const target = d3NodeMap.get(d.targetId);
-      if (!source || !target) return "";
-
-      const x1 = source.x + cardWidth / 2;
-      const y1 = source.y + cardHeight / 2;
-      const x2 = target.x + cardWidth / 2;
-      const y2 = target.y + cardHeight / 2;
-      return `M${x1},${y1} Q ${(x1 + x2) / 2},${(y1 + y2) / 2 - 50} ${x2},${y2}`;
-    };
-
-    // 2. Render Existing Tree Links
-    const primaryLinkSelection = zoomGroup
+    const primaryLinks = zoomGroup
       .append("g")
-      .attr("class", "links")
       .attr("fill", "none")
       .attr("stroke", "#3b82f6")
       .attr("stroke-width", 2.5)
-      .selectAll("path")
+      .selectAll<SVGPathElement, d3.HierarchyPointLink<CanvasNode>>("path")
       .data(root.links().filter((l) => l.source.depth > 0))
       .join("path")
-      .attr("d", getPrimaryPath);
+      .attr("d", calculatePrimaryPath);
 
-    // 3. Render Secondary DAG Links
-    let secondaryLinkSelection: any = null;
+    let secondaryLinks = null;
     if (crossLinks.length > 0) {
-      secondaryLinkSelection = zoomGroup
+      secondaryLinks = zoomGroup
         .append("g")
         .attr("stroke", "#ef4444")
         .attr("stroke-width", 2)
         .attr("stroke-dasharray", "4,4")
         .attr("fill", "none")
-        .selectAll("path")
+        .selectAll<SVGPathElement, CrossLink>("path")
         .data(crossLinks)
         .join("path")
-        .attr("d", getSecondaryPath);
+        .attr("d", (d) => calculateSecondaryPath(d, d3NodeMap));
     }
 
-    // Interactive line drawn while dragging handle
     const dragLine = zoomGroup
       .append("path")
-      .attr("class", "drag-line")
       .attr("fill", "none")
       .attr("stroke", "#22c55e")
       .attr("stroke-width", 2)
       .attr("stroke-dasharray", "4,4")
       .attr("visibility", "hidden");
 
-    // 4. Render Nodes
     const nodeSelection = zoomGroup
       .append("g")
-      .attr("class", "nodes")
-      .selectAll("g")
+      .selectAll<SVGGElement, d3.HierarchyPointNode<CanvasNode>>("g")
       .data(realNodes)
       .join("g")
-      .attr("class", "node")
       .attr("transform", (d) => `translate(${d.x}, ${d.y})`)
-      .style("cursor", "move");
-
-    // Enable Individual Node Dragging
-    const dragNode = d3
-      .drag<SVGGElement, any>()
-      .on("drag", function (event, d) {
-        d.x += event.dx;
-        d.y += event.dy;
-        d3.select(this).attr("transform", `translate(${d.x}, ${d.y})`);
-
-        // Update link coordinates dynamically
-        primaryLinkSelection.attr("d", getPrimaryPath);
-        if (secondaryLinkSelection) {
-          secondaryLinkSelection.attr("d", getSecondaryPath);
-        }
-      });
-
-    nodeSelection.call(dragNode as any);
+      .style("cursor", "move")
+      .call(createNodeDragBehavior(primaryLinks, secondaryLinks, d3NodeMap));
 
     nodeSelection
       .append("foreignObject")
-      .attr("width", cardWidth)
-      .attr("height", cardHeight)
+      .attr("width", CARD_WIDTH)
+      .attr("height", CARD_HEIGHT)
       .append("xhtml:div")
-      .attr("xmlns", "http://www.w3.org/1999/xhtml")
       .style("width", "100%")
       .style("height", "100%")
-      .style("box-sizing", "border-box")
-      .style("background-color", "#3498db")
-      .style("color", "#ffffff")
+      .style(
+        "background-color",
+        (d: any) => d.data.nodeType?.bg_color || "#3498DB",
+      )
+      .style(
+        "border",
+        (d: any) => `2px solid ${d.data.nodeType?.border_color || "#cbd5e1"}`,
+      )
       .style("border-radius", "8px")
-      .style("padding", "8px 10px")
-      .style("font-size", "11px")
-      .style("font-weight", "600")
+      .style("box-shadow", "0 2px 6px rgba(0, 0, 0, 0.08)")
       .style("display", "flex")
+      .style("flex-direction", "column")
       .style("align-items", "center")
       .style("justify-content", "center")
-      .style("text-align", "center")
-      .style("box-shadow", "0 2px 4px rgba(0,0,0,0.15)")
-      .style("user-select", "none")
+      .style("padding", "8px")
+      .style("box-sizing", "border-box")
       .html(
-        (d) =>
-          `<div>${d.data.label || d.data.title || `Node #${d.data.id}`}</div>`,
+        (d: any) => `
+      <div style="font-size: 20px; line-height: 1; margin-bottom: 4px;">
+        ${d.data.nodeType?.icon || "📌"}
+      </div>
+      <div style="font-size: 11px; font-weight: 700; line-height: 1.25; color: #1e293b; text-align: center;">
+        ${d.data.label || ""}
+      </div>
+    `,
       );
 
-    // 5. Drag behavior on green output handle
-    const handleDrag = d3
-      .drag<SVGCircleElement, any>()
-      .on("start", (event) => {
-        event.sourceEvent.stopPropagation();
-        dragLine.attr("visibility", "visible");
-      })
-      .on("drag", (event, d) => {
-        event.sourceEvent.stopPropagation();
-        const startX = d.x + cardWidth / 2;
-        const startY = d.y + cardHeight;
-        const [mouseX, mouseY] = d3.pointer(event, zoomGroup.node());
-
-        dragLine.attr(
-          "d",
-          `M${startX},${startY} C${startX},${(startY + mouseY) / 2} ${mouseX},${(startY + mouseY) / 2} ${mouseX},${mouseY}`,
-        );
-      })
-      .on("end", (event, d) => {
-        event.sourceEvent.stopPropagation();
-        dragLine.attr("visibility", "hidden");
-
-        const [dropX, dropY] = d3.pointer(event, zoomGroup.node());
-
-        const targetNode = realNodes.find((n) => {
-          if (n.data.id === d.data.id) return false;
-          return (
-            dropX >= n.x &&
-            dropX <= n.x + cardWidth &&
-            dropY >= n.y &&
-            dropY <= n.y + cardHeight
-          );
-        });
-
-        if (targetNode && onLinkNodes) {
-          onLinkNodes(d.data.id, targetNode.data.id);
-        }
-      });
-
-    // Render handle on bottom center of card
     nodeSelection
       .append("circle")
-      .attr("cx", cardWidth / 2)
-      .attr("cy", cardHeight)
+      .attr("cx", CARD_WIDTH / 2)
+      .attr("cy", CARD_HEIGHT)
       .attr("r", 6)
       .attr("fill", "#22c55e")
       .attr("stroke", "#ffffff")
       .attr("stroke-width", 2)
       .style("cursor", "crosshair")
-      .call(handleDrag);
+      .call(
+        createConnectorHandleDragBehavior(
+          zoomGroup,
+          dragLine,
+          realNodes,
+          onLinkNodes,
+        ),
+      );
   }, [data, onLinkNodes]);
 
   return (

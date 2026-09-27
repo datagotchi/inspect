@@ -177,7 +177,18 @@ export type WorkflowNodeLink = {
 export type WorkflowNode = {
   id: number;
   workflow_id?: number;
+  node_type_id?: number;
+  label?: string;
+  type?: string;
   workflow?: Workflow;
+  nodeType?: WorkflowNodeType;
   parents?: WorkflowNodeLink[];
   children?: WorkflowNodeLink[];
+};
+
+export type WorkflowNodeType = {
+  id?: number;
+  name: string;
+  icon: string;
+  bg_color: string;
 };

@@ -1,9 +1,9 @@
 import "@/app/api/postgres";
-// import { Workflow } from "@/app/types";
 import { WorkflowOJSModel } from "../../models/workflows";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/app/functions";
 import { headers } from "next/headers";
+import { getWorkflow } from "@/app/workflows/functions";
 
 export async function GET(
   req: NextRequest,
@@ -12,10 +12,13 @@ export async function GET(
   const authUser = await getAuthUser(headers);
   if (authUser) {
     const workflowId = Number((await params).id);
-    const workflow = await WorkflowOJSModel.query().findOne({
-      id: workflowId,
-      user_id: authUser.id,
-    });
+    console.log(
+      "*** ROUTE calling getWorkflow with: ",
+      workflowId,
+      authUser.id,
+    );
+    const workflow = await getWorkflow(workflowId, authUser.id!);
+    console.log("*** ROUTE workflow: ", workflow);
 
     if (workflow) {
       return NextResponse.json(workflow);

@@ -27,6 +27,7 @@ const WorkflowPage = async ({
     );
   }
 
+  console.log("*** PAGE calling getWorkflow with: ", workflowId, authUser.id);
   const workflow = await getWorkflow(workflowId, authUser.id);
 
   if (!workflow) {
