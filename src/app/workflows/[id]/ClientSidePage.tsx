@@ -18,7 +18,7 @@ interface Props {
   workflow: Workflow;
 }
 
-export default function ClientSidePae({ workflow }: Props) {
+export default function ClientSidePage({ workflow }: Props) {
   const [nodes, setNodes] = useState<WorkflowNode[]>(workflow.nodes);
   const [isCreating, setIsCreating] = useState(false);
   const { token } = useUser();
@@ -33,9 +33,7 @@ export default function ClientSidePae({ workflow }: Props) {
       const newNode = await createWorkflowNode(workflow.id, { label }, token);
 
       if (newNode) {
-        // Optimistically append the new node to local state
         setNodes((prev) => [...prev, newNode]);
-        // Refresh server components in background without full browser reload
         router.refresh();
       } else {
         alert("Failed to create node. Please try again.");

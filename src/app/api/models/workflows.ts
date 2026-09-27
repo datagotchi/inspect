@@ -1,8 +1,41 @@
 import { Model, QueryBuilder } from "objection";
 import "../postgres";
 import { PostgresBaseModel } from "./postgres_models";
-import { User, Workflow, WorkflowNode, WorkflowNodeLink } from "@/app/types";
-import { UserLibSqlModel } from "./users"; // Adjust path as needed
+import {
+  User,
+  Workflow,
+  WorkflowNode,
+  WorkflowNodeLink,
+  WorkflowNodeType,
+} from "@/app/types";
+import { UserLibSqlModel } from "./users";
+
+export class WorkflowNodeTypeOJSModel
+  extends PostgresBaseModel
+  implements WorkflowNodeType
+{
+  static tableName = "workflow_node_types";
+
+  id!: number;
+  name!: string;
+  icon!: string;
+  bg_color!: string;
+  border_color!: string;
+  text_color!: string;
+
+  static jsonSchema = {
+    type: "object",
+    required: ["name", "icon"],
+    properties: {
+      id: { type: "integer" },
+      name: { type: "string" },
+      icon: { type: "string" },
+      bg_color: { type: "string" },
+      border_color: { type: "string" },
+      text_color: { type: "string" },
+    },
+  };
+}
 
 export class WorkflowOJSModel extends PostgresBaseModel implements Workflow {
   static tableName = "workflows";
@@ -14,7 +47,7 @@ export class WorkflowOJSModel extends PostgresBaseModel implements Workflow {
   created_at?: string;
   updated_at?: string;
 
-  // Hydrated Relations (from TS Workflow interface)
+  // Hydrated Relations
   user!: User;
   nodes!: WorkflowNode[];
 
@@ -29,9 +62,8 @@ export class WorkflowOJSModel extends PostgresBaseModel implements Workflow {
   };
 
   static modifiers = {
-    // Fetch workflow with user and all nodes attached
     withFullGraph(builder: QueryBuilder<WorkflowOJSModel>) {
-      builder.withGraphFetched("[user, nodes.[parents, children]]");
+      builder.withGraphFetched("[user, nodes.[nodeType, parents, children]]");
     },
   };
 
@@ -63,7 +95,7 @@ export class WorkflowNodeOJSModel
 {
   static tableName = "workflow_nodes";
 
-  // Database Columns (Exact match to psql \d workflow_nodes)
+  // Database Columns
   id!: number;
   workflow_id!: number;
   created_at?: string;
@@ -71,8 +103,9 @@ export class WorkflowNodeOJSModel
   label?: string;
   type?: string;
 
-  // Hydrated Relations (Exact match to types.d.ts)
+  // Hydrated Relations
   workflow?: Workflow;
+  nodeType?: WorkflowNodeType;
   parents?: WorkflowNodeLink[];
   children?: WorkflowNodeLink[];
 
@@ -83,7 +116,7 @@ export class WorkflowNodeOJSModel
       id: { type: "integer" },
       workflow_id: { type: "integer" },
       label: { type: ["string", "null"] },
-      type: { type: ["string", "null"] },
+      type: { type: ["string", "number", "null"] },
     },
   };
 
@@ -95,6 +128,14 @@ export class WorkflowNodeOJSModel
         join: {
           from: "workflow_nodes.workflow_id",
           to: "workflows.id",
+        },
+      },
+      nodeType: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: WorkflowNodeTypeOJSModel,
+        join: {
+          from: "workflow_nodes.type",
+          to: "workflow_node_types.id",
         },
       },
       parents: {

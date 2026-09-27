@@ -37,10 +37,11 @@ export const getWorkflow = async (
 ): Promise<Workflow | null> => {
   try {
     const workflow = await WorkflowOJSModel.query()
-      .findById(id)
-      .where("user_id", userId)
-      .withGraphFetched("[user, nodes.[parents, children]]")
-      .first();
+      .findOne({
+        id,
+        user_id: userId,
+      })
+      .modify("withFullGraph");
 
     if (!workflow) return null;
 
