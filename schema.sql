@@ -78,6 +78,7 @@ CREATE TABLE public.insights (
     user_id integer NOT NULL,
     uid text NOT NULL,
     title text NOT NULL,
+    description text,
     created_at timestamp with time zone,
     updated_at timestamp with time zone,
     is_public boolean DEFAULT false
@@ -218,3 +219,12 @@ CREATE INDEX reactions_user_id_idx ON public.reactions USING btree (user_id);
 CREATE INDEX summaries_source_id_idx ON public.summaries USING btree (source_id);
 CREATE INDEX users_email_idx ON public.users USING btree (email);
 CREATE INDEX users_username_idx ON public.users USING btree (username);
+
+ALTER TABLE ONLY public.evidence
+  ADD CONSTRAINT evidence_summary_insight_unique UNIQUE (summary_id, insight_id);
+ALTER TABLE ONLY public.summaries
+  ADD CONSTRAINT summaries_url_unique UNIQUE (url);
+ALTER TABLE ONLY public.summaries
+  ADD CONSTRAINT summaries_uid_unique UNIQUE (uid);
+ALTER TABLE ONLY public.insights
+  ADD CONSTRAINT insights_uid_unique UNIQUE (uid);

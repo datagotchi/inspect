@@ -13,11 +13,15 @@ export const ANONYMOUS_REGEXES = [
   "^/insights",
   "^/login",
   "^/register",
+  "^/forgot-password",
+  "^/reset-password",
   "^/confirm",
   "^/api/links",
   "^/api/insights",
   "^/api/register",
   "^/api/login",
+  "^/api/forgot-password",
+  "^/api/reset-password",
   "^/api/users/[0-9]+$",
   "^/api/articles",
 ];
@@ -62,7 +66,11 @@ export const proxy = async (req: NextRequest): Promise<NextResponse> => {
 
   // const origin = `${protocol}://${host}`;
   // const url = `${origin}${req.nextUrl.pathname}${req.nextUrl.search}`;
-  if (process.env.NODE_ENV === "production") {
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.IS_LOCAL_PRODUCTION !== "true" &&
+    process.env.CI !== "true"
+  ) {
     origin = origin.replace(
       /http:\/\/localhost:3000/,
       "https://inspect.datagotchi.net",

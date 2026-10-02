@@ -1,0 +1,572 @@
+/* ===================================
+   ibm.io UI chrome for Inspect
+   =================================== */
+
+/* --- Theme orb --- */
+.masthead-theme {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.masthead-orb-btn {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-muted);
+}
+
+.masthead-orb-btn:hover {
+  color: var(--color-text);
+}
+
+.masthead-orb-btn:focus-visible {
+  color: var(--color-text);
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.theme-orb {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  background: transparent;
+  display: block;
+  transition:
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius 0.35s ease,
+    background 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+html[data-theme="light"] .theme-orb {
+  background: transparent;
+}
+html[data-theme="dark"] .theme-orb {
+  background: currentColor;
+}
+html[data-theme="contrast"] .theme-orb,
+html[data-theme="hc"] .theme-orb {
+  background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+}
+html[data-theme="paper"] .theme-orb {
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+html[data-theme="glass"] .theme-orb {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(167, 139, 250, 0.35));
+  border-color: rgba(148, 163, 184, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 0 8px rgba(124, 58, 237, 0.25);
+}
+html[data-theme="frost"] .theme-orb {
+  background: linear-gradient(145deg, rgba(148, 163, 184, 0.35), rgba(139, 92, 246, 0.45));
+  border-color: rgba(167, 139, 250, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 10px rgba(139, 92, 246, 0.35);
+}
+html[data-theme="brutal"] .theme-orb {
+  border-radius: 0;
+  background: #ff0000;
+  border-color: #000;
+  box-shadow: 2px 2px 0 #000;
+}
+html[data-theme="loom"] .theme-orb {
+  background: #d4a84b;
+  border-color: #d4a84b;
+  box-shadow: 0 0 10px rgba(212, 168, 75, 0.55);
+}
+html[data-theme="tank"] .theme-orb {
+  border-radius: 2px;
+  background: linear-gradient(#69a1b3 0 33%, #3e7f40 33% 66%, #5d4128 66% 100%);
+  border-color: #23475a;
+}
+html[data-theme="nes"] .theme-orb {
+  border-radius: 0;
+  background: #e4002b;
+  border: 2px solid #fce100;
+  box-shadow: 2px 2px 0 #209cee;
+}
+
+/* --- App shell header --- */
+.inspect-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  min-height: var(--header-h);
+  display: flex;
+  align-items: center;
+  background: color-mix(in oklab, var(--color-bg-elev) 72%, transparent);
+  border-bottom: 1px solid color-mix(in oklab, var(--color-ink) 6%, transparent);
+  backdrop-filter: saturate(1.2) blur(14px);
+  -webkit-backdrop-filter: saturate(1.2) blur(14px);
+  padding-top: env(safe-area-inset-top);
+}
+
+.inspect-header__inner {
+  width: 100%;
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 0.35rem var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.inspect-header__left {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.inspect-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+  min-width: 0;
+  padding: 0.2rem 0.15rem;
+  border-radius: 8px;
+}
+
+.inspect-brand:hover {
+  color: var(--color-text);
+  opacity: 0.82;
+}
+
+.inspect-brand__text {
+  white-space: nowrap;
+}
+
+.inspect-brand__mark {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in oklab, var(--color-ink) 8%, transparent);
+  border-radius: 7px;
+  background: color-mix(in oklab, var(--color-bg-elev) 80%, transparent);
+  flex-shrink: 0;
+}
+
+.inspect-brand__mark--quiet {
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+
+.inspect-brand__mark--quiet:hover {
+  opacity: 0.9;
+}
+
+.inspect-nav {
+  display: none;
+  align-items: center;
+  gap: 0.1rem;
+  margin-left: 0.35rem;
+  padding-left: 0.55rem;
+  border-left: 1px solid color-mix(in oklab, var(--color-ink) 8%, transparent);
+}
+
+.inspect-nav__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  color: var(--color-muted);
+  text-decoration: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.inspect-nav__link:hover {
+  color: var(--color-text);
+  background: color-mix(in oklab, var(--color-ink) 4%, transparent);
+}
+
+.inspect-header__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.inspect-main {
+  min-height: calc(100dvh - var(--header-h));
+}
+
+@media (min-width: 720px) {
+  .inspect-header__inner {
+    padding: 0.35rem var(--space-5);
+  }
+
+  .inspect-nav {
+    display: flex;
+  }
+}
+
+@media (max-width: 719px) {
+  .inspect-nav__link--desktop {
+    display: none;
+  }
+
+  .inspect-brand__mark--quiet {
+    display: none;
+  }
+}
+
+/* --- Glass / surface cards --- */
+.glass-card {
+  position: relative;
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: var(--card-blur);
+  -webkit-backdrop-filter: var(--card-blur);
+  overflow: hidden;
+}
+
+.glass-card--pad {
+  padding: var(--card-pad);
+}
+
+/* Auth / form surfaces */
+.auth-shell {
+  min-height: calc(100dvh - var(--header-h));
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: max(4.5rem, 8vh) var(--space-5) var(--space-8);
+  background:
+    radial-gradient(
+      1200px 480px at 50% -10%,
+      color-mix(in oklab, var(--color-accent) 8%, transparent),
+      transparent 60%
+    ),
+    var(--color-bg);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 24.5rem;
+  background: var(--surface-card);
+  border: 1px solid color-mix(in oklab, var(--color-ink) 8%, transparent);
+  border-radius: 16px;
+  box-shadow:
+    0 1px 2px color-mix(in oklab, var(--color-ink) 4%, transparent),
+    0 16px 40px color-mix(in oklab, var(--color-ink) 6%, transparent);
+  padding: 1.75rem 1.6rem 1.5rem;
+}
+
+.auth-card--quiet {
+  text-align: center;
+  padding-block: 2rem;
+}
+
+.auth-card__header {
+  margin-bottom: 1.35rem;
+}
+
+.auth-eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.auth-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--color-text);
+}
+
+.auth-lead {
+  margin: 0.45rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--color-muted);
+}
+
+.auth-field {
+  margin-bottom: 0.95rem;
+}
+
+.auth-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0;
+}
+
+.auth-label-row .form-label {
+  margin-bottom: var(--space-2);
+}
+
+.auth-inline-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--color-muted);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.auth-inline-link:hover {
+  color: var(--color-accent);
+}
+
+.auth-password {
+  position: relative;
+}
+
+.auth-password .form-input {
+  padding-right: 3.75rem;
+}
+
+.auth-password__toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.55rem;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 560;
+  font-family: inherit;
+  color: var(--color-muted);
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.auth-password__toggle:hover {
+  color: var(--color-text);
+  background: color-mix(in oklab, var(--color-ink) 4%, transparent);
+}
+
+.auth-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.auth-submit {
+  margin-top: 0.35rem;
+  min-height: 2.65rem;
+  border-radius: 10px;
+  font-weight: 560;
+}
+
+.auth-footer {
+  margin: 1.25rem 0 0;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+}
+
+.auth-footer__link {
+  color: var(--color-text);
+  font-weight: 560;
+  text-decoration: none;
+}
+
+.auth-footer__link:hover {
+  color: var(--color-accent);
+}
+
+.auth-reset-link {
+  margin: 0 0 0.85rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  word-break: break-all;
+  color: var(--color-muted);
+}
+
+.auth-card h2,
+.auth-title {
+  text-align: left;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 560;
+  color: var(--color-muted);
+  letter-spacing: 0.01em;
+}
+
+.form-input {
+  display: block;
+  width: 100%;
+  min-height: 2.6rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-bg-elev);
+  border: 1px solid color-mix(in oklab, var(--color-ink) 12%, transparent);
+  border-radius: 10px;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.form-input::placeholder {
+  color: color-mix(in oklab, var(--color-muted) 80%, transparent);
+}
+
+.form-input:hover:not(:disabled):not(:focus) {
+  border-color: color-mix(in oklab, var(--color-ink) 20%, transparent);
+}
+
+.form-input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-accent) 18%, transparent);
+}
+
+.alert {
+  margin: 0 0 0.85rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+}
+
+.alert-success {
+  background: color-mix(in srgb, var(--color-success, #2e7d32) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success, #2e7d32) 35%, transparent);
+  color: var(--color-success, #2e7d32);
+}
+
+.alert-error {
+  background: color-mix(in oklab, var(--color-accent-2) 10%, var(--color-bg-elev));
+  border: 1px solid color-mix(in oklab, var(--color-accent-2) 32%, transparent);
+  color: var(--color-text);
+}
+
+.alert-message {
+  line-height: 1.45;
+}
+
+.bg-neutral-100 {
+  background-color: var(--color-bg);
+}
+
+@media (max-width: 640px) {
+  .auth-shell {
+    padding: 1.25rem 1rem 2rem;
+    align-items: stretch;
+  }
+
+  .auth-card {
+    max-width: none;
+    border-radius: 14px;
+    box-shadow: none;
+    border-color: color-mix(in oklab, var(--color-ink) 10%, transparent);
+  }
+}
+
+/* Bootstrap card override for auth pages using .card */
+.auth-shell .card,
+.card.auth-card,
+.auth-shell .card.w-full {
+  background: var(--surface-card);
+  border: var(--border-weak);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
+  color: var(--color-text);
+}
+
+.auth-shell .card-body {
+  padding: var(--space-8);
+}
+
+/* Quiet nav link style for header actions */
+.inspect-nav-link {
+  color: var(--color-muted);
+  text-decoration: none;
+  font-size: var(--size-1);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  transition: color var(--motion-fast) var(--ease-standard);
+}
+
+.inspect-nav-link:hover {
+  color: var(--color-text);
+}
+
+.inspect-nav-cta {
+  color: var(--color-bg-elev);
+  background: var(--color-accent);
+  text-decoration: none;
+  font-size: var(--size-1);
+  font-weight: 500;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 0;
+  cursor: pointer;
+}
+
+.inspect-nav-cta:hover {
+  filter: brightness(1.05);
+  color: var(--color-bg-elev);
+}
+
+.modal-page-title-preview {
+  margin: var(--space-2, 0.5rem) 0 0;
+  font-weight: 600;
+  font-size: var(--size-1, 0.875rem);
+  color: var(--color-text);
+}
+
+.modal-insights-picker {
+  max-height: 220px;
+  overflow: auto;
+  border: var(--border-weak, 1px solid var(--color-border));
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-bg-elev, #fff);
+}
+
+.modal-inline-error {
+  margin-top: var(--space-3, 0.75rem);
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  border-radius: var(--radius-sm, 6px);
+  background: color-mix(in oklab, var(--color-accent-2) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-accent-2) 35%, transparent);
+  color: var(--color-text);
+  font-size: var(--size-1, 0.875rem);
+}
+
+html[data-theme="nes"] .inspect-main > * {
+  /* Keep content readable on striped bg */
+}
