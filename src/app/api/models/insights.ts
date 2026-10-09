@@ -100,8 +100,6 @@ export class InsightModel extends PostgresBaseModel implements Insight {
   };
 
   static get relationMappings() {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { InsightLinkModel } = require("./insight_links");
     return {
       parents: {
         relation: Model.HasManyRelation,
@@ -153,5 +151,58 @@ export class InsightModel extends PostgresBaseModel implements Insight {
 
   $beforeUpdate() {
     this.updated_at = new Date().toISOString();
+  }
+}
+
+export class InsightLinkModel extends PostgresBaseModel implements InsightLink {
+  static tableName = "insight_links";
+
+  id?: number;
+  parent_id!: number;
+  child_id!: number;
+  created_at?: string;
+
+  parentInsight?: Insight;
+  childInsight?: Insight;
+
+  static jsonSchema = {
+    type: "object",
+    required: ["child_id", "parent_id"],
+    properties: {
+      id: { type: "integer" },
+      child_id: { type: "integer" },
+      parent_id: { type: "integer" },
+    },
+  };
+
+  static modifiers = {
+    selectDirectChildrenCount(builder: QueryBuilder<InsightLinkModel>) {
+      builder.count("*").as("directChildrenCount");
+    },
+  };
+
+  static get relationMappings() {
+    return {
+      parentInsight: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: InsightModel,
+        join: {
+          from: "insight_links.parent_id",
+          to: "insights.id",
+        },
+      },
+      childInsight: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: InsightModel,
+        join: {
+          from: "insight_links.child_id",
+          to: "insights.id",
+        },
+      },
+    };
+  }
+
+  $beforeInsert() {
+    this.created_at = new Date().toISOString();
   }
 }

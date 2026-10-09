@@ -1,5 +1,3 @@
-"use server";
-
 import React from "react";
 import { Metadata } from "next";
 import { cookies, headers } from "next/headers";
@@ -61,13 +59,7 @@ const InsightPage = async ({
   if (insight) {
     const authUser = await getAuthUser(headers);
     // TODO: include a .user in the insight via ojs join?
-    const currentUser = authUser
-      ? await getUserFromServer(
-          origin ?? "",
-          { id: authUser.id! },
-          (await cookies()).get("token")?.value,
-        )
-      : null;
+    const currentUser = authUser ? await getUserFromServer(authUser.id!) : null;
 
     return (
       <ClientSidePage

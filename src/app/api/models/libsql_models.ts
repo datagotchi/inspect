@@ -1,4 +1,4 @@
-import { Model, snakeCaseMappers } from "objection";
+import { Model } from "objection";
 import libSqlKnexInstance from "../libsql";
 
 export class LibSqlBaseModel extends Model {
@@ -14,9 +14,5 @@ export class LibSqlBaseModel extends Model {
   // Override instance-level $knex() for relation queries
   $knex() {
     return libSqlKnexInstance;
-  }
-
-  static get columnNameMappers() {
-    return snakeCaseMappers();
   }
 }

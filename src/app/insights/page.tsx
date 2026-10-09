@@ -14,9 +14,7 @@ const InsightsPage = async (): Promise<React.JSX.Element> => {
   const token = tokenCookie ? tokenCookie.value : undefined;
 
   const authUser = await getAuthUser(headers);
-  const currentUser = authUser
-    ? await getUserFromServer(origin, { id: authUser.id! }, token)
-    : null;
+  const currentUser = authUser ? await getUserFromServer(authUser.id!) : null;
 
   const insightSearchParams = new URLSearchParams(
     "offset=0&limit=20&parents=true&children=true&evidence=true",

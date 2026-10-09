@@ -6,14 +6,14 @@ import { ForeignKeyViolationError } from "objection";
 
 import { POST } from "./route";
 import { getAuthUser } from "../../functions";
-import { InsightLinkModel } from "../models/insight_links";
+import { InsightLinkModel } from "../models/insights";
 import { InsightLink } from "../../types";
 
 jest.mock("../../functions", () => ({
   getAuthUser: jest.fn(),
 }));
 
-jest.mock("../models/insight_links", () => {
+jest.mock("../models/insights", () => {
   const mockQueryBuilder = {
     insert: jest.fn().mockReturnThis(),
     withGraphFetched: jest.fn().mockReturnThis(),

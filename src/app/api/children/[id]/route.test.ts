@@ -5,7 +5,7 @@
 import { NextRequest } from "next/server";
 
 import { DELETE } from "./route";
-import { InsightLinkModel } from "../../models/insight_links";
+import { InsightLinkModel } from "../../models/insights";
 import { getAuthUser } from "../../../functions";
 
 jest.mock("next/headers", () => ({
@@ -14,7 +14,7 @@ jest.mock("next/headers", () => ({
 jest.mock("../../../functions", () => ({
   getAuthUser: jest.fn(),
 }));
-jest.mock("../../models/insight_links", () => {
+jest.mock("../../models/insights", () => {
   const mockQueryBuilder = {
     deleteById: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),

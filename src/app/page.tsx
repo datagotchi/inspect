@@ -4,7 +4,7 @@ import React from "react";
 import { redirect } from "next/navigation";
 
 const IndexPage = async (): Promise<React.JSX.Element> => {
-  redirect("/insights");
+  redirect("/workflows");
 };
 
 export default IndexPage;

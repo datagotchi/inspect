@@ -3,7 +3,7 @@ import { NextResponse, NextRequest } from "next/server";
 
 import "../postgres";
 import { getAuthUser } from "../../functions";
-import { InsightLinkModel } from "../models/insight_links";
+import { InsightLinkModel } from "../models/insights";
 import { InsightLink } from "../../types";
 import { ForeignKeyViolationError } from "objection";
 

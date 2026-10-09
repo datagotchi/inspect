@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Metadata } from "next";
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 
 import ClientSidePage from "./ClientSidePage";
 import { getLinkFromServer, getUserFromServer } from "../../api/functions";
@@ -41,13 +41,7 @@ const Linkpage = async ({ params }: PageProps): Promise<React.JSX.Element> => {
   const origin = (await headers()).get("x-origin");
   const link = await getLinkFromServer(origin ?? "", (await params).uid);
   const authUser = await getAuthUser(headers);
-  const currentUser = authUser
-    ? await getUserFromServer(
-        origin ?? "",
-        { id: authUser.id! },
-        (await cookies()).get("token")?.value,
-      )
-    : null;
+  const currentUser = authUser ? await getUserFromServer(authUser.id!) : null;
 
   if (link) {
     return (

@@ -75,7 +75,11 @@ const AppHeader = (): React.JSX.Element => {
       </div>
       <div style={{ textAlign: "center" }}>
         <strong>by</strong> <br />
-        <a href="https://datagotchi.net" target="_blank" rel="noreferrer">
+        <a
+          href="https://github.com/datagotchi/inspect"
+          target="_blank"
+          rel="noreferrer"
+        >
           <Image
             src="/images/Color1.png"
             width="100"
