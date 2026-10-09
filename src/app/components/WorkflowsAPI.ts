@@ -57,7 +57,7 @@ export const deleteWorkflow = async (workflow: Workflow, token: string) =>
 
 export const createWorkflowNode = async (
   workflowId: number,
-  nodeData: { label: string },
+  nodeData: { label: string; type?: string }, // 👈 Added optional type property
   token?: string,
 ): Promise<WorkflowNode | null> => {
   try {
