@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
 import "../../postgres";
-import { InsightLinkModel } from "../../models/insight_links";
+import { InsightLinkModel } from "../../models/insights";
 import { getAuthUser } from "../../../functions";
 
 export interface DeleteChildInsightRouteProps {

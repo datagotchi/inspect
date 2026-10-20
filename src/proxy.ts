@@ -16,6 +16,7 @@ export const ANONYMOUS_REGEXES = [
   "^/forgot-password",
   "^/reset-password",
   "^/confirm",
+  "^/workflows",
   "^/api/links",
   "^/api/insights",
   "^/api/register",
@@ -24,6 +25,7 @@ export const ANONYMOUS_REGEXES = [
   "^/api/reset-password",
   "^/api/users/[0-9]+$",
   "^/api/articles",
+  "^/api/workflows",
 ];
 
 export const proxy = async (req: NextRequest): Promise<NextResponse> => {

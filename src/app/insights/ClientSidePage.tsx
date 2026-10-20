@@ -19,9 +19,6 @@ import {
   addCitationsToInsight,
   createInsightFromCitations,
 } from "../components/SelectedCitationsAPI";
-import HybridRadialNetwork from "../components/HybridRadialNetwork";
-
-type ViewMode = "list" | "network";
 
 const ClientSidePage = ({
   insights,
@@ -34,7 +31,6 @@ const ClientSidePage = ({
   const { token } = useUser();
   const [liveData, setLiveData] = useState(insights);
   const [query, setQuery] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isSaveLinkDialogOpen, setIsSaveLinkDialogOpen] = useState(false);
 
@@ -128,11 +124,7 @@ const ClientSidePage = ({
   const loggedIn = !!currentUser;
 
   return (
-    <div
-      className={`${styles.pageContainer} ${
-        viewMode === "network" ? styles.pageContainerNetwork : ""
-      }`}
-    >
+    <div className={styles.pageContainer}>
       <div className={styles.mainContent}>
         <header className={styles.pageIntro}>
           <div className={styles.pageIntroText}>
@@ -146,29 +138,6 @@ const ClientSidePage = ({
           </div>
 
           <div className={styles.toolbar}>
-            <div
-              className={styles.viewToggle}
-              role="group"
-              aria-label="View mode"
-            >
-              <button
-                type="button"
-                className={`${styles.viewToggleBtn} ${viewMode === "list" ? styles.viewToggleBtnActive : ""}`}
-                onClick={() => setViewMode("list")}
-                aria-pressed={viewMode === "list"}
-              >
-                List
-              </button>
-              <button
-                type="button"
-                className={`${styles.viewToggleBtn} ${viewMode === "network" ? styles.viewToggleBtnActive : ""}`}
-                onClick={() => setViewMode("network")}
-                aria-pressed={viewMode === "network"}
-              >
-                Network
-              </button>
-            </div>
-
             <div className={styles.toolbarSearchRow}>
               <label className={styles.searchField}>
                 <span className={styles.srOnly}>Search insights</span>
@@ -185,77 +154,68 @@ const ClientSidePage = ({
         </header>
 
         <CurrentUserContext.Provider value={currentUser}>
-          {viewMode === "list" ? (
-            <section className={styles.listSection} aria-label="Insights list">
-              {filteredInsights.length === 0 ? (
-                <div className={styles.emptyState}>
-                  <h2 className={styles.emptyTitle}>
-                    {query ? "No matches" : "No insights yet"}
-                  </h2>
-                  <p className={styles.emptyCopy}>
-                    {query
-                      ? "Try a different search, or clear the filter."
-                      : loggedIn
-                        ? "Tap + to create an insight or save a link."
-                        : "Log in to start building your insight network."}
-                  </p>
-                  {query && (
-                    <button
-                      type="button"
-                      className={styles.emptyAction}
-                      onClick={() => setQuery("")}
+          <section className={styles.listSection} aria-label="Insights list">
+            {filteredInsights.length === 0 ? (
+              <div className={styles.emptyState}>
+                <h2 className={styles.emptyTitle}>
+                  {query ? "No matches" : "No insights yet"}
+                </h2>
+                <p className={styles.emptyCopy}>
+                  {query
+                    ? "Try a different search, or clear the filter."
+                    : loggedIn
+                      ? "Tap + to create an insight or save a link."
+                      : "Log in to start building your insight network."}
+                </p>
+                {query && (
+                  <button
+                    type="button"
+                    className={styles.emptyAction}
+                    onClick={() => setQuery("")}
+                  >
+                    Clear search
+                  </button>
+                )}
+              </div>
+            ) : (
+              <ul className={styles.insightGrid}>
+                {filteredInsights.map((insight) => {
+                  const citationCount = insight.evidence?.length ?? 0;
+                  const childCount = insight.children?.length ?? 0;
+                  return (
+                    <li
+                      key={insight.uid || insight.id}
+                      className={styles.insightCard}
                     >
-                      Clear search
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <ul className={styles.insightGrid}>
-                  {filteredInsights.map((insight) => {
-                    const citationCount = insight.evidence?.length ?? 0;
-                    const childCount = insight.children?.length ?? 0;
-                    return (
-                      <li
-                        key={insight.uid || insight.id}
-                        className={styles.insightCard}
+                      <Link
+                        href={`/insights/${insight.uid}`}
+                        className={styles.insightCardLink}
                       >
-                        <Link
-                          href={`/insights/${insight.uid}`}
-                          className={styles.insightCardLink}
-                        >
-                          <div className={styles.insightCardBody}>
-                            <h2 className={styles.insightCardTitle}>
-                              {insight.title || "Untitled insight"}
-                            </h2>
-                            {insight.description && (
-                              <p className={styles.insightCardDesc}>
-                                {insight.description}
-                              </p>
-                            )}
-                          </div>
-                          <div className={styles.insightCardMeta}>
-                            <span>
-                              {`${citationCount} citation${citationCount === 1 ? "" : "s"}`}
-                            </span>
-                            <span>
-                              {`${childCount} child${childCount === 1 ? "" : "ren"}`}
-                            </span>
-                          </div>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </section>
-          ) : (
-            <section
-              className={styles.networkSection}
-              aria-label="Insights network"
-            >
-              <HybridRadialNetwork data={filteredInsights} crossLinks={[]} />
-            </section>
-          )}
+                        <div className={styles.insightCardBody}>
+                          <h2 className={styles.insightCardTitle}>
+                            {insight.title || "Untitled insight"}
+                          </h2>
+                          {insight.description && (
+                            <p className={styles.insightCardDesc}>
+                              {insight.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className={styles.insightCardMeta}>
+                          <span>
+                            {`${citationCount} citation${citationCount === 1 ? "" : "s"}`}
+                          </span>
+                          <span>
+                            {`${childCount} child${childCount === 1 ? "" : "ren"}`}
+                          </span>
+                        </div>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
 
           {loggedIn && (
             <FloatingActionMenu
