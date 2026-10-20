@@ -2,8 +2,9 @@ import { Model, QueryBuilder } from "objection";
 
 import { FactComment } from "../../types";
 import { UserLibSqlModel } from "../models/users";
+import { PostgresBaseModel } from "./postgres_models";
 
-export class CommentModel extends Model implements FactComment {
+export class CommentModel extends PostgresBaseModel implements FactComment {
   static tableName = "comments";
 
   user!: UserLibSqlModel;
@@ -54,10 +55,9 @@ export class CommentModel extends Model implements FactComment {
 
   $beforeInsert() {
     this.created_at = new Date().toISOString();
-    this.updated_at = new Date().toISOString();
   }
 
   $beforeUpdate() {
-    this.updated_at = new Date().toISOString();
+    // comments table has no updated_at column
   }
 }

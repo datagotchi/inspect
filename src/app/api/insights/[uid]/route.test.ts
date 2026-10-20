@@ -23,9 +23,14 @@ jest.mock("../../models/insights", () => {
     findOne: jest.fn().mockReturnThis(),
     for: jest.fn().mockReturnThis(),
     patch: jest.fn().mockReturnThis(),
+    patchAndFetchById: jest.fn().mockResolvedValue({
+      uid: "123",
+      title: "Test Insight",
+    }),
     delete: jest.fn().mockReturnThis(),
     insert: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
+    whereIn: jest.fn().mockReturnThis(),
     onConflict: jest.fn().mockReturnThis(),
     merge: jest.fn().mockReturnThis(),
     withGraphJoined: jest.fn().mockReturnThis(),
@@ -45,7 +50,21 @@ jest.mock("../../models/insights", () => {
   };
 });
 
+const mockLinkQueryBuilder = {
+  whereIn: jest.fn().mockReturnThis(),
+  select: jest.fn().mockResolvedValue([]),
+};
+
+jest.mock("../../models/insight_links", () => ({
+  InsightLinkModel: {
+    query: jest.fn(),
+  },
+}));
+
+import { InsightLinkModel } from "../../models/insight_links";
+
 const mockInsightData = {
+  id: 1,
   uid: "123",
   title: "Test Insight",
 };
@@ -58,6 +77,9 @@ describe("GET /api/insights/[uid]", () => {
     (InsightModel.query().findOne as jest.Mock).mockReturnThis();
     (InsightModel.query().for as jest.Mock).mockReturnThis();
     (InsightModel.query().patch as jest.Mock).mockReturnThis();
+    (InsightModel.query().patchAndFetchById as jest.Mock).mockResolvedValue(
+      mockInsightData,
+    );
     (InsightModel.query().delete as jest.Mock).mockReturnThis();
     (InsightModel.query().insert as jest.Mock).mockReturnThis();
     (InsightModel.query().where as jest.Mock).mockReturnThis();
@@ -76,7 +98,7 @@ describe("GET /api/insights/[uid]", () => {
 
   describe("Logged in", () => {
     beforeEach(() => {
-      (getAuthUser as jest.Mock).mockResolvedValue({ user_id: 1 });
+      (getAuthUser as jest.Mock).mockResolvedValue({ id: 1 });
     });
 
     it("should return insight data if found", async () => {
@@ -424,6 +446,9 @@ describe("PATCH /api/insights/[uid]", () => {
     (InsightModel.query().findOne as jest.Mock).mockReturnThis();
     (InsightModel.query().for as jest.Mock).mockReturnThis();
     (InsightModel.query().patch as jest.Mock).mockReturnThis();
+    (InsightModel.query().patchAndFetchById as jest.Mock).mockResolvedValue(
+      mockInsightData,
+    );
     (InsightModel.query().delete as jest.Mock).mockReturnThis();
     (InsightModel.query().insert as jest.Mock).mockReturnThis();
     (InsightModel.query().where as jest.Mock).mockReturnThis();
@@ -449,36 +474,71 @@ describe("PATCH /api/insights/[uid]", () => {
 
   describe("Logged in", () => {
     beforeEach(() => {
-      (getAuthUser as jest.Mock).mockResolvedValue({ user_id: 1 });
+      (getAuthUser as jest.Mock).mockResolvedValue({ id: 1 });
     });
 
     it("should update all available insight fields", async () => {
       const putObject = {
         title: "New Title",
+        description: "New description",
         is_public: true,
       };
       (req.json as jest.Mock).mockResolvedValue(putObject);
+      (InsightModel.query().patchAndFetchById as jest.Mock).mockResolvedValue({
+        ...mockInsightData,
+        ...putObject,
+        updated_at: "2026-10-01T00:00:00.000Z",
+      });
 
       const response = await PATCH(req, props);
       expect(response.status).toBe(200);
 
       const json = await response.json();
-      expect(json).toEqual({
-        ...putObject,
-        updated_at: expect.any(String),
-      });
+      expect(json.title).toBe("New Title");
+      expect(json.description).toBe("New description");
+      expect(json.is_public).toBe(true);
 
       expect(InsightModel.query().findOne).toHaveBeenCalledTimes(1);
-      expect(InsightModel.query().patch).toHaveBeenCalledTimes(1);
+      expect(InsightModel.query().patchAndFetchById).toHaveBeenCalledTimes(1);
     });
 
-    it("should return 400 if title or is_public are missing", async () => {
+    it("should update description alone", async () => {
+      (req.json as jest.Mock).mockResolvedValue({
+        description: "Only description",
+      });
+      (InsightModel.query().patchAndFetchById as jest.Mock).mockResolvedValue({
+        ...mockInsightData,
+        description: "Only description",
+      });
+
+      const response = await PATCH(req, props);
+      expect(response.status).toBe(200);
+      const json = await response.json();
+      expect(json.description).toBe("Only description");
+    });
+
+    it("should allow setting is_public to false", async () => {
+      (req.json as jest.Mock).mockResolvedValue({
+        is_public: false,
+      });
+      (InsightModel.query().patchAndFetchById as jest.Mock).mockResolvedValue({
+        ...mockInsightData,
+        is_public: false,
+      });
+
+      const response = await PATCH(req, props);
+      expect(response.status).toBe(200);
+      const json = await response.json();
+      expect(json.is_public).toBe(false);
+    });
+
+    it("should return 400 if title, description, and is_public are missing", async () => {
       const response = await PATCH(req, props);
       expect(response.status).toBe(400);
 
       const json = await response.json();
       expect(json).toEqual({
-        statusText: "New title or is_public are required",
+        statusText: "title, description, or is_public is required",
       });
     });
 
@@ -538,9 +598,13 @@ describe("DELETE /api/insights/[uid]", () => {
     (InsightModel.query().findOne as jest.Mock).mockReturnThis();
     (InsightModel.query().for as jest.Mock).mockReturnThis();
     (InsightModel.query().patch as jest.Mock).mockReturnThis();
+    (InsightModel.query().patchAndFetchById as jest.Mock).mockResolvedValue(
+      mockInsightData,
+    );
     (InsightModel.query().delete as jest.Mock).mockReturnThis();
     (InsightModel.query().insert as jest.Mock).mockReturnThis();
     (InsightModel.query().where as jest.Mock).mockReturnThis();
+    (InsightModel.query().whereIn as jest.Mock).mockReturnThis();
     (InsightModel.query().onConflict as jest.Mock).mockReturnThis();
     (InsightModel.query().merge as jest.Mock).mockReturnThis();
     (InsightModel.query().withGraphJoined as jest.Mock).mockReturnThis();
@@ -562,20 +626,51 @@ describe("DELETE /api/insights/[uid]", () => {
 
   describe("Logged in", () => {
     beforeEach(() => {
-      (getAuthUser as jest.Mock).mockResolvedValue({ user_id: 1 });
+      (getAuthUser as jest.Mock).mockResolvedValue({ id: 1 });
+      mockLinkQueryBuilder.whereIn.mockReturnThis();
+      mockLinkQueryBuilder.select.mockResolvedValue([]);
+      (InsightLinkModel.query as jest.Mock).mockReturnValue(
+        mockLinkQueryBuilder,
+      );
     });
 
-    it("should delete insight data", async () => {
+    it("should delete insight data and owned descendants", async () => {
       props = {
         params: Promise.resolve({ uid: "asdf" }) as Promise<{
           uid: string;
         }>,
       };
+      (InsightModel.query().findOne as jest.Mock).mockResolvedValueOnce({
+        id: 10,
+        uid: "asdf",
+        user_id: 1,
+      });
+      (InsightModel.query().whereIn as jest.Mock).mockResolvedValueOnce(1);
+
       const response = await DELETE(req, props);
       expect(response.status).toBe(200);
 
       const json = await response.json();
       expect(json).toEqual({ statusText: "success" });
+      expect(InsightModel.query().delete).toHaveBeenCalled();
+      expect(InsightModel.query().whereIn).toHaveBeenCalledWith("id", [10]);
+    });
+
+    it("should return 404 if insight is missing for this user", async () => {
+      props = {
+        params: Promise.resolve({ uid: "asdf" }) as Promise<{
+          uid: string;
+        }>,
+      };
+      (InsightModel.query().findOne as jest.Mock).mockResolvedValueOnce(
+        undefined,
+      );
+
+      const response = await DELETE(req, props);
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({
+        statusText: "Insight not found",
+      });
     });
 
     it("should return 400 if uid is missing or invalid", async () => {
@@ -596,7 +691,7 @@ describe("DELETE /api/insights/[uid]", () => {
 
     it("should return 401", async () => {
       props = {
-        params: Promise.resolve({ uid: "[object object]" }) as Promise<{
+        params: Promise.resolve({ uid: "asdf" }) as Promise<{
           uid: string;
         }>,
       };

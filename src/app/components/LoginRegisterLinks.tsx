@@ -1,54 +1,79 @@
 "use client";
 
 import styles from "../../styles/components/login-register-links.module.css";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import Cookies from "js-cookie";
 import { usePathname } from "next/navigation";
 
 import useUser from "../hooks/useUser";
 
 const LoginRegisterLinks = ({
-  loggedIn,
+  loggedIn: loggedInFromServer,
 }: {
   loggedIn: boolean;
 }): React.JSX.Element => {
-  const { logout } = useUser();
+  const { logout, loggedIn: loggedInFromClient } = useUser();
   const path = usePathname();
+  const [mounted, setMounted] = useState(false);
+  const [cookieLoggedIn, setCookieLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Re-check the cookie on every route change. Login sets the cookie in a
+  // different useUser instance, so we cannot rely on that hook alone.
+  useEffect(() => {
+    setCookieLoggedIn(!!Cookies.get("token"));
+  }, [path, loggedInFromClient, loggedInFromServer]);
+
+  const loggedIn = mounted
+    ? loggedInFromClient || cookieLoggedIn || loggedInFromServer
+    : loggedInFromServer;
 
   if (loggedIn) {
     return (
       <div className={styles.loginRegisterContainer}>
+        <Link
+          href="/change-password"
+          className={styles.accountLink}
+          title="Account"
+        >
+          Account
+        </Link>
         <button
+          type="button"
           onClick={() => {
             logout();
             window.location.href = path || "/";
           }}
           className={styles.logoutButton}
         >
-          Log Out
+          Log out
         </button>
-        <Link href="/insights" className={styles.myInsightsButton}>
-          My Insights
-        </Link>
       </div>
     );
   }
 
   return (
-    <div className={styles.loginRegisterContainer}>
-      <li className={path === "/login" ? "active" : ""}>
-        <Link href={`/login?return=${path}`} className={styles.loginButton}>
+    <div className={`${styles.loginRegisterContainer} ${styles.mobileAuth}`}>
+      {path !== "/login" && (
+        <Link
+          href={`/login?return=${encodeURIComponent(path || "/")}`}
+          className={styles.loginButton}
+        >
           Login
         </Link>
-      </li>
-      <li className={path === "/register" ? "active" : ""}>
+      )}
+      {path !== "/register" && (
         <Link
-          href={`/register?return=${path}`}
+          href={`/register?return=${encodeURIComponent(path || "/")}`}
           className={styles.registerButton}
         >
           Register
         </Link>
-      </li>
+      )}
     </div>
   );
 };

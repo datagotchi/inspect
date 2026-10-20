@@ -3,8 +3,9 @@ import { Model } from "objection";
 import { FactReaction } from "../../types";
 import { UserLibSqlModel } from "./users";
 import { SummaryModel } from "./summaries";
+import { PostgresBaseModel } from "./postgres_models";
 
-export class ReactionModel extends Model implements FactReaction {
+export class ReactionModel extends PostgresBaseModel implements FactReaction {
   static tableName = "reactions";
 
   id?: number;
@@ -61,10 +62,9 @@ export class ReactionModel extends Model implements FactReaction {
 
   $beforeInsert() {
     this.created_at = new Date().toISOString();
-    this.updated_at = new Date().toISOString();
   }
 
   $beforeUpdate() {
-    this.updated_at = new Date().toISOString();
+    // reactions table has no updated_at column
   }
 }
