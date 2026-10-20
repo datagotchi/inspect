@@ -13,6 +13,11 @@ interface InsightDetailPageProps {
   currentUser: User | null;
 }
 
+export const ADD_CITATIONS_TO_OTHER_INSIGHTS_DIALOG_ID =
+  "add-citations-to-other-insights-dialog";
+export const ADD_LINKS_AS_EVIDENCE_DIALOG_ID = "add-links-as-evidence-dialog";
+export const ADD_PARENT_INSIGHTS_DIALOG_ID = "add-parent-insights-dialog";
+
 const ClientSidePage = ({
   insight,
   currentUser,
