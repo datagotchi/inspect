@@ -27,12 +27,6 @@ const LoginRegisterLinks = ({
         >
           Log Out
         </button>
-        <Link href="/insights" className={styles.myInsightsButton}>
-          My Insights
-        </Link>
-        <Link href="/workflows" className={styles.myInsightsButton}>
-          My Workflows
-        </Link>
       </div>
     );
   }

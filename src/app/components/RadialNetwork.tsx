@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as d3 from "d3";
-import { Insight, InsightLink } from "../types";
+import { Fact, Insight, InsightEvidence, InsightLink } from "../types";
 import styles from "../../styles/components/network.module.css";
 
 interface CrossLink {
@@ -32,7 +32,7 @@ type SimLink = d3.SimulationLinkDatum<SimNode> & {
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
-const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
+const RadialNetwork: React.FC<HybridNetworkProps> = ({
   data,
   crossLinks,
   onNodeClick,
@@ -106,29 +106,29 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
       return;
     }
 
+    const insightsData = data as Insight[];
     const insightMap = new Map<string, Insight>();
 
-    const populateMap = (input: Fact[] | Fact) => {
+    const populateMap = (input: Insight[] | Insight) => {
       const items = Array.isArray(input) ? input : [input];
       for (const item of items) {
         if (item.uid && !insightMap.has(item.uid)) {
           insightMap.set(item.uid, item);
         }
 
-        // if (item.children && item.children.length > 0) {
-        //   const childNodes = item.children
-        //     .map(
-        //       (link: InsightLink) =>
-        //         link.childInsight || (link as unknown as Insight),
-        //     )
-        //     .filter((c): c is Insight => !!c && typeof c === "object");
-        //   populateMap(childNodes);
-        // }
+        if (item.children && item.children.length > 0) {
+          const childNodes = item.children
+            .map(
+              (link: InsightLink) =>
+                link.childInsight || (link as unknown as Insight),
+            )
+            .filter((c: unknown): c is Insight => !!c && typeof c === "object");
+          populateMap(childNodes);
+        }
       }
-    });
+    };
 
-    const childVisited = new Set<number>();
-    const crossLinks: { sourceId: number; targetId: number }[] = [];
+    populateMap(insightsData);
 
     const resolveChild = (link: InsightLink): Insight | undefined => {
       const fallbackUid = (link as unknown as Partial<Insight>).uid;
@@ -140,13 +140,14 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
       return childObj && childObj.title ? childObj : undefined;
     };
 
-    const roots = data.filter(
+    const roots = insightsData.filter(
       (i) =>
         !!i.uid &&
         (!i.parents ||
           i.parents.length === 0 ||
           !i.parents.some(
-            (p) => p.parentInsight && insightMap.has(p.parentInsight.uid!),
+            (p: InsightLink) =>
+              p.parentInsight && insightMap.has(p.parentInsight.uid!),
           )),
     );
 
@@ -197,24 +198,13 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
         addLink(insight.uid, child.uid, "hierarchy");
         if (!existed) walk(child, depth + 1);
       }
-    });
-
-    const rootNodes = Array.from(nodeMap.values()).filter(
-      (node) => node.id && !childVisited.has(node.id),
-    );
-
-    const syntheticRoot = {
-      id: -1,
-      title: "Root",
-      childrenNodes: rootNodes,
     };
 
     for (const root of roots) {
       walk(root, 0);
     }
 
-    // Include any filtered insights that weren't reachable as children
-    for (const insight of data) {
+    for (const insight of insightsData) {
       if (insight.uid && !nodeById.has(insight.uid)) {
         walk(insight, 0);
       }
@@ -244,7 +234,7 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
       isCompact ? 58 : 66,
       isCompact ? 78 : 88,
     );
-    // Keep cards close — just enough clearance to avoid overlap
+
     const collideRadius = Math.hypot(cardWidth, cardHeight) / 2 + 10;
     const linkDistance = Math.max(
       collideRadius * 1.55,
@@ -271,7 +261,6 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
       return { text, fontSize, lengthClass, targetLines };
     };
 
-    // Seed on a tighter viewport-filling grid
     const aspect = width / Math.max(height, 1);
     const cols = Math.max(1, Math.ceil(Math.sqrt(nodes.length * aspect)));
     const rows = Math.max(1, Math.ceil(nodes.length / cols));
@@ -296,7 +285,6 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
       .attr("preserveAspectRatio", "xMidYMid meet");
 
     svg.selectAll("*").remove();
-    svg.attr("viewBox", [-radius, -radius, width, width]);
 
     const zoomGroup = svg.append("g").attr("class", "zoom-container");
 
@@ -314,7 +302,6 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.35, 3.5])
       .filter((event) => {
-        // Allow wheel/pinch always; don't steal pan from node hover/click/drag
         if (event.type === "wheel") return true;
         if (isNodeEventTarget(event.target)) return false;
         return !event.ctrlKey && event.button === 0;
@@ -327,7 +314,6 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
       });
 
     svg.call(zoomBehavior);
-    // Disable double-click zoom — we use dblclick to fit instead
     svg.on("dblclick.zoom", null);
 
     const hierarchyLinks = links.filter((l) => l.kind === "hierarchy");
@@ -490,8 +476,8 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
       .attr(
         "class",
         (d) =>
-          `${styles.nodeCard}${d.depth === 0 ? ` ${styles.nodeCardRoot}` : ""}${
-            d.hasChildren && d.depth > 0 ? ` ${styles.nodeCardBranch}` : ""
+          `${styles.nodeCard}${d.depth === 0 ? ` \${styles.nodeCardRoot}` : ""}${
+            d.hasChildren && d.depth > 0 ? ` \${styles.nodeCardBranch}` : ""
           }`,
       )
       .each(function (d) {
@@ -520,7 +506,6 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
           .text(text);
       });
 
-    // Hit target on top of foreignObject so hover/click always work in SVG.
     nodeLayer
       .append("rect")
       .attr("class", styles.nodeHit)
@@ -621,7 +606,6 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
       const boundsWidth = Math.max(maxX - minX, 1);
       const boundsHeight = Math.max(maxY - minY, 1);
       const pad = Math.max(16, Math.min(width, height) * 0.035);
-      // Allow a light zoom-in so denser graphs fill the canvas
       const scale = clamp(
         Math.min(
           (width - pad * 2) / boundsWidth,
@@ -677,10 +661,8 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
       nodeLayer.attr("transform", (d) => `translate(${d.x ?? 0},${d.y ?? 0})`);
     };
 
-    // Place nodes at seed positions immediately (before async ticks).
     applyPositions();
 
-    // Warm-start so the first paint isn't a single stacked pile.
     for (let i = 0; i < 40; i += 1) simulation.tick();
     applyPositions();
     fitToViewport(false);
@@ -719,7 +701,6 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
         d.fx = null;
         d.fy = null;
         if (wasDragging) {
-          // Drop the synthetic click that follows a real drag.
           window.setTimeout(() => {
             suppressClick = false;
           }, 0);
@@ -854,7 +835,7 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
         {preview && (
           <aside
             className={`${styles.nodePreview}${
-              preview.depth === 0 ? ` ${styles.nodePreviewRoot}` : ""
+              preview.depth === 0 ? ` \${styles.nodePreviewRoot}` : ""
             }`}
             style={{ left: preview.left, top: preview.top }}
             aria-hidden
@@ -887,4 +868,6 @@ const HybridRadialNetwork: React.FC<HybridNetworkProps> = ({
       </div>
     </div>
   );
-}
+};
+
+export default RadialNetwork;

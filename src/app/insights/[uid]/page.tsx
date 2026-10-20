@@ -62,10 +62,7 @@ const InsightPage = async ({
     const currentUser = authUser ? await getUserFromServer(authUser.id!) : null;
 
     return (
-      <ClientSidePage
-        insightInput={insight}
-        currentUser={currentUser || null}
-      />
+      <ClientSidePage insight={insight} currentUser={currentUser || null} />
     );
   } else {
     return <div>No insight with that UID found.</div>;
