@@ -1,5 +1,5 @@
 import "@/app/api/postgres";
-import { WorkflowOJSModel } from "../../models/workflows";
+import { WorkflowNodeOJSModel, WorkflowOJSModel } from "../../models/workflows";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/app/functions";
 import { headers } from "next/headers";
@@ -18,7 +18,6 @@ export async function GET(
       authUser.id,
     );
     const workflow = await getWorkflow(workflowId, authUser.id!);
-    console.log("*** ROUTE workflow: ", workflow);
 
     if (workflow) {
       return NextResponse.json(workflow);
@@ -36,6 +35,13 @@ export async function DELETE(
   const authUser = await getAuthUser(headers);
   if (authUser) {
     const workflowId = Number((await params).id);
+
+    // 1. Delete dependent nodes first
+    await WorkflowNodeOJSModel.query()
+      .delete()
+      .where("workflow_id", workflowId); // or whatever your foreign key column name is in workflow_nodes
+
+    // 2. Delete the parent workflow
     const workflow = await WorkflowOJSModel.query()
       .delete()
       .where("id", workflowId)

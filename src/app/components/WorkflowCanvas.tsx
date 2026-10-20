@@ -7,7 +7,7 @@ import { WorkflowNode } from "@/app/types";
 
 import {
   CanvasNode,
-  CrossLink,
+  LinkData,
   processWorkflowLayout,
   calculatePrimaryPath,
   calculateSecondaryPath,
@@ -41,7 +41,12 @@ export function WorkflowCanvas({
       return;
     }
 
-    const { realNodes, crossLinks, root, d3NodeMap } = layout;
+    const {
+      realNodes,
+      primaryLinks: primaryLinksData,
+      crossLinks,
+      d3NodeMap,
+    } = layout;
     setTotalNodeCount(realNodes.length);
 
     const svg = d3.select(svgRef.current);
@@ -55,25 +60,27 @@ export function WorkflowCanvas({
       .on("zoom", (e) => zoomGroup.attr("transform", e.transform));
     svg.call(zoomBehavior);
 
+    // Primary Links (Solid Blue) using link source/target IDs
     const primaryLinks = zoomGroup
       .append("g")
       .attr("fill", "none")
       .attr("stroke", "#3b82f6")
       .attr("stroke-width", 2.5)
-      .selectAll<SVGPathElement, d3.HierarchyPointLink<CanvasNode>>("path")
-      .data(root.links().filter((l) => l.source.depth > 0))
+      .selectAll<SVGPathElement, LinkData>("path")
+      .data(primaryLinksData)
       .join("path")
-      .attr("d", calculatePrimaryPath);
+      .attr("d", (l) => calculatePrimaryPath(l, d3NodeMap));
 
+    // Secondary Cross Links (Dashed Red)
     let secondaryLinks = null;
-    if (crossLinks.length > 0) {
+    if (crossLinks && crossLinks.length > 0) {
       secondaryLinks = zoomGroup
         .append("g")
         .attr("stroke", "#ef4444")
         .attr("stroke-width", 2)
         .attr("stroke-dasharray", "4,4")
         .attr("fill", "none")
-        .selectAll<SVGPathElement, CrossLink>("path")
+        .selectAll<SVGPathElement, LinkData>("path")
         .data(crossLinks)
         .join("path")
         .attr("d", (d) => calculateSecondaryPath(d, d3NodeMap));
