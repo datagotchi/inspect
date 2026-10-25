@@ -14,9 +14,8 @@ interface PageProps {
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata | undefined> {
-  const origin = (await headers()).get("x-origin");
   const currentUrl = (await headers()).get("x-url");
-  const link = await getLinkFromServer(origin ?? "", (await params).uid);
+  const link = await getLinkFromServer((await params).uid);
   if (link) {
     return {
       openGraph: {
@@ -36,8 +35,7 @@ export async function generateMetadata({
 }
 
 const Linkpage = async ({ params }: PageProps): Promise<React.JSX.Element> => {
-  const origin = (await headers()).get("x-origin");
-  const link = await getLinkFromServer(origin ?? "", (await params).uid);
+  const link = await getLinkFromServer((await params).uid);
   const authUser = await getAuthUser(headers);
   const currentUser = authUser ? await getUserFromServer(authUser.id!) : null;
 

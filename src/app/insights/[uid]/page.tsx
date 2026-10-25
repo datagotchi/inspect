@@ -18,11 +18,9 @@ export async function generateMetadata({
 }: {
   params: Promise<{ uid: string }>;
 }): Promise<Metadata | undefined> {
-  const token = (await cookies()).get("token")?.value;
-  const origin = (await headers()).get("x-origin");
   const currentUrl = (await headers()).get("x-url");
   const uid = (await params).uid;
-  const insight = await getInsightFromServer(origin ?? "", { uid }, token);
+  const insight = await getInsightFromServer({ uid });
   if (insight) {
     return {
       openGraph: {
