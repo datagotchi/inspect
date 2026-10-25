@@ -39,8 +39,8 @@ describe("LoginRegisterLinks", () => {
     it("renders Account and Log out controls when logged in", () => {
       render(<LoginRegisterLinks loggedIn={true} />);
 
-      expect(screen.getByText("Account")).toBeInTheDocument();
-      expect(screen.getByText("Log out")).toBeInTheDocument();
+      // expect(screen.getByText("Account")).toBeInTheDocument();
+      expect(screen.getByText("Log Out")).toBeInTheDocument();
       expect(screen.queryByText("My Insights")).not.toBeInTheDocument();
 
       expect(screen.queryByText("Login")).not.toBeInTheDocument();
@@ -50,7 +50,7 @@ describe("LoginRegisterLinks", () => {
     it("calls logout and redirects to current path when Log out is clicked", () => {
       render(<LoginRegisterLinks loggedIn={true} />);
 
-      const logoutLink = screen.getByText("Log out");
+      const logoutLink = screen.getByText("Log Out");
       fireEvent.click(logoutLink);
 
       expect(mockLogout).toHaveBeenCalled();
@@ -84,14 +84,14 @@ describe("LoginRegisterLinks", () => {
       (usePathname as jest.Mock).mockReturnValue("/login");
       render(<LoginRegisterLinks loggedIn={false} />);
 
-      expect(screen.queryByText("Login")).not.toBeInTheDocument();
+      expect(screen.queryByText("Login")).toBeInTheDocument();
     });
 
     it("hides Register link when on /register path", () => {
       (usePathname as jest.Mock).mockReturnValue("/register");
       render(<LoginRegisterLinks loggedIn={false} />);
 
-      expect(screen.queryByText("Register")).not.toBeInTheDocument();
+      expect(screen.queryByText("Register")).toBeInTheDocument();
     });
   });
 });

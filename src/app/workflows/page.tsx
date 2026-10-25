@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { getAuthUser } from "../functions";
 import { getWorkflows } from "./functions";
 import ClientSidePage from "./ClientSidePage";
-import { getUserFromServer } from "../api/functions";
+import { getUserFromServer } from "../OJS-SSR-functions";
 
 const WorkflowsPage = async (): Promise<React.JSX.Element> => {
   // 1. Resolve auth user

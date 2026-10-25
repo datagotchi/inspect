@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import { headers } from "next/headers";
 
 import ClientSidePage from "./ClientSidePage";
-import { getLinkFromServer, getUserFromServer } from "../../api/functions";
+import { getLinkFromServer, getUserFromServer } from "../../OJS-SSR-functions";
 import { Link } from "../../types";
 import { getAuthUser } from "../../functions";
 

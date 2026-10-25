@@ -5,7 +5,7 @@
 import React from "react";
 import { cookies, headers } from "next/headers";
 
-import { getUserFromServer } from "./api/functions";
+import { getUserFromServer } from "./OJS-SSR-functions";
 import Dashboard from "./layout";
 
 jest.mock("next/headers");

@@ -3,7 +3,10 @@ import { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 
 import ClientSidePage from "./ClientSidePage";
-import { getInsightFromServer, getUserFromServer } from "../../api/functions";
+import {
+  getInsightFromServer,
+  getUserFromServer,
+} from "../../OJS-SSR-functions";
 import { Insight } from "../../types";
 import { getAuthUser } from "../../functions";
 
@@ -52,10 +55,8 @@ const InsightPage = async ({
 }: {
   params: Promise<{ uid: string }>;
 }): Promise<React.JSX.Element> => {
-  const origin = (await headers()).get("x-origin");
-  const token = (await cookies()).get("token")?.value;
   const uid = (await params).uid;
-  const insight = await getInsightFromServer(origin ?? "", { uid }, token);
+  const insight = await getInsightFromServer({ uid });
   if (insight) {
     const authUser = await getAuthUser(headers);
     // TODO: include a .user in the insight via ojs join?

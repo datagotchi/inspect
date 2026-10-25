@@ -15,6 +15,8 @@ const LoginRegisterLinks = ({
   const { logout } = useUser();
   const path = usePathname();
 
+  console.log("*** loggedIn: ", loggedIn);
+
   if (loggedIn) {
     return (
       <div className={styles.loginRegisterContainer}>

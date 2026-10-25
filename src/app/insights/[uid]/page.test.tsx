@@ -4,9 +4,12 @@
 import { cookies, headers } from "next/headers";
 
 import InsightPage, { generateMetadata } from "./page";
-import { getInsightFromServer, getUserFromServer } from "../../api/functions";
+import {
+  getInsightFromServer,
+  getUserFromServer,
+} from "../../OJS-SSR-functions";
 
-jest.mock("../../api/functions");
+jest.mock("../../OJS-SSR-functions");
 jest.mock("next/headers");
 jest.mock("../functions");
 jest.mock("./ClientSidePage");
@@ -49,21 +52,13 @@ describe("GET /insights/uid SSR page", () => {
       params: Promise.resolve({ uid: "123" }),
     });
     expect(result.props).toEqual({
-      insightInput: mockInsight,
+      insight: mockInsight,
       currentUser: mockUser,
     });
 
     expect(getInsightFromServer).toHaveBeenCalledTimes(1);
-    expect(getInsightFromServer).toHaveBeenCalledWith(
-      "origin",
-      { uid: "123" },
-      "token",
-    );
-    expect(getUserFromServer).toHaveBeenCalledWith(
-      "origin",
-      { id: 1 },
-      "token",
-    );
+    expect(getInsightFromServer).toHaveBeenCalledWith({ uid: "123" });
+    expect(getUserFromServer).toHaveBeenCalledWith(1);
   });
 
   it("should return an error message when the insight is not found via UID", async () => {
@@ -77,11 +72,7 @@ describe("GET /insights/uid SSR page", () => {
       children: "No insight with that UID found.",
     });
 
-    expect(getInsightFromServer).toHaveBeenCalledWith(
-      "origin",
-      { uid: "123" },
-      "token",
-    );
+    expect(getInsightFromServer).toHaveBeenCalledWith({ uid: "123" });
   });
 });
 

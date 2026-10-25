@@ -2,9 +2,9 @@
  * @jest-environment node
  */
 import Linkpage, { generateMetadata } from "./page";
-import { getLinkFromServer, getUserFromServer } from "../../api/functions";
+import { getLinkFromServer, getUserFromServer } from "../../OJS-SSR-functions";
 
-jest.mock("../../api/functions");
+jest.mock("../../OJS-SSR-functions");
 jest.mock("next/headers", () => ({
   headers: jest.fn(() => ({
     get: jest.fn((key) => {
@@ -44,13 +44,7 @@ describe("Linkpage", () => {
       "http://localhost",
       "test-uid",
     );
-    expect(mockGetUserFromServer).toHaveBeenCalledWith(
-      "http://localhost",
-      {
-        id: "123",
-      },
-      "test-token",
-    );
+    expect(mockGetUserFromServer).toHaveBeenCalledWith("123");
   });
 
   it("renders no summary message when link is not found", async () => {

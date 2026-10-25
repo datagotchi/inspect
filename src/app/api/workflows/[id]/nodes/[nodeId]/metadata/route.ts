@@ -34,8 +34,6 @@ export async function GET(
     const nodeId = Number((await params).nodeId);
     const node = await getValidatedNode(nodeId, authUser.id!);
 
-    console.log("*** node: ", node);
-
     if (node) {
       return NextResponse.json(node.metadata ?? []);
     }

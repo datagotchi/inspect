@@ -3,13 +3,13 @@
  */
 import InsightsPage from "./page";
 import { getInsights } from "./functions";
-import { getUserFromServer } from "../api/functions";
+import { getUserFromServer } from "../OJS-SSR-functions";
 
 jest.mock("./functions", () => ({
   getInsights: jest.fn(),
 }));
 
-jest.mock("../api/functions", () => ({
+jest.mock("../OJS-SSR-functions", () => ({
   getUserFromServer: jest.fn(),
 }));
 
@@ -50,11 +50,7 @@ describe("InsightsPage", () => {
 
     await InsightsPage();
 
-    expect(getUserFromServer).toHaveBeenCalledWith(
-      "test-origin",
-      { id: mockUser.id },
-      mockCookies.get("token").value,
-    );
+    expect(getUserFromServer).toHaveBeenCalledWith(mockUser.id);
     expect(getInsights).toHaveBeenCalledWith(
       "test-origin",
       "test-token",
