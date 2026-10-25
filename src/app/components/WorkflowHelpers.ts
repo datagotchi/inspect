@@ -87,7 +87,7 @@ export function processWorkflowLayout(
   if (!nodes || nodes.length === 0) return null;
 
   const nodeMap = new Map<number, WorkflowNode>();
-  nodes.forEach((n) => nodeMap.set(n.id, { ...n }));
+  nodes.forEach((n) => nodeMap.set(n.id!, { ...n }));
 
   const primaryLinks: LinkData[] = [];
   const crossLinks: LinkData[] = [];
@@ -102,7 +102,7 @@ export function processWorkflowLayout(
   };
 
   nodes.forEach((node) => {
-    const parent = nodeMap.get(node.id);
+    const parent = nodeMap.get(node.id!);
     if (parent && parent.children && parent.children.length > 0) {
       const sorted = [...parent.children].sort(
         (a, b) => (a.id || 0) - (b.id || 0),
@@ -130,15 +130,15 @@ export function processWorkflowLayout(
   const allChildIds = new Set<number>();
   primaryLinks.forEach((l) => allChildIds.add(l.targetId));
 
-  const rootNodes = nodes.filter((n) => !allChildIds.has(n.id));
+  const rootNodes = nodes.filter((n) => !allChildIds.has(n.id!));
 
   const virtualRoot: WorkflowNode = {
     id: -999,
     label: "VIRTUAL_ROOT",
     children: (rootNodes.length > 0 ? rootNodes : nodes).map((n) => ({
-      child_id: n.id,
+      child_id: n.id!,
       parent_id: -999,
-      childNode: nodeMap.get(n.id),
+      childNode: nodeMap.get(n.id!),
     })),
   };
 
@@ -151,8 +151,8 @@ export function processWorkflowLayout(
 
       d.children.forEach((link: WorkflowNodeLink) => {
         const child = link.childNode || nodeMap.get(link.child_id);
-        if (child && !seen.has(child.id)) {
-          seen.add(child.id);
+        if (child && !seen.has(child.id!)) {
+          seen.add(child.id!);
           result.push(child);
         }
       });
@@ -344,7 +344,7 @@ export function createConnectorHandleDragBehavior(
       });
 
       if (targetNode && onLinkNodes) {
-        await onLinkNodes(d.data.id, targetNode.data.id);
+        await onLinkNodes(d.data.id!, targetNode.data.id!);
       }
     });
 }
