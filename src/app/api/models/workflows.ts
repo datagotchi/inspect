@@ -1,4 +1,4 @@
-import { Model, QueryBuilder } from "objection";
+import { JSONSchema, Model, QueryBuilder } from "objection";
 import "../postgres";
 import { PostgresBaseModel } from "./postgres_models";
 import {
@@ -6,36 +6,10 @@ import {
   Workflow,
   WorkflowNode,
   WorkflowNodeLink,
+  WorkflowNodeMetadataItem,
   WorkflowNodeType,
 } from "@/app/types";
 import { UserLibSqlModel } from "./users";
-
-export class WorkflowNodeTypeOJSModel
-  extends PostgresBaseModel
-  implements WorkflowNodeType
-{
-  static tableName = "workflow_node_types";
-
-  id!: number;
-  name!: string;
-  icon!: string;
-  bg_color!: string;
-  border_color!: string;
-  text_color!: string;
-
-  static jsonSchema = {
-    type: "object",
-    required: ["name", "icon"],
-    properties: {
-      id: { type: "integer" },
-      name: { type: "string" },
-      icon: { type: "string" },
-      bg_color: { type: "string" },
-      border_color: { type: "string" },
-      text_color: { type: "string" },
-    },
-  };
-}
 
 export class WorkflowOJSModel extends PostgresBaseModel implements Workflow {
   static tableName = "workflows";
@@ -108,6 +82,7 @@ export class WorkflowNodeOJSModel
   nodeType?: WorkflowNodeType;
   parents?: WorkflowNodeLink[];
   children?: WorkflowNodeLink[];
+  metadata?: WorkflowNodeMetadataItem[];
 
   static jsonSchema = {
     type: "object",
@@ -154,8 +129,43 @@ export class WorkflowNodeOJSModel
           to: "workflow_node_links.parent_id",
         },
       },
+      metadata: {
+        relation: Model.HasManyRelation,
+        modelClass: WorkflowNodeMetadataOJSModel,
+        join: {
+          from: "workflow_nodes.id",
+          to: "workflow_node_metadata.node_id",
+        },
+      },
     };
   }
+}
+
+export class WorkflowNodeTypeOJSModel
+  extends PostgresBaseModel
+  implements WorkflowNodeType
+{
+  static tableName = "workflow_node_types";
+
+  id!: number;
+  name!: string;
+  icon!: string;
+  bg_color!: string;
+  border_color!: string;
+  text_color!: string;
+
+  static jsonSchema = {
+    type: "object",
+    required: ["name", "icon"],
+    properties: {
+      id: { type: "integer" },
+      name: { type: "string" },
+      icon: { type: "string" },
+      bg_color: { type: "string" },
+      border_color: { type: "string" },
+      text_color: { type: "string" },
+    },
+  };
 }
 
 export class WorkflowNodeLinkOJSModel
@@ -201,5 +211,33 @@ export class WorkflowNodeLinkOJSModel
         },
       },
     };
+  }
+}
+
+export class WorkflowNodeMetadataOJSModel
+  extends PostgresBaseModel
+  implements WorkflowNodeMetadataItem
+{
+  static tableName = "workflow_node_metadata";
+
+  id?: number | undefined;
+  node_id!: number;
+  node?: WorkflowNode | undefined;
+  fieldname!: string;
+  value!: string;
+
+  static jsonSchem = {
+    type: "object",
+    required: ["node_id", "fieldname", "value"],
+    properties: {
+      id: { type: "integer" },
+      node_id: { type: "integer" },
+      fieldname: { type: "string" },
+      value: { type: "string" },
+    },
+  };
+
+  static get relationMappings() {
+    return {};
   }
 }

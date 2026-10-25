@@ -1,15 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as d3 from "d3";
-import { WorkflowNode, WorkflowNodeLink } from "@/app/types";
-
-export const CARD_WIDTH = 180;
-export const CARD_HEIGHT = 80;
-export const CANVAS_WIDTH = 1200;
-export const CANVAS_HEIGHT = 800;
+import {
+  WorkflowNode,
+  WorkflowNodeLink,
+  WorkflowNodeMetadataItem,
+} from "@/app/types";
 
 export interface CanvasNode extends WorkflowNode {
   x?: number;
   y?: number;
+  metadata?: WorkflowNodeMetadataItem[];
 }
 
 export interface LinkData {
@@ -26,13 +25,27 @@ export interface WorkflowLayoutResult {
   d3NodeMap: Map<number, d3.HierarchyPointNode<CanvasNode>>;
 }
 
+export const CARD_WIDTH = 180;
+export const CARD_HEIGHT = 80;
+export const CANVAS_WIDTH = 1200;
+export const CANVAS_HEIGHT = 800;
+
 export function calculatePrimaryPath(
   link: LinkData,
   d3NodeMap: Map<number, d3.HierarchyPointNode<CanvasNode>>,
 ): string {
   const source = d3NodeMap.get(link.sourceId);
   const target = d3NodeMap.get(link.targetId);
-  if (!source || !target) return "";
+  if (
+    !source ||
+    !target ||
+    source.x === undefined ||
+    source.y === undefined ||
+    target.x === undefined ||
+    target.y === undefined
+  ) {
+    return "";
+  }
 
   const sourceX = source.x + CARD_WIDTH / 2;
   const sourceY = source.y + CARD_HEIGHT;
@@ -49,7 +62,16 @@ export function calculateSecondaryPath(
 ): string {
   const source = d3NodeMap.get(link.sourceId);
   const target = d3NodeMap.get(link.targetId);
-  if (!source || !target) return "";
+  if (
+    !source ||
+    !target ||
+    source.x === undefined ||
+    source.y === undefined ||
+    target.x === undefined ||
+    target.y === undefined
+  ) {
+    return "";
+  }
 
   const sourceX = source.x + CARD_WIDTH / 2;
   const sourceY = source.y + CARD_HEIGHT / 2;
@@ -70,7 +92,6 @@ export function processWorkflowLayout(
   const primaryLinks: LinkData[] = [];
   const crossLinks: LinkData[] = [];
 
-  // Identify nodes that act as explicit Validation/Audit Gates
   const isGateNode = (n?: WorkflowNode) => {
     const label = n?.label?.toLowerCase() || "";
     return (
@@ -80,7 +101,6 @@ export function processWorkflowLayout(
     );
   };
 
-  // 1. Classify Primary vs Cross-Links
   nodes.forEach((node) => {
     const parent = nodeMap.get(node.id);
     if (parent && parent.children && parent.children.length > 0) {
@@ -90,10 +110,6 @@ export function processWorkflowLayout(
       parent.children = sorted;
 
       sorted.forEach((link, index) => {
-        const child = link.childNode || nodeMap.get(link.child_id);
-
-        // Validation Gates ALWAYS produce primary (Blue) outputs for all their branches!
-        // Standard nodes' first created link is also Primary (Blue).
         if (isGateNode(parent) || index === 0) {
           primaryLinks.push({
             id: link.id,
@@ -101,7 +117,6 @@ export function processWorkflowLayout(
             targetId: link.child_id,
           });
         } else {
-          // Secondary bypass/cross-link (Red)
           crossLinks.push({
             id: link.id,
             sourceId: link.parent_id,
@@ -112,7 +127,6 @@ export function processWorkflowLayout(
     }
   });
 
-  // 2. Build root & tree hierarchy with all primary nodes
   const allChildIds = new Set<number>();
   primaryLinks.forEach((l) => allChildIds.add(l.targetId));
 
@@ -180,13 +194,97 @@ export function processWorkflowLayout(
   };
 }
 
+// Canvas Initialization & Zoom Helper
+export function setupCanvasZoom(svgElement: SVGSVGElement) {
+  const svg = d3.select(svgElement);
+  svg.selectAll("*").remove();
+  svg.attr("viewBox", `0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`);
+
+  const zoomGroup = svg.append("g").attr("class", "zoom-container");
+  const zoomBehavior = d3
+    .zoom<SVGSVGElement, unknown>()
+    .scaleExtent([0.2, 3])
+    .on("zoom", (e) => zoomGroup.attr("transform", e.transform));
+
+  svg.call(zoomBehavior);
+  return { svg, zoomGroup };
+}
+
+// Link Rendering Helpers
+export function renderPrimaryLinks(
+  parentGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+  primaryLinksData: LinkData[],
+  d3NodeMap: Map<number, d3.HierarchyPointNode<CanvasNode>>,
+) {
+  return parentGroup
+    .append("g")
+    .attr("fill", "none")
+    .attr("stroke", "#3b82f6")
+    .attr("stroke-width", 2.5)
+    .selectAll<SVGPathElement, LinkData>("path")
+    .data(primaryLinksData)
+    .join("path")
+    .attr("d", (l) => calculatePrimaryPath(l, d3NodeMap));
+}
+
+export function renderSecondaryLinks(
+  parentGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+  crossLinksData: LinkData[],
+  d3NodeMap: Map<number, d3.HierarchyPointNode<CanvasNode>>,
+) {
+  if (!crossLinksData || crossLinksData.length === 0) return null;
+  return parentGroup
+    .append("g")
+    .attr("stroke", "#ef4444")
+    .attr("stroke-width", 2)
+    .attr("stroke-dasharray", "4,4")
+    .attr("fill", "none")
+    .selectAll<SVGPathElement, LinkData>("path")
+    .data(crossLinksData)
+    .join("path")
+    .attr("d", (d) => calculateSecondaryPath(d, d3NodeMap));
+}
+
+export function renderDragLine(
+  parentGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+) {
+  return parentGroup
+    .append("path")
+    .attr("fill", "none")
+    .attr("stroke", "#22c55e")
+    .attr("stroke-width", 2)
+    .attr("stroke-dasharray", "4,4")
+    .attr("visibility", "hidden");
+}
+
+// Node Drag Behavior
 export function createNodeDragBehavior(
-  primarySelection: d3.Selection<SVGPathElement, any, any, any>,
-  secondarySelection: d3.Selection<SVGPathElement, any, any, any> | null,
+  primarySelection: d3.Selection<
+    SVGPathElement,
+    LinkData,
+    SVGGElement,
+    unknown
+  >,
+  secondarySelection: d3.Selection<
+    SVGPathElement,
+    LinkData,
+    SVGGElement,
+    unknown
+  > | null,
   d3NodeMap: Map<number, d3.HierarchyPointNode<CanvasNode>>,
 ) {
   return d3
     .drag<SVGGElement, d3.HierarchyPointNode<CanvasNode>>()
+    .filter((event) => {
+      // Prevent drag initiation when tapping or clicking the edit button
+      if (
+        event.target &&
+        (event.target as HTMLElement).closest(".node-edit-btn")
+      ) {
+        return false;
+      }
+      return !event.ctrlKey && event.button === 0;
+    })
     .on("drag", (event, d) => {
       d.x += event.dx;
       d.y += event.dy;
@@ -196,18 +294,19 @@ export function createNodeDragBehavior(
         `translate(${d.x}, ${d.y})`,
       );
 
-      primarySelection.attr("d", (l: any) =>
+      primarySelection.attr("d", (l: LinkData) =>
         calculatePrimaryPath(l, d3NodeMap),
       );
 
       if (secondarySelection) {
-        secondarySelection.attr("d", (cl: any) =>
+        secondarySelection.attr("d", (cl: LinkData) =>
           calculateSecondaryPath(cl, d3NodeMap),
         );
       }
     });
 }
 
+// Connector Handle Drag Behavior
 export function createConnectorHandleDragBehavior(
   zoomGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
   dragLine: d3.Selection<SVGPathElement, unknown, null, undefined>,
@@ -248,4 +347,116 @@ export function createConnectorHandleDragBehavior(
         await onLinkNodes(d.data.id, targetNode.data.id);
       }
     });
+}
+
+// Node Cards Rendering Helper
+export function renderNodes(
+  parentGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+  realNodes: d3.HierarchyPointNode<CanvasNode>[],
+  dragBehavior: d3.DragBehavior<
+    SVGGElement,
+    d3.HierarchyPointNode<CanvasNode>,
+    unknown
+  >,
+  onEditNodeMetadata?: (node: CanvasNode) => void,
+) {
+  const nodeSelection = parentGroup
+    .append("g")
+    .selectAll<SVGGElement, d3.HierarchyPointNode<CanvasNode>>("g")
+    .data(realNodes)
+    .join("g")
+    .attr("transform", (d) => `translate(${d.x}, ${d.y})`)
+    .style("cursor", "move")
+    .call(dragBehavior);
+
+  const foreign = nodeSelection
+    .append("foreignObject")
+    .attr("width", CARD_WIDTH)
+    .attr("height", CARD_HEIGHT);
+
+  const div = foreign
+    .append("xhtml:div")
+    .style("width", "100%")
+    .style("height", "100%")
+    .style("position", "relative")
+    .style("background-color", (d) => d.data.nodeType?.bg_color || "#3498DB")
+    .style(
+      "border",
+      (d) => `2px solid ${d.data.nodeType?.bg_color || "#cbd5e1"}`,
+    )
+    .style("border-radius", "8px")
+    .style("box-shadow", "0 2px 6px rgba(0, 0, 0, 0.08)")
+    .style("display", "flex")
+    .style("flex-direction", "column")
+    .style("align-items", "center")
+    .style("justify-content", "center")
+    .style("padding", "8px")
+    .style("box-sizing", "border-box");
+
+  // Edit Metadata Button
+  div
+    .append("xhtml:button")
+    .attr("class", "node-edit-btn")
+    .style("position", "absolute")
+    .style("top", "4px")
+    .style("right", "4px")
+    .style("background", "rgba(255, 255, 255, 0.85)")
+    .style("border", "1px solid #cbd5e1")
+    .style("border-radius", "4px")
+    .style("padding", "2px 5px")
+    .style("font-size", "11px")
+    .style("cursor", "pointer")
+    .style("line-height", "1")
+    .attr("title", "Edit Node Metadata")
+    .html("✏️")
+    .on("click", (event, d) => {
+      event.stopPropagation();
+      if (onEditNodeMetadata) {
+        onEditNodeMetadata(d.data);
+      }
+    });
+
+  div
+    .append("xhtml:div")
+    .style("font-size", "20px")
+    .style("line-height", "1")
+    .style("margin-bottom", "4px")
+    .text((d) => d.data.nodeType?.icon || "📌");
+
+  div
+    .append("xhtml:div")
+    .style("font-size", "11px")
+    .style("font-weight", "700")
+    .style("line-height", "1.25")
+    .style("color", "#1e293b")
+    .style("text-align", "center")
+    .text((d) => d.data.label || "");
+
+  return nodeSelection;
+}
+
+// Connector Handle Rendering Helper
+export function renderConnectorHandles(
+  nodeSelection: d3.Selection<
+    SVGGElement,
+    d3.HierarchyPointNode<CanvasNode>,
+    SVGGElement,
+    unknown
+  >,
+  connectorDragBehavior: d3.DragBehavior<
+    SVGCircleElement,
+    d3.HierarchyPointNode<CanvasNode>,
+    unknown
+  >,
+) {
+  nodeSelection
+    .append("circle")
+    .attr("cx", CARD_WIDTH / 2)
+    .attr("cy", CARD_HEIGHT)
+    .attr("r", 6)
+    .attr("fill", "#22c55e")
+    .attr("stroke", "#ffffff")
+    .attr("stroke-width", 2)
+    .style("cursor", "crosshair")
+    .call(connectorDragBehavior);
 }

@@ -10,18 +10,12 @@ import { Workflow, WorkflowNode, WorkflowNodeType } from "@/app/types";
 import {
   createWorkflowLink,
   createWorkflowNode,
+  getWorkflowNodeTypes,
 } from "@/app/components/WorkflowsAPI";
 import useUser from "@/app/hooks/useUser";
 import { WorkflowCanvas } from "@/app/components/WorkflowCanvas";
-
-// Static fallback matching your workflow_node_types table
-const DEFAULT_NODE_TYPES: WorkflowNodeType[] = [
-  { id: 1, name: "Human Action", icon: "👤", bg_color: "#e0f2fe" },
-  { id: 2, name: "System / Data", icon: "🗄️", bg_color: "#f1f5f9" },
-  { id: 3, name: "AI Model / LLM", icon: "🤖", bg_color: "#fef3c7" },
-  { id: 4, name: "JAW Supervisory Gate", icon: "🛡️", bg_color: "#dcfce7" },
-  { id: 5, name: "Impact & Reporting", icon: "📊", bg_color: "#f3e8ff" },
-];
+import { CanvasNode } from "@/app/components/WorkflowHelpers";
+import { EditNodeMetadataModal } from "./EditNodeMetadataModal";
 
 interface Props {
   workflow: Workflow;
@@ -31,9 +25,18 @@ export default function ClientSidePage({ workflow }: Props) {
   const [nodes, setNodes] = useState<WorkflowNode[]>(workflow.nodes);
   const [isCreating, setIsCreating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingNode, setEditingNode] = useState<CanvasNode | null>(null);
   const [label, setLabel] = useState("");
   const [selectedTypeId, setSelectedTypeId] = useState<number>(1);
-  const [nodeTypes] = useState<WorkflowNodeType[]>(DEFAULT_NODE_TYPES);
+  const [nodeTypes, setNodeTypes] = useState<WorkflowNodeType[]>();
+
+  useEffect(() => {
+    if (!nodeTypes) {
+      getWorkflowNodeTypes().then((types) => {
+        setNodeTypes(types);
+      });
+    }
+  }, [nodeTypes]);
 
   const { token } = useUser();
   const router = useRouter();
@@ -134,6 +137,9 @@ export default function ClientSidePage({ workflow }: Props) {
                   if (link) {
                     router.refresh();
                   }
+                }}
+                onEditNodeMetadata={(node) => {
+                  setEditingNode(node);
                 }}
               />
             ) : (
@@ -256,11 +262,12 @@ export default function ClientSidePage({ workflow }: Props) {
                     boxSizing: "border-box",
                   }}
                 >
-                  {nodeTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.icon} {type.name}
-                    </option>
-                  ))}
+                  {nodeTypes &&
+                    nodeTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.icon} {type.name}
+                      </option>
+                    ))}
                 </select>
               </div>
 
@@ -309,6 +316,16 @@ export default function ClientSidePage({ workflow }: Props) {
             </form>
           </div>
         </div>
+      )}
+
+      {/* EDIT METADATA MODAL */}
+      {editingNode && (
+        <EditNodeMetadataModal
+          node={editingNode}
+          token={token}
+          onClose={() => setEditingNode(null)}
+          onSaved={() => router.refresh()}
+        />
       )}
     </div>
   );

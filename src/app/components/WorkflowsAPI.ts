@@ -5,6 +5,8 @@ import {
   Workflow,
   WorkflowNode,
   WorkflowNodeLink,
+  WorkflowNodeType,
+  WorkflowNodeMetadataItem,
 } from "../types";
 
 export const createWorkflow = (
@@ -55,9 +57,17 @@ export const deleteWorkflow = async (workflow: Workflow, token: string) =>
         }) as FLVResponse,
     );
 
+export const getWorkflowNodeTypes = async (): Promise<WorkflowNodeType[]> => {
+  const res = await fetch("/api/workflows/types");
+
+  if (!res.ok) throw new Error("Failed to get workflow node types");
+
+  return await res.json();
+};
+
 export const createWorkflowNode = async (
   workflowId: number,
-  nodeData: { label: string; type?: string }, // 👈 Added optional type property
+  nodeData: { label: string; type?: string },
   token?: string,
 ): Promise<WorkflowNode | null> => {
   try {
@@ -101,3 +111,58 @@ export const createWorkflowLink = async (
     return null;
   }
 };
+
+export async function getNodeMetadata(
+  workflowId: number,
+  nodeId: number,
+  token?: string,
+): Promise<WorkflowNodeMetadataItem[]> {
+  const res = await fetch(
+    `/api/workflows/${workflowId}/nodes/${nodeId}/metadata`,
+    {
+      headers: {
+        Authorization: `Bearer ${token || ""}`,
+      },
+    },
+  );
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function saveNodeMetadata(
+  workflowId: number,
+  nodeId: number,
+  metadata: WorkflowNodeMetadataItem[],
+  token?: string,
+): Promise<boolean> {
+  const res = await fetch(
+    `/api/workflows/${workflowId}/nodes/${nodeId}/metadata`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token || ""}`,
+      },
+      body: JSON.stringify(metadata),
+    },
+  );
+  return res.ok;
+}
+
+export async function deleteNodeMetadata(
+  workflowId: number,
+  nodeId: number,
+  metadataId: number,
+  token?: string,
+): Promise<boolean> {
+  const res = await fetch(
+    `/api/workflows/${workflowId}/nodes/${nodeId}/metadata/${metadataId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token || ""}`,
+      },
+    },
+  );
+  return res.ok;
+}
