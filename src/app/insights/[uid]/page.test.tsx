@@ -133,6 +133,7 @@ describe("generateMetadata", () => {
     (getInsightFromServer as jest.Mock).mockResolvedValue(null);
 
     const metadata = await generateMetadata({
+      origin: "http://localhost",
       params: Promise.resolve({ uid: "123" }),
     });
 
