@@ -1,21 +1,23 @@
 import React from "react";
 import { Metadata } from "next";
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 
 import ClientSidePage from "./ClientSidePage";
 import {
   getInsightFromServer,
   getUserFromServer,
 } from "../../OJS-SSR-functions";
-import { Insight } from "../../types";
+// import { Insight } from "../../types";
 import { getAuthUser } from "../../functions";
 
-const sortCitationCountDesc = (a: Insight, b: Insight) =>
-  (a.evidence?.length ?? 0) - (b.evidence?.length ?? 0);
+// const sortCitationCountDesc = (a: Insight, b: Insight) =>
+//   (a.evidence?.length ?? 0) - (b.evidence?.length ?? 0);
 
 export async function generateMetadata({
+  origin,
   params,
 }: {
+  origin: string;
   params: Promise<{ uid: string }>;
 }): Promise<Metadata | undefined> {
   const currentUrl = (await headers()).get("x-url");
@@ -27,15 +29,15 @@ export async function generateMetadata({
         url: currentUrl!,
         type: "article",
         title: insight.title,
-        description: `📄 ${insight.evidence?.length ?? 0}
-${insight.children
-  .map((cl) => cl.childInsight!)
-  .sort(sortCitationCountDesc)
-  .map(
-    (childInsight) =>
-      `${childInsight.title} 📄 ${childInsight.evidence?.length ?? 0}`,
-  )
-  .join(",\n")}`,
+        description: `📄 ${insight.evidence?.length ?? 0}`,
+        // ${insight.children
+        //   .map((cl) => cl.childInsight!)
+        //   .sort(sortCitationCountDesc)
+        //   .map(
+        //     (childInsight) =>
+        //       `${childInsight.title} 📄 ${childInsight.evidence?.length ?? 0}`,
+        //   )
+        //   .join(",\n")}`,
         // TODO: upload/generate an image for the insight?
         images: `${origin}/images/share_image.png`,
         locale: "en_US",

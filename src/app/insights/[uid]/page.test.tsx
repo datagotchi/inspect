@@ -110,16 +110,16 @@ describe("generateMetadata", () => {
       .mockReturnValueOnce("http://localhost/insight/123");
 
     const metadata = await generateMetadata({
+      origin: "http://localhost",
       params: Promise.resolve({ uid: "123" }),
     });
 
     expect(metadata).toEqual({
       openGraph: {
-        url: "http://localhost/insight/123",
+        url: "http://localhost",
         type: "article",
         title: "Test Insight",
-        description: `📄 3
-`,
+        description: `📄 3`,
         images: "http://localhost/images/share_image.png",
         locale: "en_US",
       },

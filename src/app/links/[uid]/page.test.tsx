@@ -40,10 +40,7 @@ describe("Linkpage", () => {
       linkInput: mockLink,
       currentUser: mockUser,
     });
-    expect(mockGetLinkFromServer).toHaveBeenCalledWith(
-      "http://localhost",
-      "test-uid",
-    );
+    expect(mockGetLinkFromServer).toHaveBeenCalledWith("test-uid");
     expect(mockGetUserFromServer).toHaveBeenCalledWith("123");
   });
 
@@ -81,10 +78,7 @@ describe("generateMetadata", () => {
         creator: "@bobstark",
       },
     });
-    expect(mockGetLinkFromServer).toHaveBeenCalledWith(
-      "http://localhost",
-      "test-uid",
-    );
+    expect(mockGetLinkFromServer).toHaveBeenCalledWith("test-uid");
   });
 
   it("returns undefined metadata when link is not found", async () => {
@@ -97,9 +91,6 @@ describe("generateMetadata", () => {
     });
 
     expect(metadata).toBeUndefined();
-    expect(mockGetLinkFromServer).toHaveBeenCalledWith(
-      "http://localhost",
-      "test-uid",
-    );
+    expect(mockGetLinkFromServer).toHaveBeenCalledWith("test-uid");
   });
 });

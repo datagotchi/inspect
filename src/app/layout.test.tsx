@@ -9,7 +9,7 @@ import { getUserFromServer } from "./OJS-SSR-functions";
 import Dashboard from "./layout";
 
 jest.mock("next/headers");
-jest.mock("./api/functions");
+jest.mock("./OJS-SSR-functions");
 
 describe("Dashboard", () => {
   beforeEach(() => {

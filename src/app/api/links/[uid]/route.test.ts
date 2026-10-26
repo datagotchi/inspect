@@ -9,7 +9,6 @@ import { SummaryModel } from "../../models/summaries";
 import { getAuthUser } from "../../../functions";
 
 jest.mock("../../../functions");
-jest.mock("../../functions");
 jest.mock("./functions");
 
 jest.mock("../../models/summaries", () => {
