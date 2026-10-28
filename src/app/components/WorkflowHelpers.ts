@@ -1,15 +1,5 @@
 import * as d3 from "d3";
-import {
-  WorkflowNode,
-  WorkflowNodeLink,
-  WorkflowNodeMetadataItem,
-} from "@/app/types";
-
-export interface CanvasNode extends WorkflowNode {
-  x?: number;
-  y?: number;
-  metadata?: WorkflowNodeMetadataItem[];
-}
+import { WorkflowNode, WorkflowNodeLink } from "@/app/types";
 
 export interface LinkData {
   id?: number;
@@ -19,11 +9,11 @@ export interface LinkData {
 }
 
 export interface WorkflowLayoutResult {
-  realNodes: d3.HierarchyPointNode<CanvasNode>[];
+  realNodes: d3.HierarchyPointNode<WorkflowNode>[];
   primaryLinks: LinkData[];
   crossLinks: LinkData[];
-  root: d3.HierarchyPointNode<CanvasNode>;
-  d3NodeMap: Map<number, d3.HierarchyPointNode<CanvasNode>>;
+  root: d3.HierarchyPointNode<WorkflowNode>;
+  d3NodeMap: Map<number, d3.HierarchyPointNode<WorkflowNode>>;
 }
 
 export const CARD_WIDTH = 180;
@@ -33,7 +23,7 @@ export const CANVAS_HEIGHT = 800;
 
 export function calculatePrimaryPath(
   link: LinkData,
-  d3NodeMap: Map<number, d3.HierarchyPointNode<CanvasNode>>,
+  d3NodeMap: Map<number, d3.HierarchyPointNode<WorkflowNode>>,
 ): string {
   const source = d3NodeMap.get(link.sourceId);
   const target = d3NodeMap.get(link.targetId);
@@ -59,7 +49,7 @@ export function calculatePrimaryPath(
 
 export function calculateSecondaryPath(
   link: LinkData,
-  d3NodeMap: Map<number, d3.HierarchyPointNode<CanvasNode>>,
+  d3NodeMap: Map<number, d3.HierarchyPointNode<WorkflowNode>>,
 ): string {
   const source = d3NodeMap.get(link.sourceId);
   const target = d3NodeMap.get(link.targetId);
@@ -152,22 +142,22 @@ export function processWorkflowLayout({
     primaryChildrenMap.set(l.sourceId, children);
   });
 
-  const baseHierarchy = d3.hierarchy<CanvasNode>(
-    virtualRoot as CanvasNode,
+  const baseHierarchy = d3.hierarchy<WorkflowNode>(
+    virtualRoot as WorkflowNode,
     (d) => {
       if (d.id === -999) {
-        return (rootNodes.length > 0 ? rootNodes : nodes) as CanvasNode[];
+        return (rootNodes.length > 0 ? rootNodes : nodes) as WorkflowNode[];
       }
 
       const childIds = primaryChildrenMap.get(d.id!) || [];
       const seen = new Set<number>();
-      const childrenNodes: CanvasNode[] = [];
+      const childrenNodes: WorkflowNode[] = [];
 
       childIds.forEach((childId) => {
         const childNode = nodeMap.get(childId);
         if (childNode && !seen.has(childNode.id!)) {
           seen.add(childNode.id!);
-          childrenNodes.push(childNode as CanvasNode);
+          childrenNodes.push(childNode as WorkflowNode);
         }
       });
 
@@ -176,13 +166,13 @@ export function processWorkflowLayout({
   );
 
   const treeLayout = d3
-    .tree<CanvasNode>()
+    .tree<WorkflowNode>()
     .nodeSize([CARD_WIDTH + 60, CARD_HEIGHT + 80]);
 
-  const root = treeLayout(baseHierarchy) as d3.HierarchyPointNode<CanvasNode>;
+  const root = treeLayout(baseHierarchy) as d3.HierarchyPointNode<WorkflowNode>;
 
-  const d3NodeMap = new Map<number, d3.HierarchyPointNode<CanvasNode>>();
-  const realNodes: d3.HierarchyPointNode<CanvasNode>[] = [];
+  const d3NodeMap = new Map<number, d3.HierarchyPointNode<WorkflowNode>>();
+  const realNodes: d3.HierarchyPointNode<WorkflowNode>[] = [];
 
   const minX = d3.min(root.descendants(), (d) => d.x) || 0;
   const xOffset = CANVAS_WIDTH / 2 - minX - CARD_WIDTH / 2;
@@ -191,8 +181,15 @@ export function processWorkflowLayout({
   root.each((node) => {
     if (node.data && node.data.id !== -999 && node.data.id !== undefined) {
       if (!d3NodeMap.has(node.data.id)) {
-        node.x = node.x + xOffset;
-        node.y = node.y + yOffset;
+        // Priority 1: User's saved/dragged coordinates
+        // Priority 2: Calculated hierarchical tree coordinates
+        if (node.data.x !== undefined && node.data.y !== undefined) {
+          node.x = node.data.x;
+          node.y = node.data.y;
+        } else {
+          node.x = node.x + xOffset;
+          node.y = node.y + yOffset;
+        }
 
         d3NodeMap.set(node.data.id, node);
         realNodes.push(node);
@@ -227,33 +224,13 @@ export function setupCanvasZoom(svgElement: SVGSVGElement) {
 export function renderPrimaryLinks(
   parentGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
   primaryLinksData: LinkData[],
-  d3NodeMap: Map<number, d3.HierarchyPointNode<CanvasNode>>,
+  d3NodeMap: Map<number, d3.HierarchyPointNode<WorkflowNode>>,
   onEditLink?: (link: WorkflowNodeLink) => void,
   onDeleteLink?: (linkId: number) => Promise<void>,
 ) {
   const g = parentGroup.append("g").attr("class", "primary-links");
 
-  // Render Path Lines
-  g.attr("fill", "none")
-    .attr("stroke", "#3b82f6")
-    .attr("stroke-width", 2.5)
-    .selectAll<SVGPathElement, LinkData>("path")
-    .data(primaryLinksData)
-    .join("path")
-    .attr("d", (l) => calculatePrimaryPath(l, d3NodeMap))
-    .style("cursor", "pointer")
-    .on("click", (event, d) => {
-      event.stopPropagation();
-      if (onEditLink && d.rawLink) {
-        onEditLink(d.rawLink);
-      } else if (onDeleteLink && d.id !== undefined) {
-        if (confirm(`Delete connection #${d.id}?`)) {
-          onDeleteLink(d.id);
-        }
-      }
-    });
-
-  // Render Optional Link Labels (Hard-coded "label" check)
+  // Render Optional Link Labels
   g.selectAll<SVGTextElement, LinkData>("text")
     .data(primaryLinksData.filter((l) => Boolean(getLinkLabel(l))))
     .join("text")
@@ -275,13 +252,32 @@ export function renderPrimaryLinks(
     .style("pointer-events", "none")
     .text((l) => getLinkLabel(l) || "");
 
-  return g;
+  // Return the path selection directly so createNodeDragBehavior receives SVGPathElement
+  return g
+    .attr("fill", "none")
+    .attr("stroke", "#3b82f6")
+    .attr("stroke-width", 2.5)
+    .selectAll<SVGPathElement, LinkData>("path")
+    .data(primaryLinksData)
+    .join("path")
+    .attr("d", (l) => calculatePrimaryPath(l, d3NodeMap))
+    .style("cursor", "pointer")
+    .on("click", (event, d) => {
+      event.stopPropagation();
+      if (onEditLink && d.rawLink) {
+        onEditLink(d.rawLink);
+      } else if (onDeleteLink && d.id !== undefined) {
+        if (confirm(`Delete connection #${d.id}?`)) {
+          onDeleteLink(d.id);
+        }
+      }
+    });
 }
 
 export function renderSecondaryLinks(
   parentGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
   crossLinksData: LinkData[],
-  d3NodeMap: Map<number, d3.HierarchyPointNode<CanvasNode>>,
+  d3NodeMap: Map<number, d3.HierarchyPointNode<WorkflowNode>>,
   onEditLink?: (link: WorkflowNodeLink) => void,
   onDeleteLink?: (linkId: number) => Promise<void>,
 ) {
@@ -289,8 +285,31 @@ export function renderSecondaryLinks(
 
   const g = parentGroup.append("g").attr("class", "secondary-links");
 
-  // Render Path Lines
-  g.attr("stroke", "#ef4444")
+  // Render Optional Link Labels for Secondary Connections
+  g.selectAll<SVGTextElement, LinkData>("text")
+    .data(crossLinksData.filter((l) => Boolean(getLinkLabel(l))))
+    .join("text")
+    .attr("x", (l) => {
+      const src = d3NodeMap.get(l.sourceId);
+      const tgt = d3NodeMap.get(l.targetId);
+      return src && tgt ? (src.x + tgt.x + CARD_WIDTH) / 2 : 0;
+    })
+    .attr("y", (l) => {
+      const src = d3NodeMap.get(l.sourceId);
+      const tgt = d3NodeMap.get(l.targetId);
+      return src && tgt ? (src.y + tgt.y + CARD_HEIGHT) / 2 - 25 : 0;
+    })
+    .attr("text-anchor", "middle")
+    .attr("dy", "-4")
+    .attr("fill", "#dc2626")
+    .attr("font-size", "11px")
+    .attr("font-weight", "600")
+    .style("pointer-events", "none")
+    .text((l) => getLinkLabel(l) || "");
+
+  // Return path selection directly
+  return g
+    .attr("stroke", "#ef4444")
     .attr("stroke-width", 2)
     .attr("stroke-dasharray", "4,4")
     .attr("fill", "none")
@@ -309,31 +328,6 @@ export function renderSecondaryLinks(
         }
       }
     });
-
-  // Render Optional Link Labels for Secondary Connections
-  g.selectAll<SVGTextElement, LinkData>("text")
-    .data(crossLinksData.filter((l) => Boolean(getLinkLabel(l))))
-    .join("text")
-    .attr("x", (l) => {
-      const src = d3NodeMap.get(l.sourceId);
-      const tgt = d3NodeMap.get(l.targetId);
-      return src && tgt ? (src.x + tgt.x + CARD_WIDTH) / 2 : 0;
-    })
-    .attr("y", (l) => {
-      const src = d3NodeMap.get(l.sourceId);
-      const tgt = d3NodeMap.get(l.targetId);
-      // Account for the -50px quadratic arc offset in calculateSecondaryPath
-      return src && tgt ? (src.y + tgt.y + CARD_HEIGHT) / 2 - 25 : 0;
-    })
-    .attr("text-anchor", "middle")
-    .attr("dy", "-4")
-    .attr("fill", "#dc2626")
-    .attr("font-size", "11px")
-    .attr("font-weight", "600")
-    .style("pointer-events", "none")
-    .text((l) => getLinkLabel(l) || "");
-
-  return g;
 }
 
 export function renderDragLine(
@@ -361,10 +355,11 @@ export function createNodeDragBehavior(
     SVGGElement,
     unknown
   > | null,
-  d3NodeMap: Map<number, d3.HierarchyPointNode<CanvasNode>>,
+  d3NodeMap: Map<number, d3.HierarchyPointNode<WorkflowNode>>,
+  onNodeDragEnd?: (nodeId: number, x: number, y: number) => void,
 ) {
   return d3
-    .drag<SVGGElement, d3.HierarchyPointNode<CanvasNode>>()
+    .drag<SVGGElement, d3.HierarchyPointNode<WorkflowNode>>()
     .filter((event) => {
       if (
         event.target &&
@@ -392,17 +387,23 @@ export function createNodeDragBehavior(
           calculateSecondaryPath(cl, d3NodeMap),
         );
       }
+    })
+    .on("end", (event, d) => {
+      // Sync the final (x, y) back to React state
+      if (onNodeDragEnd && d.data.id !== undefined) {
+        onNodeDragEnd(d.data.id, d.x, d.y);
+      }
     });
 }
 
 export function createConnectorHandleDragBehavior(
   zoomGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
   dragLine: d3.Selection<SVGPathElement, unknown, null, undefined>,
-  realNodes: d3.HierarchyPointNode<CanvasNode>[],
+  realNodes: d3.HierarchyPointNode<WorkflowNode>[],
   onLinkNodes?: (parentId: number, childId: number) => Promise<void>,
 ) {
   return d3
-    .drag<SVGCircleElement, d3.HierarchyPointNode<CanvasNode>>()
+    .drag<SVGCircleElement, d3.HierarchyPointNode<WorkflowNode>>()
     .on("start", (event, d) => {
       event.sourceEvent.stopPropagation();
       const startX = d.x + CARD_WIDTH / 2;
@@ -439,18 +440,18 @@ export function createConnectorHandleDragBehavior(
 
 export function renderNodes(
   parentGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
-  realNodes: d3.HierarchyPointNode<CanvasNode>[],
+  realNodes: d3.HierarchyPointNode<WorkflowNode>[],
   dragBehavior: d3.DragBehavior<
     SVGGElement,
-    d3.HierarchyPointNode<CanvasNode>,
+    d3.HierarchyPointNode<WorkflowNode>,
     unknown
   >,
-  onEditNodeMetadata?: (node: CanvasNode) => void,
+  onEditNodeMetadata?: (node: WorkflowNode) => void,
   onDeleteNode?: (nodeId: number) => Promise<void>,
 ) {
   const nodeSelection = parentGroup
     .append("g")
-    .selectAll<SVGGElement, d3.HierarchyPointNode<CanvasNode>>("g")
+    .selectAll<SVGGElement, d3.HierarchyPointNode<WorkflowNode>>("g")
     .data(realNodes)
     .join("g")
     .attr("transform", (d) => `translate(${d.x}, ${d.y})`)
@@ -553,13 +554,13 @@ export function renderNodes(
 export function renderConnectorHandles(
   nodeSelection: d3.Selection<
     SVGGElement,
-    d3.HierarchyPointNode<CanvasNode>,
+    d3.HierarchyPointNode<WorkflowNode>,
     SVGGElement,
     unknown
   >,
   connectorDragBehavior: d3.DragBehavior<
     SVGCircleElement,
-    d3.HierarchyPointNode<CanvasNode>,
+    d3.HierarchyPointNode<WorkflowNode>,
     unknown
   >,
 ) {

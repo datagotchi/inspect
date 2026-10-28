@@ -21,7 +21,6 @@ import {
 } from "@/app/components/WorkflowsAPI";
 import useUser from "@/app/hooks/useUser";
 import { WorkflowCanvas } from "@/app/components/WorkflowCanvas";
-import { CanvasNode } from "@/app/components/WorkflowHelpers";
 import { EditNodeMetadataModal } from "./EditNodeMetadataModal";
 import { EditLinkModal } from "./EditLinkModal";
 
@@ -30,14 +29,54 @@ interface Props {
 }
 
 export default function ClientSidePage({ workflow }: Props) {
-  const [nodes, setNodes] = useState<WorkflowNode[]>(workflow.nodes || []);
-  const [links, setLinks] = useState<WorkflowNodeLink[]>(workflow.links || []);
   const [isCreating, setIsCreating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingNode, setEditingNode] = useState<CanvasNode | null>(null);
+  const [editingNode, setEditingNode] = useState<WorkflowNode | null>(null);
   const [label, setLabel] = useState("");
   const [selectedTypeId, setSelectedTypeId] = useState<number>(1);
   const [nodeTypes, setNodeTypes] = useState<WorkflowNodeType[]>();
+
+  const STORAGE_KEY = `jaw_workflow_${workflow.id}_draft`;
+
+  const [nodes, setNodes] = useState<WorkflowNode[]>(() => {
+    if (typeof window === "undefined") return workflow.nodes || [];
+    const draft = localStorage.getItem(`jaw_workflow_${workflow.id}_draft`);
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        if (parsed.nodes?.length) return parsed.nodes;
+      } catch (err) {
+        console.error("Failed to parse local draft nodes:", err);
+      }
+    }
+    return workflow.nodes || [];
+  });
+
+  const [links, setLinks] = useState<WorkflowNodeLink[]>(() => {
+    if (typeof window === "undefined") return workflow.links || [];
+    const draft = localStorage.getItem(`jaw_workflow_${workflow.id}_draft`);
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        if (parsed.links) return parsed.links;
+      } catch (err) {
+        console.error("Failed to parse local draft links:", err);
+      }
+    }
+    return workflow.links || [];
+  });
+
+  // auto-save to local storage effect
+  useEffect(() => {
+    const draftData = {
+      workflowId: workflow.id,
+      nodes,
+      links,
+      lastSaved: new Date().toISOString(),
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(draftData));
+  }, [nodes, links, STORAGE_KEY, workflow]);
 
   const { token } = useUser();
   const router = useRouter();
@@ -66,7 +105,7 @@ export default function ClientSidePage({ workflow }: Props) {
     [workflow.id, token, router],
   );
 
-  const handleEditNodeMetadata = useCallback((node: CanvasNode) => {
+  const handleEditNodeMetadata = useCallback((node: WorkflowNode) => {
     setEditingNode(node);
   }, []);
 
@@ -84,6 +123,12 @@ export default function ClientSidePage({ workflow }: Props) {
     [workflow.id, token, router],
   );
 
+  const handleNodeDragEnd = (nodeId: number, x: number, y: number) => {
+    setNodes((prevNodes) =>
+      prevNodes.map((n) => (n.id === nodeId ? { ...n, x, y } : n)),
+    );
+  };
+
   useEffect(() => {
     if (!nodeTypes) {
       getWorkflowNodeTypes().then((types) => {
@@ -92,11 +137,27 @@ export default function ClientSidePage({ workflow }: Props) {
     }
   }, [nodeTypes]);
 
-  // Sync state when server props update via router.refresh()
+  // Sync state when server props update via router.refresh(),
+  // but preserve local draft coordinates if they exist in localStorage
   useEffect(() => {
+    const draft = localStorage.getItem(STORAGE_KEY);
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        if (parsed.nodes?.length) {
+          setNodes(parsed.nodes);
+          if (parsed.links) setLinks(parsed.links);
+          return;
+        }
+      } catch (err) {
+        console.error("Failed to restore draft in prop sync:", err);
+      }
+    }
+
+    // Fallback to server props if no local draft exists
     setNodes(workflow.nodes || []);
     setLinks(workflow.links || []);
-  }, [workflow.nodes, workflow.links]);
+  }, [workflow.nodes, workflow.links, STORAGE_KEY]);
 
   const handleCreateNode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,6 +242,7 @@ export default function ClientSidePage({ workflow }: Props) {
               <WorkflowCanvas
                 nodes={nodes}
                 links={links}
+                onNodeDragEnd={handleNodeDragEnd}
                 onDeleteNode={handleDeleteNode}
                 onLinkNodes={handleLinkNodes}
                 onEditNodeMetadata={handleEditNodeMetadata}

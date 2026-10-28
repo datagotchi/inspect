@@ -5,7 +5,6 @@ import * as d3 from "d3";
 import { WorkflowNode, WorkflowNodeLink } from "@/app/types";
 
 import {
-  CanvasNode,
   processWorkflowLayout,
   setupCanvasZoom,
   renderPrimaryLinks,
@@ -20,9 +19,10 @@ import {
 interface WorkflowCanvasProps {
   nodes: WorkflowNode[];
   links: WorkflowNodeLink[];
+  onNodeDragEnd?: (nodeId: number, x: number, y: number) => void;
   onDeleteNode?: (nodeId: number) => Promise<void>;
   onLinkNodes?: (parentId: number, childId: number) => Promise<void>;
-  onEditNodeMetadata?: (node: CanvasNode) => void;
+  onEditNodeMetadata?: (node: WorkflowNode) => void;
   onEditLink?: (link: WorkflowNodeLink) => void;
   onDeleteLink?: (linkId: number) => Promise<void>;
 }
@@ -30,6 +30,7 @@ interface WorkflowCanvasProps {
 export function WorkflowCanvas({
   nodes = [],
   links = [],
+  onNodeDragEnd,
   onDeleteNode,
   onLinkNodes,
   onEditNodeMetadata,
@@ -39,6 +40,7 @@ export function WorkflowCanvas({
   const svgRef = useRef<SVGSVGElement>(null);
   const [totalNodeCount, setTotalNodeCount] = useState<number>(0);
 
+  // d3 rendering effect
   useEffect(() => {
     if (!svgRef.current) return;
 
@@ -80,6 +82,7 @@ export function WorkflowCanvas({
       primarySelection,
       secondarySelection,
       d3NodeMap,
+      onNodeDragEnd,
     );
 
     const nodeSelection = renderNodes(

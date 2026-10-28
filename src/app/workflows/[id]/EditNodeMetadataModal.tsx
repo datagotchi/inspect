@@ -1,16 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CanvasNode } from "@/app/components/WorkflowHelpers";
 import {
   getNodeMetadata,
   saveNodeMetadata,
 } from "@/app/components/WorkflowsAPI";
-import { WorkflowNodeMetadataItem } from "@/app/types";
+import { WorkflowNode, WorkflowNodeMetadataItem } from "@/app/types";
 import { MetadataFieldsEditor } from "./MetadataFieldsEditor";
 
 interface EditNodeMetadataModalProps {
-  node: CanvasNode;
+  node: WorkflowNode;
   token?: string;
   onClose: () => void;
   onSaved: () => void;

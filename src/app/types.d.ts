@@ -184,6 +184,8 @@ export type WorkflowNode = {
   node_type_id?: number;
   label?: string;
   type?: string;
+  x?: number;
+  y?: number;
 
   workflow?: Workflow;
   nodeType?: WorkflowNodeType;
