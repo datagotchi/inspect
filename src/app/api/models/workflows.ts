@@ -4,6 +4,7 @@ import { PostgresBaseModel } from "./postgres_models";
 import {
   User,
   Workflow,
+  WorkflowLinkMetadataItem,
   WorkflowNode,
   WorkflowNodeLink,
   WorkflowNodeMetadataItem,
@@ -24,6 +25,7 @@ export class WorkflowOJSModel extends PostgresBaseModel implements Workflow {
   // Hydrated Relations
   user!: User;
   nodes!: WorkflowNode[];
+  links!: WorkflowNodeLink[];
 
   static jsonSchema = {
     type: "object",
@@ -57,6 +59,14 @@ export class WorkflowOJSModel extends PostgresBaseModel implements Workflow {
         join: {
           from: "workflows.id",
           to: "workflow_nodes.workflow_id",
+        },
+      },
+      links: {
+        relation: Model.HasManyRelation,
+        modelClass: WorkflowNodeLinkOJSModel,
+        join: {
+          from: "workflows.id",
+          to: "workflow_node_links.workflow_id",
         },
       },
     };
@@ -178,9 +188,12 @@ export class WorkflowNodeLinkOJSModel
   parent_id!: number;
   child_id!: number;
   created_at?: string;
+  workflow_id!: number;
 
   parentNode?: WorkflowNode;
   childNode?: WorkflowNode;
+  workflow?: Workflow | undefined;
+  metadata?: WorkflowLinkMetadataItem[]; // 👈 Hydrated relation
 
   static jsonSchema = {
     type: "object",
@@ -208,6 +221,15 @@ export class WorkflowNodeLinkOJSModel
         join: {
           from: "workflow_node_links.child_id",
           to: "workflow_nodes.id",
+        },
+      },
+      // 👈 Link metadata relation
+      metadata: {
+        relation: Model.HasManyRelation,
+        modelClass: WorkflowLinkMetadataOJSModel,
+        join: {
+          from: "workflow_node_links.id",
+          to: "workflow_link_metadata.link_id",
         },
       },
     };
@@ -240,4 +262,28 @@ export class WorkflowNodeMetadataOJSModel
   static get relationMappings() {
     return {};
   }
+}
+
+export class WorkflowLinkMetadataOJSModel
+  extends PostgresBaseModel
+  implements WorkflowLinkMetadataItem
+{
+  static tableName = "workflow_link_metadata";
+
+  id?: number;
+  link_id!: number;
+  fieldname!: string;
+  value!: string;
+  link?: WorkflowNodeLink;
+
+  static jsonSchema = {
+    type: "object",
+    required: ["link_id", "fieldname", "value"],
+    properties: {
+      id: { type: "integer" },
+      link_id: { type: "integer" },
+      fieldname: { type: "string" },
+      value: { type: "string" },
+    },
+  };
 }

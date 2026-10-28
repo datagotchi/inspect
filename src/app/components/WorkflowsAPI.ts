@@ -7,6 +7,7 @@ import {
   WorkflowNodeLink,
   WorkflowNodeType,
   WorkflowNodeMetadataItem,
+  WorkflowLinkMetadataItem,
 } from "../types";
 
 export const createWorkflow = (
@@ -88,6 +89,18 @@ export const createWorkflowNode = async (
   }
 };
 
+export async function deleteWorkflowNode(
+  workflowId: number,
+  nodeId: number,
+  token?: string,
+) {
+  const res = await fetch(`/api/workflows/${workflowId}/nodes/${nodeId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.ok;
+}
+
 export const createWorkflowLink = async (
   workflowId: number,
   linkData: { parent_id: number; child_id: number },
@@ -162,6 +175,57 @@ export async function deleteNodeMetadata(
       headers: {
         Authorization: `Bearer ${token || ""}`,
       },
+    },
+  );
+  return res.ok;
+}
+
+export async function deleteWorkflowLink(
+  workflowId: number,
+  linkId: number,
+  token?: string,
+): Promise<boolean> {
+  const res = await fetch(`/api/workflows/${workflowId}/links/${linkId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token || ""}`,
+    },
+  });
+  return res.ok;
+}
+
+export async function getLinkMetadata(
+  workflowId: number,
+  linkId: number,
+  token?: string,
+): Promise<WorkflowLinkMetadataItem[]> {
+  const res = await fetch(
+    `/api/workflows/${workflowId}/links/${linkId}/metadata`,
+    {
+      headers: {
+        Authorization: `Bearer ${token || ""}`,
+      },
+    },
+  );
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function saveLinkMetadata(
+  workflowId: number,
+  linkId: number,
+  metadata: WorkflowLinkMetadataItem[],
+  token?: string,
+): Promise<boolean> {
+  const res = await fetch(
+    `/api/workflows/${workflowId}/links/${linkId}/metadata`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token || ""}`,
+      },
+      body: JSON.stringify(metadata),
     },
   );
   return res.ok;

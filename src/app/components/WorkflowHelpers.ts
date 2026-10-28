@@ -15,6 +15,7 @@ export interface LinkData {
   id?: number;
   sourceId: number;
   targetId: number;
+  rawLink?: WorkflowNodeLink;
 }
 
 export interface WorkflowLayoutResult {
@@ -81,9 +82,13 @@ export function calculateSecondaryPath(
   return `M${sourceX},${sourceY} Q ${(sourceX + targetX) / 2},${(sourceY + targetY) / 2 - 50} ${targetX},${targetY}`;
 }
 
-export function processWorkflowLayout(
-  nodes: WorkflowNode[],
-): WorkflowLayoutResult | null {
+export function processWorkflowLayout({
+  nodes = [],
+  links = [],
+}: {
+  nodes: WorkflowNode[];
+  links: WorkflowNodeLink[];
+}): WorkflowLayoutResult | null {
   if (!nodes || nodes.length === 0) return null;
 
   const nodeMap = new Map<number, WorkflowNode>();
@@ -101,62 +106,72 @@ export function processWorkflowLayout(
     );
   };
 
-  nodes.forEach((node) => {
-    const parent = nodeMap.get(node.id!);
-    if (parent && parent.children && parent.children.length > 0) {
-      const sorted = [...parent.children].sort(
-        (a, b) => (a.id || 0) - (b.id || 0),
-      );
-      parent.children = sorted;
-
-      sorted.forEach((link, index) => {
-        if (isGateNode(parent) || index === 0) {
-          primaryLinks.push({
-            id: link.id,
-            sourceId: link.parent_id,
-            targetId: link.child_id,
-          });
-        } else {
-          crossLinks.push({
-            id: link.id,
-            sourceId: link.parent_id,
-            targetId: link.child_id,
-          });
-        }
-      });
-    }
+  const linksByParent = new Map<number, WorkflowNodeLink[]>();
+  links.forEach((link) => {
+    const list = linksByParent.get(link.parent_id) || [];
+    list.push(link);
+    linksByParent.set(link.parent_id, list);
   });
 
-  const allChildIds = new Set<number>();
-  primaryLinks.forEach((l) => allChildIds.add(l.targetId));
+  linksByParent.forEach((parentLinks, parentId) => {
+    const parentNode = nodeMap.get(parentId);
+    const sortedLinks = [...parentLinks].sort(
+      (a, b) => (a.child_id || 0) - (b.child_id || 0),
+    );
 
-  const rootNodes = nodes.filter((n) => !allChildIds.has(n.id!));
+    sortedLinks.forEach((link, index) => {
+      const linkData: LinkData = {
+        id: link.id!,
+        sourceId: link.parent_id,
+        targetId: link.child_id,
+        rawLink: link,
+      };
+
+      if (isGateNode(parentNode) || index === 0) {
+        primaryLinks.push(linkData);
+      } else {
+        crossLinks.push(linkData);
+      }
+    });
+  });
+
+  const allTargetIds = new Set<number>();
+  primaryLinks.forEach((l) => allTargetIds.add(l.targetId));
+
+  const rootNodes = nodes.filter((n) => !allTargetIds.has(n.id!));
 
   const virtualRoot: WorkflowNode = {
     id: -999,
     label: "VIRTUAL_ROOT",
-    children: (rootNodes.length > 0 ? rootNodes : nodes).map((n) => ({
-      child_id: n.id!,
-      parent_id: -999,
-      childNode: nodeMap.get(n.id!),
-    })),
   };
+
+  const primaryChildrenMap = new Map<number, number[]>();
+  primaryLinks.forEach((l) => {
+    const children = primaryChildrenMap.get(l.sourceId) || [];
+    children.push(l.targetId);
+    primaryChildrenMap.set(l.sourceId, children);
+  });
 
   const baseHierarchy = d3.hierarchy<CanvasNode>(
     virtualRoot as CanvasNode,
     (d) => {
-      if (!d.children) return [];
-      const seen = new Set<number>();
-      const result: WorkflowNode[] = [];
+      if (d.id === -999) {
+        return (rootNodes.length > 0 ? rootNodes : nodes) as CanvasNode[];
+      }
 
-      d.children.forEach((link: WorkflowNodeLink) => {
-        const child = link.childNode || nodeMap.get(link.child_id);
-        if (child && !seen.has(child.id!)) {
-          seen.add(child.id!);
-          result.push(child);
+      const childIds = primaryChildrenMap.get(d.id!) || [];
+      const seen = new Set<number>();
+      const childrenNodes: CanvasNode[] = [];
+
+      childIds.forEach((childId) => {
+        const childNode = nodeMap.get(childId);
+        if (childNode && !seen.has(childNode.id!)) {
+          seen.add(childNode.id!);
+          childrenNodes.push(childNode as CanvasNode);
         }
       });
-      return result;
+
+      return childrenNodes;
     },
   );
 
@@ -194,7 +209,6 @@ export function processWorkflowLayout(
   };
 }
 
-// Canvas Initialization & Zoom Helper
 export function setupCanvasZoom(svgElement: SVGSVGElement) {
   const svg = d3.select(svgElement);
   svg.selectAll("*").remove();
@@ -210,39 +224,116 @@ export function setupCanvasZoom(svgElement: SVGSVGElement) {
   return { svg, zoomGroup };
 }
 
-// Link Rendering Helpers
 export function renderPrimaryLinks(
   parentGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
   primaryLinksData: LinkData[],
   d3NodeMap: Map<number, d3.HierarchyPointNode<CanvasNode>>,
+  onEditLink?: (link: WorkflowNodeLink) => void,
+  onDeleteLink?: (linkId: number) => Promise<void>,
 ) {
-  return parentGroup
-    .append("g")
-    .attr("fill", "none")
+  const g = parentGroup.append("g").attr("class", "primary-links");
+
+  // Render Path Lines
+  g.attr("fill", "none")
     .attr("stroke", "#3b82f6")
     .attr("stroke-width", 2.5)
     .selectAll<SVGPathElement, LinkData>("path")
     .data(primaryLinksData)
     .join("path")
-    .attr("d", (l) => calculatePrimaryPath(l, d3NodeMap));
+    .attr("d", (l) => calculatePrimaryPath(l, d3NodeMap))
+    .style("cursor", "pointer")
+    .on("click", (event, d) => {
+      event.stopPropagation();
+      if (onEditLink && d.rawLink) {
+        onEditLink(d.rawLink);
+      } else if (onDeleteLink && d.id !== undefined) {
+        if (confirm(`Delete connection #${d.id}?`)) {
+          onDeleteLink(d.id);
+        }
+      }
+    });
+
+  // Render Optional Link Labels (Hard-coded "label" check)
+  g.selectAll<SVGTextElement, LinkData>("text")
+    .data(primaryLinksData.filter((l) => Boolean(getLinkLabel(l))))
+    .join("text")
+    .attr("x", (l) => {
+      const src = d3NodeMap.get(l.sourceId);
+      const tgt = d3NodeMap.get(l.targetId);
+      return src && tgt ? (src.x + tgt.x + CARD_WIDTH) / 2 : 0;
+    })
+    .attr("y", (l) => {
+      const src = d3NodeMap.get(l.sourceId);
+      const tgt = d3NodeMap.get(l.targetId);
+      return src && tgt ? (src.y + tgt.y + CARD_HEIGHT) / 2 : 0;
+    })
+    .attr("text-anchor", "middle")
+    .attr("dy", "-4")
+    .attr("fill", "#1e293b")
+    .attr("font-size", "11px")
+    .attr("font-weight", "600")
+    .style("pointer-events", "none")
+    .text((l) => getLinkLabel(l) || "");
+
+  return g;
 }
 
 export function renderSecondaryLinks(
   parentGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
   crossLinksData: LinkData[],
   d3NodeMap: Map<number, d3.HierarchyPointNode<CanvasNode>>,
+  onEditLink?: (link: WorkflowNodeLink) => void,
+  onDeleteLink?: (linkId: number) => Promise<void>,
 ) {
   if (!crossLinksData || crossLinksData.length === 0) return null;
-  return parentGroup
-    .append("g")
-    .attr("stroke", "#ef4444")
+
+  const g = parentGroup.append("g").attr("class", "secondary-links");
+
+  // Render Path Lines
+  g.attr("stroke", "#ef4444")
     .attr("stroke-width", 2)
     .attr("stroke-dasharray", "4,4")
     .attr("fill", "none")
     .selectAll<SVGPathElement, LinkData>("path")
     .data(crossLinksData)
     .join("path")
-    .attr("d", (d) => calculateSecondaryPath(d, d3NodeMap));
+    .attr("d", (d) => calculateSecondaryPath(d, d3NodeMap))
+    .style("cursor", "pointer")
+    .on("click", (event, d) => {
+      event.stopPropagation();
+      if (onEditLink && d.rawLink) {
+        onEditLink(d.rawLink);
+      } else if (onDeleteLink && d.id !== undefined) {
+        if (confirm(`Delete connection #${d.id}?`)) {
+          onDeleteLink(d.id);
+        }
+      }
+    });
+
+  // Render Optional Link Labels for Secondary Connections
+  g.selectAll<SVGTextElement, LinkData>("text")
+    .data(crossLinksData.filter((l) => Boolean(getLinkLabel(l))))
+    .join("text")
+    .attr("x", (l) => {
+      const src = d3NodeMap.get(l.sourceId);
+      const tgt = d3NodeMap.get(l.targetId);
+      return src && tgt ? (src.x + tgt.x + CARD_WIDTH) / 2 : 0;
+    })
+    .attr("y", (l) => {
+      const src = d3NodeMap.get(l.sourceId);
+      const tgt = d3NodeMap.get(l.targetId);
+      // Account for the -50px quadratic arc offset in calculateSecondaryPath
+      return src && tgt ? (src.y + tgt.y + CARD_HEIGHT) / 2 - 25 : 0;
+    })
+    .attr("text-anchor", "middle")
+    .attr("dy", "-4")
+    .attr("fill", "#dc2626")
+    .attr("font-size", "11px")
+    .attr("font-weight", "600")
+    .style("pointer-events", "none")
+    .text((l) => getLinkLabel(l) || "");
+
+  return g;
 }
 
 export function renderDragLine(
@@ -257,7 +348,6 @@ export function renderDragLine(
     .attr("visibility", "hidden");
 }
 
-// Node Drag Behavior
 export function createNodeDragBehavior(
   primarySelection: d3.Selection<
     SVGPathElement,
@@ -276,7 +366,6 @@ export function createNodeDragBehavior(
   return d3
     .drag<SVGGElement, d3.HierarchyPointNode<CanvasNode>>()
     .filter((event) => {
-      // Prevent drag initiation when tapping or clicking the edit button
       if (
         event.target &&
         (event.target as HTMLElement).closest(".node-edit-btn")
@@ -306,7 +395,6 @@ export function createNodeDragBehavior(
     });
 }
 
-// Connector Handle Drag Behavior
 export function createConnectorHandleDragBehavior(
   zoomGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
   dragLine: d3.Selection<SVGPathElement, unknown, null, undefined>,
@@ -349,7 +437,6 @@ export function createConnectorHandleDragBehavior(
     });
 }
 
-// Node Cards Rendering Helper
 export function renderNodes(
   parentGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
   realNodes: d3.HierarchyPointNode<CanvasNode>[],
@@ -359,6 +446,7 @@ export function renderNodes(
     unknown
   >,
   onEditNodeMetadata?: (node: CanvasNode) => void,
+  onDeleteNode?: (nodeId: number) => Promise<void>,
 ) {
   const nodeSelection = parentGroup
     .append("g")
@@ -393,13 +481,40 @@ export function renderNodes(
     .style("padding", "8px")
     .style("box-sizing", "border-box");
 
-  // Edit Metadata Button
-  div
-    .append("xhtml:button")
-    .attr("class", "node-edit-btn")
+  const actionsDiv = div
+    .append("xhtml:div")
     .style("position", "absolute")
     .style("top", "4px")
     .style("right", "4px")
+    .style("display", "flex")
+    .style("gap", "4px");
+
+  actionsDiv
+    .append("xhtml:button")
+    .attr("class", "node-delete-btn")
+    .style("background", "rgba(255, 255, 255, 0.85)")
+    .style("border", "1px solid #fca5a5")
+    .style("border-radius", "4px")
+    .style("padding", "2px 5px")
+    .style("font-size", "11px")
+    .style("cursor", "pointer")
+    .style("line-height", "1")
+    .attr("title", "Delete Node")
+    .html("🗑️")
+    .on("click", (event, d) => {
+      event.stopPropagation();
+      if (onDeleteNode && d.data.id !== undefined) {
+        if (
+          confirm(`Are you sure you want to delete node "${d.data.label}"?`)
+        ) {
+          onDeleteNode(d.data.id);
+        }
+      }
+    });
+
+  actionsDiv
+    .append("xhtml:button")
+    .attr("class", "node-edit-btn")
     .style("background", "rgba(255, 255, 255, 0.85)")
     .style("border", "1px solid #cbd5e1")
     .style("border-radius", "4px")
@@ -435,7 +550,6 @@ export function renderNodes(
   return nodeSelection;
 }
 
-// Connector Handle Rendering Helper
 export function renderConnectorHandles(
   nodeSelection: d3.Selection<
     SVGGElement,
@@ -459,4 +573,12 @@ export function renderConnectorHandles(
     .attr("stroke-width", 2)
     .style("cursor", "crosshair")
     .call(connectorDragBehavior);
+}
+
+function getLinkLabel(link: LinkData): string | null {
+  if (!link.rawLink?.metadata) return null;
+  const labelItem = link.rawLink.metadata.find(
+    (item) => item.fieldname.toLowerCase() === "label",
+  );
+  return labelItem?.value || null;
 }

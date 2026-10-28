@@ -161,6 +161,7 @@ export type Workflow = {
   name: string;
   user: User;
   nodes: WorkflowNode[];
+  links: WorkflowNodeLink[];
   created_at?: string;
   updated_at?: string;
 };
@@ -169,9 +170,12 @@ export type WorkflowNodeLink = {
   id?: number;
   child_id: number;
   parent_id: number;
+  workflow_id: number;
 
   parentNode?: WorkflowNode;
   childNode?: WorkflowNode;
+  workflow?: Workflow;
+  metadata?: WorkflowLinkMetadataItem[];
 };
 
 export type WorkflowNode = {
@@ -195,10 +199,18 @@ export type WorkflowNodeType = {
   bg_color: string;
 };
 
-export type WorkflowNodeMetadataItem = {
+type WorkflowItemMetadataItem = {
   id?: number;
-  node_id: number;
-  node?: WorkflowNode;
   fieldname: string;
   value: string;
+};
+
+export type WorkflowNodeMetadataItem = WorkflowItemMetadataItem & {
+  node_id: number;
+  node?: WorkflowNode;
+};
+
+export type WorkflowLinkMetadataItem = WorkflowItemMetadataItem & {
+  link_id: number;
+  link?: WorkflowNodeLink;
 };

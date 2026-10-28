@@ -10,7 +10,7 @@ const rl = readline.createInterface({
   prompt: "sqlite> ",
 });
 
-console.log("SQLite Shell (Type 'exit' to quit)");
+console.info("SQLite Shell (Type 'exit' to quit)");
 rl.prompt();
 
 rl.on("line", async (line) => {
@@ -39,9 +39,9 @@ rl.on("line", async (line) => {
     if (result.rows.length > 0) {
       console.table(result.rows);
     } else if (result.rowsAffected > 0) {
-      console.log(`Success. Rows affected: ${result.rowsAffected}`);
+      console.info(`Success. Rows affected: ${result.rowsAffected}`);
     } else {
-      console.log("Query executed successfully.");
+      console.info("Query executed successfully.");
     }
   } catch (err) {
     console.error(`Error: ${err.message}`);

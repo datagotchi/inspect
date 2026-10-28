@@ -1,34 +1,88 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 import styles from "../../../styles/components/main-insights-page.module.css";
 import cardStyles from "../../../styles/components/card.module.css";
 
-import { Workflow, WorkflowNode, WorkflowNodeType } from "@/app/types";
+import {
+  Workflow,
+  WorkflowNode,
+  WorkflowNodeLink,
+  WorkflowNodeType,
+} from "@/app/types";
 import {
   createWorkflowLink,
   createWorkflowNode,
+  deleteWorkflowLink,
+  deleteWorkflowNode,
   getWorkflowNodeTypes,
 } from "@/app/components/WorkflowsAPI";
 import useUser from "@/app/hooks/useUser";
 import { WorkflowCanvas } from "@/app/components/WorkflowCanvas";
 import { CanvasNode } from "@/app/components/WorkflowHelpers";
 import { EditNodeMetadataModal } from "./EditNodeMetadataModal";
+import { EditLinkModal } from "./EditLinkModal";
 
 interface Props {
   workflow: Workflow;
 }
 
 export default function ClientSidePage({ workflow }: Props) {
-  const [nodes, setNodes] = useState<WorkflowNode[]>(workflow.nodes);
+  const [nodes, setNodes] = useState<WorkflowNode[]>(workflow.nodes || []);
+  const [links, setLinks] = useState<WorkflowNodeLink[]>(workflow.links || []);
   const [isCreating, setIsCreating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingNode, setEditingNode] = useState<CanvasNode | null>(null);
   const [label, setLabel] = useState("");
   const [selectedTypeId, setSelectedTypeId] = useState<number>(1);
   const [nodeTypes, setNodeTypes] = useState<WorkflowNodeType[]>();
+
+  const { token } = useUser();
+  const router = useRouter();
+
+  const handleDeleteNode = useCallback(
+    async (nodeId: number) => {
+      const success = await deleteWorkflowNode(workflow.id, nodeId, token);
+      if (success) {
+        router.refresh();
+      }
+    },
+    [workflow.id, token, router],
+  );
+
+  const handleLinkNodes = useCallback(
+    async (parent_id: number, child_id: number) => {
+      const link = await createWorkflowLink(
+        workflow.id,
+        { parent_id, child_id },
+        token,
+      );
+      if (link) {
+        router.refresh();
+      }
+    },
+    [workflow.id, token, router],
+  );
+
+  const handleEditNodeMetadata = useCallback((node: CanvasNode) => {
+    setEditingNode(node);
+  }, []);
+
+  const [editingLink, setEditingLink] = useState<WorkflowNodeLink | null>(null);
+
+  const handleEditLink = useCallback((link: WorkflowNodeLink) => {
+    setEditingLink(link);
+  }, []);
+
+  const handleDeleteLink = useCallback(
+    async (linkId: number) => {
+      await deleteWorkflowLink(workflow.id, linkId, token);
+      router.refresh();
+    },
+    [workflow.id, token, router],
+  );
 
   useEffect(() => {
     if (!nodeTypes) {
@@ -38,13 +92,11 @@ export default function ClientSidePage({ workflow }: Props) {
     }
   }, [nodeTypes]);
 
-  const { token } = useUser();
-  const router = useRouter();
-
   // Sync state when server props update via router.refresh()
   useEffect(() => {
-    setNodes(workflow.nodes);
-  }, [workflow.nodes]);
+    setNodes(workflow.nodes || []);
+    setLinks(workflow.links || []);
+  }, [workflow.nodes, workflow.links]);
 
   const handleCreateNode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,20 +179,13 @@ export default function ClientSidePage({ workflow }: Props) {
           >
             {hasNodes ? (
               <WorkflowCanvas
-                data={nodes}
-                onLinkNodes={async (parent_id, child_id) => {
-                  const link = await createWorkflowLink(
-                    workflow.id,
-                    { parent_id, child_id },
-                    token,
-                  );
-                  if (link) {
-                    router.refresh();
-                  }
-                }}
-                onEditNodeMetadata={(node) => {
-                  setEditingNode(node);
-                }}
+                nodes={nodes}
+                links={links}
+                onDeleteNode={handleDeleteNode}
+                onLinkNodes={handleLinkNodes}
+                onEditNodeMetadata={handleEditNodeMetadata}
+                onEditLink={handleEditLink}
+                onDeleteLink={handleDeleteLink}
               />
             ) : (
               <div
@@ -325,6 +370,17 @@ export default function ClientSidePage({ workflow }: Props) {
           token={token}
           onClose={() => setEditingNode(null)}
           onSaved={() => router.refresh()}
+        />
+      )}
+
+      {/* EDIT LINK DATA MODAL */}
+      {editingLink && (
+        <EditLinkModal
+          link={editingLink}
+          token={token}
+          onClose={() => setEditingLink(null)}
+          onSaved={() => router.refresh()}
+          onDeleteLink={handleDeleteLink}
         />
       )}
     </div>

@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import * as d3 from "d3";
-import { WorkflowNode } from "@/app/types";
+import { WorkflowNode, WorkflowNodeLink } from "@/app/types";
 
 import {
   CanvasNode,
@@ -18,15 +18,23 @@ import {
 } from "./WorkflowHelpers";
 
 interface WorkflowCanvasProps {
-  data: WorkflowNode[];
+  nodes: WorkflowNode[];
+  links: WorkflowNodeLink[];
+  onDeleteNode?: (nodeId: number) => Promise<void>;
   onLinkNodes?: (parentId: number, childId: number) => Promise<void>;
   onEditNodeMetadata?: (node: CanvasNode) => void;
+  onEditLink?: (link: WorkflowNodeLink) => void;
+  onDeleteLink?: (linkId: number) => Promise<void>;
 }
 
 export function WorkflowCanvas({
-  data = [],
+  nodes = [],
+  links = [],
+  onDeleteNode,
   onLinkNodes,
   onEditNodeMetadata,
+  onEditLink,
+  onDeleteLink,
 }: WorkflowCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [totalNodeCount, setTotalNodeCount] = useState<number>(0);
@@ -34,50 +42,54 @@ export function WorkflowCanvas({
   useEffect(() => {
     if (!svgRef.current) return;
 
-    const layout = processWorkflowLayout(data);
+    const layout = processWorkflowLayout({ nodes, links });
+
     if (!layout) {
-      setTotalNodeCount(0);
+      if (totalNodeCount !== 0) {
+        setTotalNodeCount(0);
+      }
       d3.select(svgRef.current).selectAll("*").remove();
       return;
     }
 
     const { realNodes, primaryLinks, crossLinks, d3NodeMap } = layout;
-    setTotalNodeCount(realNodes.length);
+    if (totalNodeCount !== realNodes.length) {
+      setTotalNodeCount(realNodes.length);
+    }
 
-    // Setup viewport & zoom
     const { zoomGroup } = setupCanvasZoom(svgRef.current);
 
-    // Render Link Layers
     const primarySelection = renderPrimaryLinks(
       zoomGroup,
       primaryLinks,
       d3NodeMap,
+      onEditLink,
+      onDeleteLink,
     );
     const secondarySelection = renderSecondaryLinks(
       zoomGroup,
       crossLinks,
       d3NodeMap,
+      onEditLink,
+      onDeleteLink,
     );
 
-    // Dynamic drag line for drawing connections
     const dragLine = renderDragLine(zoomGroup);
 
-    // Node Drag Behavior
     const nodeDragBehavior = createNodeDragBehavior(
       primarySelection,
       secondarySelection,
       d3NodeMap,
     );
 
-    // Render Nodes with edit button listener
     const nodeSelection = renderNodes(
       zoomGroup,
       realNodes,
       nodeDragBehavior,
       onEditNodeMetadata,
+      onDeleteNode,
     );
 
-    // Handle Drag Behavior
     const connectorDragBehavior = createConnectorHandleDragBehavior(
       zoomGroup,
       dragLine,
@@ -87,15 +99,24 @@ export function WorkflowCanvas({
 
     // Render Bottom Green Connector Handles
     renderConnectorHandles(nodeSelection, connectorDragBehavior);
-  }, [data, onLinkNodes, onEditNodeMetadata]);
+  }, [
+    nodes,
+    links,
+    onDeleteNode,
+    onLinkNodes,
+    onEditNodeMetadata,
+    onEditLink,
+    onDeleteLink,
+    totalNodeCount,
+  ]);
 
   return (
     <div className="w-full flex flex-col gap-2">
       <div className="text-xs font-semibold text-slate-600 px-2 flex items-center justify-between">
         <span>Showing {totalNodeCount} nodes across workflow</span>
         <span className="text-slate-400 font-normal">
-          Drag nodes to arrange layout • Tap ✏️ to edit metadata • Drag green
-          bottom dots to connect nodes
+          Drag nodes to arrange layout • Tap ✏️ to edit metadata • Click links
+          to edit/delete
         </span>
       </div>
       <svg

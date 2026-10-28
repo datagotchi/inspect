@@ -41,7 +41,8 @@ export const getWorkflow = async (
         id,
         user_id: userId,
       })
-      .modify("withFullGraph");
+      .withGraphFetched("[nodes.[nodeType, metadata], links]");
+    // .modify("withFullGraph"); // TODO: this never loads; find out what field/relation is breaking it
 
     if (!workflow) return null;
 
