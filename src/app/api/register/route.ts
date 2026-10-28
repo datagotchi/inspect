@@ -52,12 +52,16 @@ const isUniqueEmailError = (error: unknown): boolean => {
   return false;
 };
 
-const toPublicUser = (user: UserLibSqlModel, token: string): User => {
+const toPublicUser = (
+  user: UserLibSqlModel,
+  token: string,
+  username: string,
+): User => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { password: _password, ...safeUser } = user;
   return {
     id: safeUser.id,
-    username: safeUser.username,
+    username: safeUser.username || username,
     email: safeUser.email,
     token,
     enable_email_notifications: Boolean(
@@ -114,26 +118,27 @@ export async function POST(
         Number((postgresMax as { maxId?: number } | undefined)?.maxId || 0),
       ) + 1;
 
+    // Omit username from SQLite insert to prevent SQLITE_ERROR
     createdSqliteUser = (await UserLibSqlModel.query().insert({
       id: nextId,
-      username: trimmedUsername,
       email: normalizedEmail,
       password: encryptedPassword,
     })) as UserLibSqlModel;
 
-    // Postgres users.password is NOT NULL — keep both stores in sync.
+    // Postgres users table supports username
     await UserPostgresModel.query().insert({
       id: createdSqliteUser.id,
-      username: createdSqliteUser.username,
+      username: trimmedUsername,
       email: createdSqliteUser.email,
       password: encryptedPassword,
     } as Partial<UserPostgresModel>);
 
     const token = await createSession(createdSqliteUser);
 
-    return NextResponse.json(toPublicUser(createdSqliteUser, token), {
-      status: 201,
-    });
+    return NextResponse.json(
+      toPublicUser(createdSqliteUser, token, trimmedUsername),
+      { status: 201 },
+    );
   } catch (error) {
     if (createdSqliteUser?.id) {
       try {

@@ -10,7 +10,7 @@ export class UserLibSqlModel extends LibSqlBaseModel implements User {
   static tableName = "users";
 
   id?: number;
-  username!: string;
+  username?: string;
   email!: string;
   password?: string;
   passwordResetKey?: string | null;
@@ -18,11 +18,13 @@ export class UserLibSqlModel extends LibSqlBaseModel implements User {
 
   static jsonSchema = {
     type: "object",
-    required: ["username", "email"],
+    // Omit 'username' from required so SQLite inserts can omit the username column
+    required: ["email", "password"],
     properties: {
       id: { type: "integer" },
       username: { type: "string" },
       email: { type: "string" },
+      password: { type: "string" },
       passwordResetKey: { type: ["string", "null"] },
     },
   };
@@ -32,12 +34,6 @@ export class UserLibSqlModel extends LibSqlBaseModel implements User {
       builder.select("users.id", "users.username", "users.avatar_uri");
     },
   };
-
-  // static get relationMappings() {
-  //   return {
-  //     // followers: {from: id, to: user_id },
-  //   };
-  // }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static query(...args: any[]) {
@@ -59,7 +55,7 @@ export class UserPostgresModel extends PostgresBaseModel implements User {
 
   static jsonSchema = {
     type: "object",
-    required: ["id", "username", "email"],
+    required: ["id", "username", "email", "password"],
     properties: {
       id: { type: "integer" },
       username: { type: "string" },

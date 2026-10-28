@@ -1,7 +1,3 @@
-import {
-  RegisterPostRouteRequestBody,
-  RegisterPostRouteResponse,
-} from "../api/register/route";
 import { User } from "../types";
 
 type RegisterInput = {
@@ -10,9 +6,7 @@ type RegisterInput = {
   password: string;
 };
 
-export async function handleRegister(
-  input: RegisterInput,
-): Promise<User | undefined> {
+export async function handleRegister(input: RegisterInput): Promise<User> {
   const email = input.email.trim();
   const username = input.username.trim();
   const password = input.password.trim();
@@ -21,35 +15,30 @@ export async function handleRegister(
     throw new Error("Please fill out all fields");
   }
 
-  const formObject: Awaited<RegisterPostRouteRequestBody> = {
+  const payload = {
     enable_email_notifications: false,
     username,
     email,
     password,
   };
 
-  try {
-    const response = (await fetch("/api/register", {
-      method: "POST",
-      body: JSON.stringify(formObject),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })) as RegisterPostRouteResponse;
+  const response = await fetch("/api/register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
 
-    if (response.status === 201) {
-      return await response.json();
-    }
+  const data = await response.json();
 
-    const errorData = await response.json();
+  if (!response.ok) {
     throw new Error(
-      errorData.message ||
+      data.message ||
         `Registration failed: ${response.status} ${response.statusText}`,
     );
-  } catch (error) {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error("Network error during registration");
   }
+
+  return data as User;
 }

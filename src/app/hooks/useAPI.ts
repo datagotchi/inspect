@@ -12,19 +12,19 @@ const useAPI = (cookieUser: CookieUser) => {
     return user;
   };
 
-  const register = async (email: string, password: string) =>
-    fetch("/api/users/register", {
+  const register = async (email: string, password: string, username?: string) =>
+    fetch("/api/register", {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, username }),
     })
       .then((response) => response.json())
       .then((data) => {
-        if (data.error) {
-          throw new Error(data.error);
+        if (data.error || data.message) {
+          throw new Error(data.error || data.message);
         }
         return data;
       })

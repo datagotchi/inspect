@@ -20,8 +20,8 @@ export type Follower = {
 };
 
 export type User = {
-  id?: number; // TODO: replace id? fields with base types without ID for creation & then plain types with id
-  username: string;
+  id?: number;
+  username?: string;
   email: string;
   avatar_uri?: string;
   token?: string;
