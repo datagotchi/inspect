@@ -66,6 +66,82 @@ export default function ClientSidePage({ workflow }: Props) {
     return workflow.links || [];
   });
 
+  // Export directly from local storage / current state
+  const handleExportModel = () => {
+    const existingDraft = localStorage.getItem(STORAGE_KEY);
+
+    const exportData = existingDraft
+      ? JSON.parse(existingDraft)
+      : {
+          workflowId: workflow.id,
+          nodes,
+          links,
+          lastSaved: new Date().toISOString(),
+        };
+
+    // Attach metadata wrapper if needed
+    const filePayload = {
+      version: "1.0",
+      exportedAt: new Date().toISOString(),
+      ...exportData,
+    };
+
+    const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+      JSON.stringify(filePayload, null, 2),
+    )}`;
+
+    const downloadAnchor = document.createElement("a");
+    const fileName = `${(workflow.name || "workflow")
+      .toLowerCase()
+      .replace(/\s+/g, "_")}_${workflow.id}.jaw.json`;
+
+    downloadAnchor.setAttribute("href", jsonString);
+    downloadAnchor.setAttribute("download", fileName);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  // Import by updating local storage directly, then updating React state
+  const handleImportModel = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const fileReader = new FileReader();
+    fileReader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const parsed = JSON.parse(content);
+
+        const importedNodes = parsed.nodes || [];
+        const importedLinks = parsed.links || [];
+
+        // 1. Direct write to localStorage draft
+        const draftData = {
+          workflowId: workflow.id,
+          nodes: importedNodes,
+          links: importedLinks,
+          lastSaved: new Date().toISOString(),
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(draftData));
+
+        // 2. Hydrate React state—our existing hooks handle everything else!
+        setNodes(importedNodes);
+        setLinks(importedLinks);
+
+        alert(
+          `Successfully imported JAW model (${importedNodes.length} nodes)!`,
+        );
+      } catch (err) {
+        console.error("Failed to parse JAW model JSON:", err);
+        alert("Error importing file. Please check that it is valid JSON.");
+      }
+    };
+
+    fileReader.readAsText(file);
+    event.target.value = ""; // Reset input
+  };
+
   // auto-save to local storage effect
   useEffect(() => {
     const draftData = {
@@ -209,7 +285,34 @@ export default function ClientSidePage({ workflow }: Props) {
                 </p>
               </div>
 
-              <div style={{ display: "flex", gap: "var(--spacing-2)" }}>
+              <div style={{ display: "flex", gap: "var(--spacing-2, 8px)" }}>
+                {/* EXPORT JAW BUTTON */}
+                <button
+                  onClick={handleExportModel}
+                  className={cardStyles.addButton}
+                  title="Export Workflow to .jaw.json"
+                >
+                  <span className={cardStyles.addButtonIcon}>📥</span>
+                  <span className={cardStyles.addButtonText}>Export JAW</span>
+                </button>
+
+                {/* IMPORT JAW BUTTON */}
+                <label
+                  className={cardStyles.addButton}
+                  style={{ cursor: "pointer" }}
+                  title="Import Workflow from .jaw.json"
+                >
+                  <span className={cardStyles.addButtonIcon}>📤</span>
+                  <span className={cardStyles.addButtonText}>Import JAW</span>
+                  <input
+                    type="file"
+                    accept=".json,.jaw.json"
+                    onChange={handleImportModel}
+                    style={{ display: "none" }}
+                  />
+                </label>
+
+                {/* CREATE NEW NODE BUTTON */}
                 <button
                   onClick={() => setIsModalOpen(true)}
                   disabled={isCreating}
