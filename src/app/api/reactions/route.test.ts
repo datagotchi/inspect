@@ -9,7 +9,6 @@ import { ReactionModel } from "../models/reactions";
 import { POST } from "./route";
 import { getAuthUser } from "../../functions";
 
-jest.mock("../functions");
 jest.mock("next/headers", () => ({
   headers: jest.fn(),
 }));

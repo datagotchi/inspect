@@ -3,7 +3,7 @@ import { cookies, headers } from "next/headers";
 
 import { getInsights } from "./functions";
 import ClientSidePage from "./ClientSidePage";
-import { getUserFromServer } from "../api/functions";
+import { getUserFromServer } from "../OJS-SSR-functions";
 import { getAuthUser } from "../functions";
 
 const InsightsPage = async (): Promise<React.JSX.Element> => {
@@ -12,9 +12,7 @@ const InsightsPage = async (): Promise<React.JSX.Element> => {
   const token = tokenCookie ? tokenCookie.value : undefined;
 
   const authUser = await getAuthUser(headers);
-  const currentUser = authUser
-    ? await getUserFromServer(origin, { id: authUser.id! }, token)
-    : null;
+  const currentUser = authUser ? await getUserFromServer(authUser.id!) : null;
 
   const insightSearchParams = new URLSearchParams(
     "offset=0&limit=20&parents=true&children=true&evidence=true",

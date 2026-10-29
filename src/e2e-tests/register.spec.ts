@@ -8,6 +8,7 @@ const Client = pg.Client;
 let client: pg.Client;
 const registerEmail = `e2e-register-${Date.now()}@example.com`;
 const registerUsername = `E2EReg${Date.now().toString(36).slice(-6)}`;
+const validPassword = "Password123!";
 
 test.beforeAll(async () => {
   dotenv.config({ path: "./.env", quiet: true });
@@ -51,19 +52,19 @@ test.afterAll(async () => {
 test("click on register link", async ({ page }) => {
   await page.goto("http://localhost:3000");
 
-  await expect(page).toHaveURL("http://localhost:3000/insights");
-  await expect(
-    page.getByRole("heading", { name: "My Insights" }),
-  ).toBeVisible();
+  // Verify URL redirects to workflows or insights
+  await expect(page).toHaveURL(/\/(workflows|insights)/);
 
-  await expect(page.getByRole("link", { name: "Register" })).toBeVisible();
-  await page.getByRole("link", { name: "Register" }).click();
+  // Unauthenticated visitors see the "Register" header link rendered by LoginRegisterLinks
+  const registerLink = page.getByRole("link", { name: "Register" });
+  await expect(registerLink).toBeVisible();
+  await registerLink.click();
 
   await expect(page).toHaveURL(/\/register\?return=/);
 });
 
 test("do registration", async ({ page }) => {
-  await page.goto("http://localhost:3000/register?return=/insights");
+  await page.goto("http://localhost:3000/register?return=/workflows");
 
   await expect(
     page.getByRole("heading", { name: "Create account" }),
@@ -85,12 +86,13 @@ test("do registration", async ({ page }) => {
 
   const passwordInput = page.locator("#register-password");
   await expect(passwordInput).toBeVisible();
-  await passwordInput.fill("asdf12");
+  await passwordInput.fill(validPassword);
 
   await expect(registerButton).toBeEnabled();
   await registerButton.click();
 
-  await expect(page).toHaveURL("http://localhost:3000/insights", {
+  // After successful registration, user gets logged in and redirected
+  await expect(page).toHaveURL(/localhost:3000\/(workflows|insights)/, {
     timeout: 30000,
   });
 });

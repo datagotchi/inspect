@@ -127,7 +127,7 @@ export const createLink = async (url: string, token: string): Promise<Link> => {
     try {
       source = await getSource({ baseurl: baseUrl }, token);
     } catch {
-      console.log("Source not found, creating new source:", baseUrl);
+      console.error("Source not found, creating new source:", baseUrl);
       try {
         source = await createSource(baseUrl, token);
       } catch (createError) {

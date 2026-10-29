@@ -20,8 +20,8 @@ export type Follower = {
 };
 
 export type User = {
-  id?: number; // TODO: replace id? fields with base types without ID for creation & then plain types with id
-  username: string;
+  id?: number;
+  username?: string;
   email: string;
   avatar_uri?: string;
   token?: string;
@@ -37,11 +37,12 @@ export type Fact = Indexable & {
   id?: number;
   uid?: string;
   title?: string;
-  reactions?: FactReaction[];
-  comments?: FactComment[];
-  evidence?: EvidenceRecord[];
+  parent_id?: number | null; // Direct parent reference
+  user_id?: number;
   created_at?: string;
   updated_at?: string;
+  reactions?: FactReaction[];
+  comments?: FactComment[];
 };
 
 export type Link = Fact & {
@@ -65,6 +66,15 @@ export type InsightEvidence = EvidenceRecord & {
   comments?: FactComment[];
   reactions?: FactReaction[];
   source: Source;
+};
+
+export type InsightLink = {
+  id?: number;
+  child_id: number;
+  parent_id: number;
+
+  parentInsight?: Insight;
+  childInsight?: Insight;
 };
 
 export type Insight = Fact & {
@@ -114,15 +124,6 @@ export type CommentSelectedText = {
 export type WithPartial<T, K extends keyof T> = Omit<T, K> &
   Partial<Pick<T, K>>;
 
-export type InsightLink = {
-  id?: number;
-  child_id: number;
-  parent_id: number;
-
-  parentInsight?: Insight;
-  childInsight?: Insight;
-};
-
 export type Field = {
   id?: number;
   name: string;
@@ -153,4 +154,65 @@ export type Session = {
   token: string;
   user_id: number;
   expires: Date | string;
+};
+
+export type Workflow = {
+  id: number;
+  name: string;
+  user: User;
+  nodes: WorkflowNode[];
+  links: WorkflowNodeLink[];
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type WorkflowNodeLink = {
+  id?: number;
+  child_id: number;
+  parent_id: number;
+  workflow_id: number;
+
+  parentNode?: WorkflowNode;
+  childNode?: WorkflowNode;
+  workflow?: Workflow;
+  metadata?: WorkflowLinkMetadataItem[];
+};
+
+export type WorkflowNode = {
+  id?: number;
+  workflow_id?: number;
+  node_type_id?: number;
+  label?: string;
+  type?: string;
+  x?: number;
+  y?: number;
+
+  workflow?: Workflow;
+  nodeType?: WorkflowNodeType;
+  parents?: WorkflowNodeLink[];
+  children?: WorkflowNodeLink[];
+  metadata?: WorkflowNodeMetadataItem[];
+};
+
+export type WorkflowNodeType = {
+  id?: number;
+  name: string;
+  icon: string;
+  bg_color: string;
+};
+
+type WorkflowItemMetadataItem = {
+  id?: number;
+  fieldname: string;
+  value: string;
+};
+
+export type WorkflowNodeMetadataItem = WorkflowItemMetadataItem & {
+  node_id: number;
+  node?: WorkflowNode;
+};
+
+export type WorkflowLinkMetadataItem = WorkflowItemMetadataItem & {
+  link_id: number;
+  link?: WorkflowNodeLink;
 };

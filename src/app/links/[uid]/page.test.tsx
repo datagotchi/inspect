@@ -2,9 +2,9 @@
  * @jest-environment node
  */
 import Linkpage, { generateMetadata } from "./page";
-import { getLinkFromServer, getUserFromServer } from "../../api/functions";
+import { getLinkFromServer, getUserFromServer } from "../../OJS-SSR-functions";
 
-jest.mock("../../api/functions");
+jest.mock("../../OJS-SSR-functions");
 jest.mock("next/headers", () => ({
   headers: jest.fn(() => ({
     get: jest.fn((key) => {
@@ -40,17 +40,8 @@ describe("Linkpage", () => {
       linkInput: mockLink,
       currentUser: mockUser,
     });
-    expect(mockGetLinkFromServer).toHaveBeenCalledWith(
-      "http://localhost",
-      "test-uid",
-    );
-    expect(mockGetUserFromServer).toHaveBeenCalledWith(
-      "http://localhost",
-      {
-        id: "123",
-      },
-      "test-token",
-    );
+    expect(mockGetLinkFromServer).toHaveBeenCalledWith("test-uid");
+    expect(mockGetUserFromServer).toHaveBeenCalledWith("123");
   });
 
   it("renders no summary message when link is not found", async () => {
@@ -87,10 +78,7 @@ describe("generateMetadata", () => {
         creator: "@bobstark",
       },
     });
-    expect(mockGetLinkFromServer).toHaveBeenCalledWith(
-      "http://localhost",
-      "test-uid",
-    );
+    expect(mockGetLinkFromServer).toHaveBeenCalledWith("test-uid");
   });
 
   it("returns undefined metadata when link is not found", async () => {
@@ -103,9 +91,6 @@ describe("generateMetadata", () => {
     });
 
     expect(metadata).toBeUndefined();
-    expect(mockGetLinkFromServer).toHaveBeenCalledWith(
-      "http://localhost",
-      "test-uid",
-    );
+    expect(mockGetLinkFromServer).toHaveBeenCalledWith("test-uid");
   });
 });

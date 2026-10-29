@@ -29,10 +29,11 @@ if (!global.knexInstance || process.env.NODE_ENV === "development") {
   Model.knex(knexInstance);
 
   global.knexInstance = knexInstance;
-  console.log("Database connection initialized and bound to Objection.js.");
+  console.info("Database connection initialized and bound to Objection.js.");
 } else {
+  // TODO: this never happens just about... why???
   knexInstance = global.knexInstance;
-  console.log("Using existing database connection.");
+  console.info("Using existing database connection.");
 }
 
 export default knexInstance;

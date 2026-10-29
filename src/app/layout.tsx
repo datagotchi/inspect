@@ -63,8 +63,11 @@ const Dashboard = async ({ children }: Props): Promise<React.JSX.Element> => {
 
               {loggedIn && (
                 <nav className="inspect-nav" aria-label="Primary">
-                  <Link href="/insights" className="inspect-nav__link">
-                    Insights
+                  <Link href="/insights" className="inspect-nav-link">
+                    My Insights
+                  </Link>
+                  <Link href="/workflows" className="inspect-nav-link">
+                    My Workflows
                   </Link>
                 </nav>
               )}

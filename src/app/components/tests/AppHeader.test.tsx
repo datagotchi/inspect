@@ -44,7 +44,7 @@ describe("AppHeader", () => {
     expect(datagotchiLogo).toBeInTheDocument();
     await expect(datagotchiLogo.closest("a")).toHaveAttribute(
       "href",
-      "https://datagotchi.net",
+      "https://github.com/datagotchi/inspect",
     );
   });
 });
