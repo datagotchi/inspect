@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server.js";
+import { NextRequest, NextResponse } from "next/server";
 import { raw } from "objection";
-
-import { FieldModel } from "../models/Fields";
+// 1. Updated import to point to the consolidated models file
+import { FieldModel } from "@/app/api/models/fieldnotes";
 
 export type GetFieldsResponse = NextResponse<
   FieldModel[] | { statusText: string }
@@ -12,20 +12,29 @@ export async function GET(req: NextRequest): Promise<GetFieldsResponse> {
     const searchParams = req.nextUrl.searchParams;
     const user_id = searchParams.get("user_id");
 
+    // 2. Wrap user_id filter in a grouped condition so orWhereNull applies correctly
     const fields = await FieldModel.query()
       .select(
         "fields.id",
         "fields.name",
+        "fields.user_id",
         raw("count(field_values.id) as use_count"),
       )
       .leftJoin("field_values", "fields.id", "field_values.field_id")
-      .where("fields.user_id", user_id)
-      .orWhereNull("fields.user_id")
-      .groupBy("fields.id", "fields.name")
+      .where((builder) => {
+        if (user_id) {
+          builder
+            .where("fields.user_id", user_id)
+            .orWhereNull("fields.user_id");
+        } else {
+          builder.whereNull("fields.user_id");
+        }
+      })
+      .groupBy("fields.id", "fields.name", "fields.user_id")
       .orderBy("use_count", "desc")
       .orderBy("fields.name", "asc");
 
-    return NextResponse.json(fields);
+    return NextResponse.json(fields as unknown as FieldModel[]);
   } catch (err) {
     console.error("Error in GET /api/fieldnotes/fields:", err);
     return NextResponse.json(
@@ -61,7 +70,7 @@ export async function POST(req: NextRequest): Promise<PostFieldsResponse> {
       );
     }
   } catch (err) {
-    console.error("Error in POST /syndicates/fieldnotes/fields:", err);
+    console.error("Error in POST /api/fieldnotes/fields:", err);
     return NextResponse.json(
       {
         statusText: "Internal server error while creating field",

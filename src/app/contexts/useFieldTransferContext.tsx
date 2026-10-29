@@ -108,7 +108,7 @@ export const FieldTransferProvider = ({ children }: Props) => {
               );
               setUpdatedNote({
                 ...apiResponseNote,
-                datetime: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
               });
 
               setFieldDefinitions(

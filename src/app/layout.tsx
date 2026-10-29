@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { CookiesProvider } from "next-client-cookies/server";
 import Image from "next/image";
 import Link from "next/link";
-import Script from "next/script";
 
 import "../styles/index.css";
 import LoginRegisterLinks from "./components/LoginRegisterLinks";
@@ -36,15 +35,21 @@ const Dashboard = async ({ children }: Props): Promise<React.JSX.Element> => {
   const loggedIn = !!tokenCookie;
 
   return (
-    <html lang="en" data-theme="light" suppressHydrationWarning>
+    <html
+      lang="en"
+      data-theme="light"
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
       <head>
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
-        <Script id="inspect-theme-boot" strategy="beforeInteractive">
-          {themeBootScript}
-        </Script>
+        <script
+          id="inspect-theme-boot"
+          dangerouslySetInnerHTML={{ __html: themeBootScript }}
+        />
       </head>
       <body>
         <BootstrapClient />
