@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { FieldModel, FieldValueModel } from "@/app/api/models/fieldnotes";
+import { FieldModel } from "@/app/api/models/fieldnotes";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -24,10 +24,10 @@ export async function DELETE(
     const user_id = 1;
 
     // Optional: Clean up associated field values prior to deleting the field definition
-    await FieldValueModel.query()
-      .delete()
-      .where("field_id", fieldId)
-      .andWhere("user_id", user_id);
+    // await FieldValueModel.query()
+    //   .delete()
+    //   .where("field_id", fieldId)
+    //   .andWhere("user_id", user_id);
 
     const deletedCount = await FieldModel.query()
       .delete()

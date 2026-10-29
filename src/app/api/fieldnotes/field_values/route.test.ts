@@ -4,8 +4,7 @@
 
 import { NextRequest } from "next/server";
 import { POST } from "./route";
-import { PATCH, DELETE } from "./[id]/route";
-import { FieldValueModel, FieldValueModel } from "@/app/api/models/fieldnotes";
+import { FieldValueModel } from "@/app/api/models/fieldnotes";
 import { getAuthUser } from "../../../functions";
 
 jest.mock("../../../functions", () => ({

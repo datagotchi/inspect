@@ -1,8 +1,52 @@
+/**
+ * @jest-environment node
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
 import { NoteModel, FieldValueModel } from "@/app/api/models/fieldnotes";
 import { getAuthUser } from "@/app/functions";
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const authUser = await getAuthUser(headers);
+    if (!authUser || !authUser.id) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const noteId = parseInt(id, 10);
+
+    // Clean up associated field values first
+    // await FieldValueModel.query()
+    //   .delete()
+    //   .where({ note_id: noteId, user_id: authUser.id });
+
+    // Delete the note record
+    const deletedCount = await NoteModel.query()
+      .deleteById(noteId)
+      .where("user_id", authUser.id);
+
+    if (deletedCount === 0) {
+      return NextResponse.json(
+        { error: "Note not found or unauthorized" },
+        { status: 404 },
+      );
+    }
+
+    return new NextResponse(null, { status: 204 });
+  } catch (err) {
+    console.error("Error in DELETE /api/fieldnotes/notes/[id]:", err);
+    return NextResponse.json(
+      { statusText: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
 
 export async function PATCH(
   req: NextRequest,
@@ -64,46 +108,6 @@ export async function PATCH(
     console.error("Error in PATCH /api/fieldnotes/notes/[id]:", err);
     return NextResponse.json(
       { statusText: "Internal server error while updating note" },
-      { status: 500 },
-    );
-  }
-}
-
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const authUser = await getAuthUser(headers);
-    if (!authUser || !authUser.id) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
-    const { id } = await params;
-    const noteId = parseInt(id, 10);
-
-    // Clean up associated field values first
-    await FieldValueModel.query()
-      .delete()
-      .where({ note_id: noteId, user_id: authUser.id });
-
-    // Delete the note record
-    const deletedCount = await NoteModel.query()
-      .deleteById(noteId)
-      .where("user_id", authUser.id);
-
-    if (deletedCount === 0) {
-      return NextResponse.json(
-        { error: "Note not found or unauthorized" },
-        { status: 404 },
-      );
-    }
-
-    return new NextResponse(null, { status: 204 });
-  } catch (err) {
-    console.error("Error in DELETE /api/fieldnotes/notes/[id]:", err);
-    return NextResponse.json(
-      { statusText: "Internal server error" },
       { status: 500 },
     );
   }
