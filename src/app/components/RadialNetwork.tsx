@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as d3 from "d3";
-import { Fact, Insight, InsightEvidence, InsightLink } from "../types";
+import { Fact, Insight, InsightLink } from "../types";
 import styles from "../../styles/components/network.module.css";
 
 interface CrossLink {

@@ -1,4 +1,4 @@
-import { JSONSchema, Model, QueryBuilder } from "objection";
+import { Model, QueryBuilder } from "objection";
 import "../postgres";
 import { PostgresBaseModel } from "./postgres_models";
 import {

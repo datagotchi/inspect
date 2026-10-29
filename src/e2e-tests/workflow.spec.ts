@@ -7,7 +7,7 @@ import { encodeStringURI } from "../app/hooks/functions";
 
 let client: pg.Client;
 let token: string;
-let userId: number;
+// let userId: number;
 
 test.describe("Workflow Canvas & JAW Import/Export E2E Suite", () => {
   test.beforeAll(async ({ request }) => {
@@ -21,11 +21,11 @@ test.describe("Workflow Canvas & JAW Import/Export E2E Suite", () => {
     });
     await client.connect();
 
-    const userRes = await client.query(
-      "SELECT id FROM users WHERE email = $1::text",
-      [email],
-    );
-    userId = userRes.rows[0]?.id;
+    // const userRes = await client.query(
+    //   "SELECT id FROM users WHERE email = $1::text",
+    //   [email],
+    // );
+    // userId = userRes.rows[0]?.id;
 
     const response = await request.post("http://localhost:3000/api/login", {
       data: { email, password },
@@ -34,7 +34,7 @@ test.describe("Workflow Canvas & JAW Import/Export E2E Suite", () => {
     token = json.token;
   });
 
-  test.beforeEach(async ({ context, page }) => {
+  test.beforeEach(async ({ context }) => {
     await context.addCookies([
       {
         name: "token",

@@ -111,6 +111,7 @@ export function WorkflowCanvas({
     onEditLink,
     onDeleteLink,
     totalNodeCount,
+    onNodeDragEnd,
   ]);
 
   return (

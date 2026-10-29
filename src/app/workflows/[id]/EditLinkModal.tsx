@@ -149,14 +149,14 @@ const modalContentStyle: React.CSSProperties = {
   boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
 };
 
-const modalActionsRightStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: "8px",
-  marginTop: "16px",
-  paddingTop: "16px",
-  borderTop: "1px solid #e2e8f0",
-};
+// const modalActionsRightStyle: React.CSSProperties = {
+//   display: "flex",
+//   justifyContent: "flex-end",
+//   gap: "8px",
+//   marginTop: "16px",
+//   paddingTop: "16px",
+//   borderTop: "1px solid #e2e8f0",
+// };
 
 const modalActionsSplitStyle: React.CSSProperties = {
   display: "flex",

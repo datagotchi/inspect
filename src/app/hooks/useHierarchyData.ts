@@ -6,6 +6,7 @@ export function useHierarchyData(data: Fact[]) {
     if (!data || data.length === 0)
       return { syntheticRoot: null, crossLinks: [] };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const nodeMap = new Map<number, Fact & { childrenNodes: any[] }>();
     data.forEach((item) => {
       if (item.id) nodeMap.set(item.id, { ...item, childrenNodes: [] });
