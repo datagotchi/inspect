@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { NoteModel, FieldValueModel } from "@/app/api/models/fieldnotes";
+
+import { FieldValueModel } from "@/app/api/models/fieldnotes";
 import { getAuthUser } from "@/app/functions";
 
 export async function PATCH(
@@ -14,48 +15,37 @@ export async function PATCH(
     }
 
     const { id } = await context.params;
-    const noteId = parseInt(id, 10);
+    const fieldValueId = parseInt(id, 10);
     const body = await req.json();
-    const { text, field_values } = body;
+    const { value, field_id } = body;
 
-    // 1. Update text if provided (updated_at is handled via $beforeUpdate hook)
-    if (text !== undefined) {
-      await NoteModel.query()
-        .patch({ text } as Partial<NoteModel>)
-        .where({ id: noteId, user_id: authUser.id });
+    const allowedUpdates: Partial<FieldValueModel> = {};
+    if (value !== undefined) allowedUpdates.value = value;
+    if (field_id !== undefined) allowedUpdates.field_id = field_id;
+
+    if (Object.keys(allowedUpdates).length > 0) {
+      await FieldValueModel.query()
+        .patch(allowedUpdates)
+        .where({ id: fieldValueId, user_id: authUser.id });
     }
 
-    // 2. Update field values if provided
-    if (Array.isArray(field_values)) {
-      // Remove existing field values and re-insert
-      await FieldValueModel.query().delete().where({ note_id: noteId });
+    const updatedFieldValue = await FieldValueModel.query()
+      .findById(fieldValueId)
+      .where("user_id", authUser.id)
+      .withGraphFetched("field");
 
-      for (const fv of field_values) {
-        if (fv.field_id && fv.value) {
-          await FieldValueModel.query().insert({
-            note_id: noteId,
-            field_id: fv.field_id,
-            value: fv.value,
-            user_id: authUser.id,
-          } as Partial<FieldValueModel>);
-        }
-      }
+    if (!updatedFieldValue) {
+      return NextResponse.json(
+        { error: "Field value not found" },
+        { status: 404 },
+      );
     }
 
-    // 3. Return updated note graph
-    const updatedNote = await NoteModel.query()
-      .findById(noteId)
-      .withGraphFetched("field_values.field");
-
-    if (!updatedNote) {
-      return NextResponse.json({ error: "Note not found" }, { status: 404 });
-    }
-
-    return NextResponse.json(updatedNote);
+    return NextResponse.json(updatedFieldValue);
   } catch (err) {
-    console.error("Error in PATCH /api/fieldnotes/notes/[id]:", err);
+    console.error("Error in PATCH /api/fieldnotes/field_values/[id]:", err);
     return NextResponse.json(
-      { statusText: "Internal server error while updating note" },
+      { statusText: "Internal server error while updating field value" },
       { status: 500 },
     );
   }
@@ -72,18 +62,24 @@ export async function DELETE(
     }
 
     const { id } = await context.params;
-    const noteId = parseInt(id, 10);
+    const fieldValueId = parseInt(id, 10);
 
-    // Delete associated field values first
-    await FieldValueModel.query().delete().where({ note_id: noteId });
-    // Delete note
-    await NoteModel.query().deleteById(noteId).where("user_id", authUser.id);
+    const deletedCount = await FieldValueModel.query()
+      .deleteById(fieldValueId)
+      .where("user_id", authUser.id);
+
+    if (deletedCount === 0) {
+      return NextResponse.json(
+        { error: "Field value not found or unauthorized" },
+        { status: 404 },
+      );
+    }
 
     return new NextResponse(null, { status: 204 });
   } catch (err) {
-    console.error("Error in DELETE /api/fieldnotes/notes/[id]:", err);
+    console.error("Error in DELETE /api/fieldnotes/field_values/[id]:", err);
     return NextResponse.json(
-      { statusText: "Internal server error while deleting note" },
+      { statusText: "Internal server error while deleting field value" },
       { status: 500 },
     );
   }

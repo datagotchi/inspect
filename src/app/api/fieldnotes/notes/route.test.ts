@@ -6,10 +6,10 @@ import { NextRequest } from "next/server";
 
 import { GET, POST } from "./route";
 import { PATCH, DELETE } from "./[id]/route";
-import { NoteModel } from "../models/notes";
+import { NoteModel } from "@/app/api/models/fieldnotes";
 import * as AppFunctions from "../../../functions";
 
-jest.mock("../models/notes", () => {
+jest.mock("@/app/api/models/fieldnotes", () => {
   const mockQueryBuilder = {
     insertAndFetch: jest.fn(),
     patch: jest.fn().mockReturnThis(),

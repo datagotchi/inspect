@@ -2,12 +2,12 @@
  * @jest-environment node
  */
 
-import { FieldModel } from "../models/Fields";
+import { FieldModel } from "@/app/api/models/fieldnotes";
 import { GET, POST } from "./route";
 import { DELETE } from "./[id]/route";
 import { NextRequest } from "next/server";
 
-jest.mock("../models/Fields", () => {
+jest.mock("@/app/api/models/fieldnotes", () => {
   const mockQueryBuilder = {
     select: jest.fn().mockReturnThis(),
     leftJoin: jest.fn().mockReturnThis(),
@@ -115,7 +115,7 @@ describe("fieldnotes/fields routes", () => {
         },
       } as unknown as NextRequest;
 
-      const res = await DELETE(req);
+      const res = await DELETE(req, { params: Promise.resolve({ id: "2" }) });
 
       expect(FieldModel.query().delete).toHaveBeenCalled();
       expect(FieldModel.query().where).toHaveBeenCalledWith("id", "1");
