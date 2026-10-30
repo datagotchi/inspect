@@ -140,7 +140,8 @@ export type Note = {
   id?: number;
   text: string;
   field_values?: (FieldValue & Field)[];
-  datetime?: string;
+  created_at?: string;
+  updated_at?: string;
   emoji?: string;
 };
 

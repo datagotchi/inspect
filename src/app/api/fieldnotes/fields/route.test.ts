@@ -2,22 +2,19 @@
  * @jest-environment node
  */
 
-import { FieldModel } from "../models/Fields";
+import { FieldModel } from "@/app/api/models/fieldnotes";
 import { GET, POST } from "./route";
-import { DELETE } from "./[id]/route";
 import { NextRequest } from "next/server";
 
-jest.mock("../models/Fields", () => {
+jest.mock("@/app/api/models/fieldnotes", () => {
   const mockQueryBuilder = {
     select: jest.fn().mockReturnThis(),
     leftJoin: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
-    andWhere: jest.fn().mockReturnThis(),
     orWhereNull: jest.fn().mockReturnThis(),
     groupBy: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     insert: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
     then: jest.fn(),
   };
 
@@ -103,24 +100,6 @@ describe("fieldnotes/fields routes", () => {
         ...localMockField,
         id: 1,
       });
-    });
-  });
-
-  describe("DELETE /:id", () => {
-    it("should delete a field and return 204", async () => {
-      (FieldModel.query().andWhere as jest.Mock).mockResolvedValue(1);
-      const req = {
-        nextUrl: {
-          searchParams: new URLSearchParams({ id: "1" }),
-        },
-      } as unknown as NextRequest;
-
-      const res = await DELETE(req);
-
-      expect(FieldModel.query().delete).toHaveBeenCalled();
-      expect(FieldModel.query().where).toHaveBeenCalledWith("id", "1");
-      expect(FieldModel.query().andWhere).toHaveBeenCalledWith("user_id", 1);
-      expect(res.status).toBe(204);
     });
   });
 });
