@@ -8,6 +8,40 @@ import { headers } from "next/headers";
 import { NoteModel, FieldValueModel } from "@/app/api/models/fieldnotes";
 import { getAuthUser } from "@/app/functions";
 
+interface RouteParams {
+  params: Promise<{ id: string }>;
+}
+
+export async function GET(
+  req: NextRequest,
+  { params }: RouteParams,
+): Promise<NextResponse<NoteModel | { statusText: string }>> {
+  try {
+    const authUser = await getAuthUser(headers);
+    if (!authUser) {
+      return NextResponse.json({ statusText: "Unauthorized" }, { status: 401 });
+    }
+
+    const noteId = parseInt((await params).id);
+
+    const note = await NoteModel.query()
+      .findById(noteId)
+      .where("user_id", authUser.id!)
+      .withGraphFetched("field_values.field");
+
+    if (note) {
+      return NextResponse.json(note);
+    }
+    return NextResponse.json({ statusText: "No note found" }, { status: 404 });
+  } catch (err) {
+    console.error("Error in GET /api/fieldnotes/notes/[id]:", err);
+    return NextResponse.json(
+      { statusText: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
+
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
