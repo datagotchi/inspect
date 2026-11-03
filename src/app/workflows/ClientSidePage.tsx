@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import styles from "../../styles/components/main-insights-page.module.css";
 import cardStyles from "../../styles/components/card.module.css";
@@ -10,7 +11,13 @@ import { User, Workflow } from "../types";
 import CurrentUserContext from "../contexts/CurrentUserContext";
 import { createWorkflow, deleteWorkflow } from "../components/WorkflowsAPI";
 import useUser from "../hooks/useUser";
-import { useRouter } from "next/navigation";
+import { CreateModal } from "../components/CreateModal";
+
+const CATEGORY_OPTIONS = [
+  { value: "gtm", label: "Product Funnel / GTM" },
+  { value: "cwa", label: "Cognitive Work Analysis (CWA)" },
+  { value: "system", label: "System Architecture" },
+];
 
 const ClientSidePage = ({
   workflows,
@@ -23,11 +30,30 @@ const ClientSidePage = ({
   const router = useRouter();
   const selectedWorkflows: Workflow[] = [];
 
-  const promptForNewWorkflowName = async () => {
-    const name = prompt("New workflow:");
-    if (name) {
-      await createWorkflow({ name, user_id: user_id! }, token!);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const handleCreateWorkflow = async (
+    name: string,
+    category: string | number,
+  ) => {
+    setIsCreating(true);
+    try {
+      await createWorkflow(
+        {
+          name: name.trim(),
+          category: String(category),
+          user_id: user_id!,
+        },
+        token!,
+      );
+      setIsModalOpen(false);
       router.refresh();
+    } catch (err) {
+      console.error("Error creating workflow:", err);
+      alert("Failed to create workflow. Please try again.");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -50,7 +76,7 @@ const ClientSidePage = ({
               {loggedIn && (
                 <div style={{ display: "flex", gap: "var(--spacing-2)" }}>
                   <button
-                    onClick={promptForNewWorkflowName}
+                    onClick={() => setIsModalOpen(true)}
                     className={cardStyles.addButton}
                     aria-label="Create New Workflow"
                     title="Create New Workflow"
@@ -100,6 +126,22 @@ const ClientSidePage = ({
                 {workflows.map((wf) => (
                   <li key={`wf: ${wf.id}`}>
                     <Link href={`/workflows/${wf.id}`}>{wf.name}</Link>{" "}
+                    {wf.category && (
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          backgroundColor: "#f1f5f9",
+                          color: "#475569",
+                          marginLeft: "8px",
+                          marginRight: "8px",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {wf.category.toUpperCase()}
+                      </span>
+                    )}
                     <button
                       onClick={async () => {
                         if (confirm("Are you sure?")) {
@@ -117,6 +159,19 @@ const ClientSidePage = ({
           </div>
         </CurrentUserContext.Provider>
       </div>
+
+      {/* REUSABLE CREATE WORKFLOW MODAL */}
+      <CreateModal
+        isOpen={isModalOpen}
+        title="Create New Workflow"
+        inputLabel="Workflow Name"
+        placeholder="e.g. Gen Z Digital Sovereignty Funnel"
+        selectLabel="Category"
+        options={CATEGORY_OPTIONS}
+        isSubmitting={isCreating}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateWorkflow}
+      />
     </div>
   );
 };

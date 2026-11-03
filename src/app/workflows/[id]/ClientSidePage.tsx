@@ -17,12 +17,14 @@ import {
   createWorkflowNode,
   deleteWorkflowLink,
   deleteWorkflowNode,
+  fetchWorkflow,
   getWorkflowNodeTypes,
 } from "@/app/components/WorkflowsAPI";
 import useUser from "@/app/hooks/useUser";
 import { WorkflowCanvas } from "@/app/components/WorkflowCanvas";
-import { EditNodeMetadataModal } from "./EditNodeMetadataModal";
+import { EditNodeDetailsModal } from "./EditNodeDetailsModal";
 import { EditLinkModal } from "./EditLinkModal";
+import { CreateModal } from "@/app/components/CreateModal";
 
 interface Props {
   workflow: Workflow;
@@ -32,8 +34,6 @@ export default function ClientSidePage({ workflow }: Props) {
   const [isCreating, setIsCreating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingNode, setEditingNode] = useState<WorkflowNode | null>(null);
-  const [label, setLabel] = useState("");
-  const [selectedTypeId, setSelectedTypeId] = useState<number>(1);
   const [nodeTypes, setNodeTypes] = useState<WorkflowNodeType[]>();
 
   const STORAGE_KEY = `jaw_workflow_${workflow.id}_draft`;
@@ -66,7 +66,6 @@ export default function ClientSidePage({ workflow }: Props) {
     return workflow.links || [];
   });
 
-  // Export directly from local storage / current state
   const handleExportModel = () => {
     const existingDraft = localStorage.getItem(STORAGE_KEY);
 
@@ -79,7 +78,6 @@ export default function ClientSidePage({ workflow }: Props) {
           lastSaved: new Date().toISOString(),
         };
 
-    // Attach metadata wrapper if needed
     const filePayload = {
       version: "1.0",
       exportedAt: new Date().toISOString(),
@@ -102,7 +100,6 @@ export default function ClientSidePage({ workflow }: Props) {
     downloadAnchor.remove();
   };
 
-  // Import by updating local storage directly, then updating React state
   const handleImportModel = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -116,7 +113,6 @@ export default function ClientSidePage({ workflow }: Props) {
         const importedNodes = parsed.nodes || [];
         const importedLinks = parsed.links || [];
 
-        // 1. Direct write to localStorage draft
         const draftData = {
           workflowId: workflow.id,
           nodes: importedNodes,
@@ -125,7 +121,6 @@ export default function ClientSidePage({ workflow }: Props) {
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(draftData));
 
-        // 2. Hydrate React state—our existing hooks handle everything else!
         setNodes(importedNodes);
         setLinks(importedLinks);
 
@@ -139,10 +134,9 @@ export default function ClientSidePage({ workflow }: Props) {
     };
 
     fileReader.readAsText(file);
-    event.target.value = ""; // Reset input
+    event.target.value = "";
   };
 
-  // auto-save to local storage effect
   useEffect(() => {
     const draftData = {
       workflowId: workflow.id,
@@ -213,8 +207,6 @@ export default function ClientSidePage({ workflow }: Props) {
     }
   }, [nodeTypes]);
 
-  // Sync state when server props update via router.refresh(),
-  // but preserve local draft coordinates if they exist in localStorage
   useEffect(() => {
     const draft = localStorage.getItem(STORAGE_KEY);
     if (draft) {
@@ -230,30 +222,27 @@ export default function ClientSidePage({ workflow }: Props) {
       }
     }
 
-    // Fallback to server props if no local draft exists
     setNodes(workflow.nodes || []);
     setLinks(workflow.links || []);
   }, [workflow.nodes, workflow.links, STORAGE_KEY]);
 
-  const handleCreateNode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!label.trim()) return;
-
+  const handleCreateNode = async (
+    label: string,
+    selectedValue: string | number,
+  ) => {
     setIsCreating(true);
     try {
       const newNode = await createWorkflowNode(
         workflow.id,
         {
           label: label.trim(),
-          type: String(selectedTypeId), // Foreign key to workflow_node_types.id
+          type: String(selectedValue),
         },
         token,
       );
 
       if (newNode) {
         setIsModalOpen(false);
-        setLabel("");
-        setSelectedTypeId(1);
         router.refresh();
       } else {
         alert("Failed to create node. Please try again.");
@@ -266,6 +255,13 @@ export default function ClientSidePage({ workflow }: Props) {
   };
 
   const hasNodes = nodes && nodes.length > 0;
+
+  const nodeTypeOptions = (nodeTypes || [])
+    .filter((nt) => nt.category === workflow.category)
+    .map((t) => ({
+      value: t.id!,
+      label: `${t.icon} ${t.name}`,
+    }));
 
   return (
     <div className={styles.pageContainer}>
@@ -286,7 +282,6 @@ export default function ClientSidePage({ workflow }: Props) {
               </div>
 
               <div style={{ display: "flex", gap: "var(--spacing-2, 8px)" }}>
-                {/* EXPORT JAW BUTTON */}
                 <button
                   onClick={handleExportModel}
                   className={cardStyles.addButton}
@@ -296,7 +291,6 @@ export default function ClientSidePage({ workflow }: Props) {
                   <span className={cardStyles.addButtonText}>Export JAW</span>
                 </button>
 
-                {/* IMPORT JAW BUTTON */}
                 <label
                   className={cardStyles.addButton}
                   style={{ cursor: "pointer" }}
@@ -312,7 +306,6 @@ export default function ClientSidePage({ workflow }: Props) {
                   />
                 </label>
 
-                {/* CREATE NEW NODE BUTTON */}
                 <button
                   onClick={() => setIsModalOpen(true)}
                   disabled={isCreating}
@@ -345,6 +338,7 @@ export default function ClientSidePage({ workflow }: Props) {
               <WorkflowCanvas
                 nodes={nodes}
                 links={links}
+                workflowCategory={workflow.category}
                 onNodeDragEnd={handleNodeDragEnd}
                 onDeleteNode={handleDeleteNode}
                 onLinkNodes={handleLinkNodes}
@@ -381,160 +375,39 @@ export default function ClientSidePage({ workflow }: Props) {
         </div>
       </div>
 
-      {/* CREATE NODE MODAL */}
-      {isModalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(15, 23, 42, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 50,
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#ffffff",
-              borderRadius: "12px",
-              padding: "24px",
-              width: "100%",
-              maxWidth: "420px",
-              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "18px",
-                fontWeight: "700",
-                color: "#0f172a",
-                marginBottom: "16px",
-              }}
-            >
-              Create New Workflow Node
-            </h3>
-            <form
-              onSubmit={handleCreateNode}
-              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-            >
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "12px",
-                    fontWeight: "600",
-                    color: "#475569",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Node Label
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Initial Intake Triage"
-                  value={label}
-                  onChange={(e) => setLabel(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "8px 12px",
-                    borderRadius: "6px",
-                    border: "1px solid #cbd5e1",
-                    fontSize: "14px",
-                    boxSizing: "border-box",
-                  }}
-                />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "12px",
-                    fontWeight: "600",
-                    color: "#475569",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Node Type
-                </label>
-                <select
-                  value={selectedTypeId}
-                  onChange={(e) => setSelectedTypeId(Number(e.target.value))}
-                  style={{
-                    width: "100%",
-                    padding: "8px 12px",
-                    borderRadius: "6px",
-                    border: "1px solid #cbd5e1",
-                    fontSize: "14px",
-                    backgroundColor: "#ffffff",
-                    boxSizing: "border-box",
-                  }}
-                >
-                  {nodeTypes &&
-                    nodeTypes.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.icon} {type.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "8px",
-                  marginTop: "8px",
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: "6px",
-                    border: "1px solid #cbd5e1",
-                    backgroundColor: "#ffffff",
-                    color: "#475569",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isCreating}
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: "6px",
-                    border: "none",
-                    backgroundColor: "#2563eb",
-                    color: "#ffffff",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    cursor: isCreating ? "not-allowed" : "pointer",
-                    opacity: isCreating ? 0.7 : 1,
-                  }}
-                >
-                  {isCreating ? "Creating..." : "Create Node"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* REUSABLE CREATE NODE MODAL */}
+      <CreateModal
+        isOpen={isModalOpen}
+        title="Create New Workflow Node"
+        inputLabel="Node Label"
+        placeholder="e.g. Initial Intake Triage"
+        selectLabel="Node Type"
+        options={nodeTypeOptions}
+        isSubmitting={isCreating}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateNode}
+      />
 
       {/* EDIT METADATA MODAL */}
       {editingNode && (
-        <EditNodeMetadataModal
+        <EditNodeDetailsModal
           node={editingNode}
           token={token}
           onClose={() => setEditingNode(null)}
-          onSaved={() => router.refresh()}
+          onSaved={async () => {
+            // 1. Fetch fresh payload from API
+            const updatedWorkflow = await fetchWorkflow(workflow.id, token);
+
+            // 2. Pass fresh nodes/links to React state so D3 re-calculates the layout
+            if (updatedWorkflow) {
+              setNodes(updatedWorkflow.nodes);
+              setLinks(updatedWorkflow.links);
+            }
+
+            // 3. Sync server components & close modal
+            router.refresh();
+            setEditingNode(null);
+          }}
         />
       )}
 

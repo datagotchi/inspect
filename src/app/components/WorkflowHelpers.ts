@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as d3 from "d3";
 import { WorkflowNode, WorkflowNodeLink } from "@/app/types";
 
@@ -24,6 +25,7 @@ export const CANVAS_HEIGHT = 800;
 export function calculatePrimaryPath(
   link: LinkData,
   d3NodeMap: Map<number, d3.HierarchyPointNode<WorkflowNode>>,
+  isGtm: boolean = false,
 ): string {
   const source = d3NodeMap.get(link.sourceId);
   const target = d3NodeMap.get(link.targetId);
@@ -38,6 +40,18 @@ export function calculatePrimaryPath(
     return "";
   }
 
+  if (isGtm) {
+    // Horizontal layout: Source Right-Center -> Target Left-Center
+    const sourceX = source.x + CARD_WIDTH;
+    const sourceY = source.y + CARD_HEIGHT / 2;
+    const targetX = target.x;
+    const targetY = target.y + CARD_HEIGHT / 2;
+    const midX = (sourceX + targetX) / 2;
+
+    return `M${sourceX},${sourceY} C${midX},${sourceY} ${midX},${targetY} ${targetX},${targetY}`;
+  }
+
+  // Vertical layout: Source Bottom-Center -> Target Top-Center
   const sourceX = source.x + CARD_WIDTH / 2;
   const sourceY = source.y + CARD_HEIGHT;
   const targetX = target.x + CARD_WIDTH / 2;
@@ -50,6 +64,7 @@ export function calculatePrimaryPath(
 export function calculateSecondaryPath(
   link: LinkData,
   d3NodeMap: Map<number, d3.HierarchyPointNode<WorkflowNode>>,
+  isGtm: boolean = false,
 ): string {
   const source = d3NodeMap.get(link.sourceId);
   const target = d3NodeMap.get(link.targetId);
@@ -69,139 +84,108 @@ export function calculateSecondaryPath(
   const targetX = target.x + CARD_WIDTH / 2;
   const targetY = target.y + CARD_HEIGHT / 2;
 
+  if (isGtm) {
+    return `M${sourceX},${sourceY} Q ${(sourceX + targetX) / 2 - 50},${(sourceY + targetY) / 2} ${targetX},${targetY}`;
+  }
+
   return `M${sourceX},${sourceY} Q ${(sourceX + targetX) / 2},${(sourceY + targetY) / 2 - 50} ${targetX},${targetY}`;
 }
 
-export function processWorkflowLayout({
-  nodes = [],
-  links = [],
-}: {
+export interface LayoutParams {
   nodes: WorkflowNode[];
   links: WorkflowNodeLink[];
-}): WorkflowLayoutResult | null {
+  category?: string;
+}
+
+export function processWorkflowLayout({
+  nodes,
+  links,
+  category,
+}: LayoutParams): WorkflowLayoutResult | null {
   if (!nodes || nodes.length === 0) return null;
 
-  const nodeMap = new Map<number, WorkflowNode>();
-  nodes.forEach((n) => nodeMap.set(n.id!, { ...n }));
+  const isGtm = category === "gtm";
 
-  const primaryLinks: LinkData[] = [];
-  const crossLinks: LinkData[] = [];
+  const realNodesMap = new Map<number, WorkflowNode>();
+  nodes.forEach((n) => realNodesMap.set(n.id!, { ...n }));
 
-  const isGateNode = (n?: WorkflowNode) => {
-    const label = n?.label?.toLowerCase() || "";
-    return (
-      label.includes("gate") ||
-      label.includes("audit") ||
-      label.includes("validation")
-    );
-  };
+  // Find root nodes (nodes with no incoming links)
+  const childSet = new Set<number>();
+  links.forEach((l) => childSet.add(l.child_id));
 
-  const linksByParent = new Map<number, WorkflowNodeLink[]>();
-  links.forEach((link) => {
-    const list = linksByParent.get(link.parent_id) || [];
-    list.push(link);
-    linksByParent.set(link.parent_id, list);
+  const rootCandidates = nodes.filter((n) => !childSet.has(n.id!));
+  // rootCandidates.sort((a, b) => a.id! - b.id!);
+  // or b.id - a.id depending on your DB IDs
+
+  let virtualRoot: any;
+  if (rootCandidates.length === 1) {
+    virtualRoot = rootCandidates[0];
+  } else {
+    virtualRoot = {
+      id: -1,
+      label: "Virtual Root",
+      children: rootCandidates,
+    };
+  }
+
+  const rootHierarchy = d3.hierarchy<WorkflowNode>(virtualRoot, (d: any) => {
+    if (d.id === -1) return d.children;
+    const outgoing = links.filter((l) => l.parent_id === d.id);
+    return outgoing.map((l) => realNodesMap.get(l.child_id)).filter(Boolean);
   });
 
-  linksByParent.forEach((parentLinks, parentId) => {
-    const parentNode = nodeMap.get(parentId);
-    const sortedLinks = [...parentLinks].sort(
-      (a, b) => (a.child_id || 0) - (b.child_id || 0),
-    );
+  if (isGtm) {
+    // Horizontal layout: height along Y, depth along X
+    const treeLayout = d3
+      .tree<WorkflowNode>()
+      .nodeSize([CARD_HEIGHT + 40, CARD_WIDTH + 120]);
 
-    sortedLinks.forEach((link, index) => {
-      const linkData: LinkData = {
-        id: link.id!,
-        sourceId: link.parent_id,
-        targetId: link.child_id,
-        rawLink: link,
-      };
+    treeLayout(rootHierarchy);
 
-      if (isGateNode(parentNode) || index === 0) {
-        primaryLinks.push(linkData);
-      } else {
-        crossLinks.push(linkData);
-      }
+    let maxDepth = 0;
+    rootHierarchy.each((node) => {
+      if (node.depth > maxDepth) maxDepth = node.depth;
     });
-  });
 
-  const allTargetIds = new Set<number>();
-  primaryLinks.forEach((l) => allTargetIds.add(l.targetId));
+    // Swap and project coordinates (Features on LEFT x=0, Target Users on far RIGHT)
+    rootHierarchy.each((node: any) => {
+      const originalBreadthY = node.x;
+      node.x = node.depth * (CARD_WIDTH + 120);
+      node.y = originalBreadthY;
+    });
+  } else {
+    // Standard top-down layout for system/cwa
+    const treeLayout = d3
+      .tree<WorkflowNode>()
+      .nodeSize([CARD_WIDTH + 60, CARD_HEIGHT + 100]);
 
-  const rootNodes = nodes.filter((n) => !allTargetIds.has(n.id!));
-
-  const virtualRoot: WorkflowNode = {
-    id: -999,
-    label: "VIRTUAL_ROOT",
-  };
-
-  const primaryChildrenMap = new Map<number, number[]>();
-  primaryLinks.forEach((l) => {
-    const children = primaryChildrenMap.get(l.sourceId) || [];
-    children.push(l.targetId);
-    primaryChildrenMap.set(l.sourceId, children);
-  });
-
-  const baseHierarchy = d3.hierarchy<WorkflowNode>(
-    virtualRoot as WorkflowNode,
-    (d) => {
-      if (d.id === -999) {
-        return (rootNodes.length > 0 ? rootNodes : nodes) as WorkflowNode[];
-      }
-
-      const childIds = primaryChildrenMap.get(d.id!) || [];
-      const seen = new Set<number>();
-      const childrenNodes: WorkflowNode[] = [];
-
-      childIds.forEach((childId) => {
-        const childNode = nodeMap.get(childId);
-        if (childNode && !seen.has(childNode.id!)) {
-          seen.add(childNode.id!);
-          childrenNodes.push(childNode as WorkflowNode);
-        }
-      });
-
-      return childrenNodes;
-    },
-  );
-
-  const treeLayout = d3
-    .tree<WorkflowNode>()
-    .nodeSize([CARD_WIDTH + 60, CARD_HEIGHT + 80]);
-
-  const root = treeLayout(baseHierarchy) as d3.HierarchyPointNode<WorkflowNode>;
+    treeLayout(rootHierarchy);
+  }
 
   const d3NodeMap = new Map<number, d3.HierarchyPointNode<WorkflowNode>>();
-  const realNodes: d3.HierarchyPointNode<WorkflowNode>[] = [];
+  const realNodesList: d3.HierarchyPointNode<WorkflowNode>[] = [];
 
-  const minX = d3.min(root.descendants(), (d) => d.x) || 0;
-  const xOffset = CANVAS_WIDTH / 2 - minX - CARD_WIDTH / 2;
-  const yOffset = 60;
-
-  root.each((node) => {
-    if (node.data && node.data.id !== -999 && node.data.id !== undefined) {
-      if (!d3NodeMap.has(node.data.id)) {
-        // Priority 1: User's saved/dragged coordinates
-        // Priority 2: Calculated hierarchical tree coordinates
-        if (node.data.x !== undefined && node.data.y !== undefined) {
-          node.x = node.data.x;
-          node.y = node.data.y;
-        } else {
-          node.x = node.x + xOffset;
-          node.y = node.y + yOffset;
-        }
-
-        d3NodeMap.set(node.data.id, node);
-        realNodes.push(node);
-      }
+  rootHierarchy.each((node: any) => {
+    if (node.data && node.data.id !== -1) {
+      d3NodeMap.set(node.data.id, node);
+      realNodesList.push(node);
     }
   });
 
+  const primaryLinks: LinkData[] = links.map((l) => ({
+    id: l.id,
+    sourceId: l.parent_id,
+    targetId: l.child_id,
+    rawLink: l,
+  }));
+
+  const crossLinks: LinkData[] = [];
+
   return {
-    realNodes,
+    realNodes: realNodesList,
     primaryLinks,
     crossLinks,
-    root,
+    root: rootHierarchy as any,
     d3NodeMap,
   };
 }
@@ -227,7 +211,9 @@ export function renderPrimaryLinks(
   d3NodeMap: Map<number, d3.HierarchyPointNode<WorkflowNode>>,
   onEditLink?: (link: WorkflowNodeLink) => void,
   onDeleteLink?: (linkId: number) => Promise<void>,
+  category?: string,
 ) {
+  const isGtm = category === "gtm";
   const g = parentGroup.append("g").attr("class", "primary-links");
 
   // Render Optional Link Labels
@@ -260,7 +246,7 @@ export function renderPrimaryLinks(
     .selectAll<SVGPathElement, LinkData>("path")
     .data(primaryLinksData)
     .join("path")
-    .attr("d", (l) => calculatePrimaryPath(l, d3NodeMap))
+    .attr("d", (l) => calculatePrimaryPath(l, d3NodeMap, isGtm))
     .style("cursor", "pointer")
     .on("click", (event, d) => {
       event.stopPropagation();
@@ -280,9 +266,11 @@ export function renderSecondaryLinks(
   d3NodeMap: Map<number, d3.HierarchyPointNode<WorkflowNode>>,
   onEditLink?: (link: WorkflowNodeLink) => void,
   onDeleteLink?: (linkId: number) => Promise<void>,
+  category?: string,
 ) {
   if (!crossLinksData || crossLinksData.length === 0) return null;
 
+  const isGtm = category === "gtm";
   const g = parentGroup.append("g").attr("class", "secondary-links");
 
   // Render Optional Link Labels for Secondary Connections
@@ -316,7 +304,7 @@ export function renderSecondaryLinks(
     .selectAll<SVGPathElement, LinkData>("path")
     .data(crossLinksData)
     .join("path")
-    .attr("d", (d) => calculateSecondaryPath(d, d3NodeMap))
+    .attr("d", (d) => calculateSecondaryPath(d, d3NodeMap, isGtm))
     .style("cursor", "pointer")
     .on("click", (event, d) => {
       event.stopPropagation();
@@ -357,7 +345,10 @@ export function createNodeDragBehavior(
   > | null,
   d3NodeMap: Map<number, d3.HierarchyPointNode<WorkflowNode>>,
   onNodeDragEnd?: (nodeId: number, x: number, y: number) => void,
+  category?: string,
 ) {
+  const isGtm = category === "gtm";
+
   return d3
     .drag<SVGGElement, d3.HierarchyPointNode<WorkflowNode>>()
     .filter((event) => {
@@ -379,12 +370,12 @@ export function createNodeDragBehavior(
       );
 
       primarySelection.attr("d", (l: LinkData) =>
-        calculatePrimaryPath(l, d3NodeMap),
+        calculatePrimaryPath(l, d3NodeMap, isGtm),
       );
 
       if (secondarySelection) {
         secondarySelection.attr("d", (cl: LinkData) =>
-          calculateSecondaryPath(cl, d3NodeMap),
+          calculateSecondaryPath(cl, d3NodeMap, isGtm),
         );
       }
     })
@@ -401,20 +392,23 @@ export function createConnectorHandleDragBehavior(
   dragLine: d3.Selection<SVGPathElement, unknown, null, undefined>,
   realNodes: d3.HierarchyPointNode<WorkflowNode>[],
   onLinkNodes?: (parentId: number, childId: number) => Promise<void>,
+  category?: string,
 ) {
+  const isGtm = category === "gtm";
+
   return d3
     .drag<SVGCircleElement, d3.HierarchyPointNode<WorkflowNode>>()
     .on("start", (event, d) => {
       event.sourceEvent.stopPropagation();
-      const startX = d.x + CARD_WIDTH / 2;
-      const startY = d.y + CARD_HEIGHT;
+      const startX = isGtm ? d.x + CARD_WIDTH : d.x + CARD_WIDTH / 2;
+      const startY = isGtm ? d.y + CARD_HEIGHT / 2 : d.y + CARD_HEIGHT;
       dragLine
         .attr("d", `M${startX},${startY} L${startX},${startY}`)
         .attr("visibility", "visible");
     })
     .on("drag", (event, d) => {
-      const startX = d.x + CARD_WIDTH / 2;
-      const startY = d.y + CARD_HEIGHT;
+      const startX = isGtm ? d.x + CARD_WIDTH : d.x + CARD_WIDTH / 2;
+      const startY = isGtm ? d.y + CARD_HEIGHT / 2 : d.y + CARD_HEIGHT;
       const [mouseX, mouseY] = d3.pointer(event, zoomGroup.node());
       dragLine.attr("d", `M${startX},${startY} L${mouseX},${mouseY}`);
     })
@@ -563,11 +557,14 @@ export function renderConnectorHandles(
     d3.HierarchyPointNode<WorkflowNode>,
     unknown
   >,
+  category?: string,
 ) {
+  const isGtm = category === "gtm";
+
   nodeSelection
     .append("circle")
-    .attr("cx", CARD_WIDTH / 2)
-    .attr("cy", CARD_HEIGHT)
+    .attr("cx", isGtm ? CARD_WIDTH : CARD_WIDTH / 2)
+    .attr("cy", isGtm ? CARD_HEIGHT / 2 : CARD_HEIGHT)
     .attr("r", 6)
     .attr("fill", "#22c55e")
     .attr("stroke", "#ffffff")

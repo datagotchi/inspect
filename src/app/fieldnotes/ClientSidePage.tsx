@@ -284,7 +284,7 @@ export default function ClientSidePage({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 text-xs bg-[#C05621] text-white rounded hover:bg-[#A0461B] font-medium shadow-sm"
+                  className="px-4 py-2 text-xs bg-[#C05621] rounded hover:bg-[#A0461B] font-medium shadow-sm"
                 >
                   {isSubmitting ? "Saving..." : "Create Note"}
                 </button>

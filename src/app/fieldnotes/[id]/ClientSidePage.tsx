@@ -145,7 +145,7 @@ export default function ClientSidePage({
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="px-3 py-1 bg-[#C05621] text-white rounded text-xs hover:bg-[#A0461B]"
+                  className="px-3 py-1 bg-[#C05621] rounded text-xs hover:bg-[#A0461B]"
                 >
                   {isSaving ? "Saving..." : "Save Changes"}
                 </button>

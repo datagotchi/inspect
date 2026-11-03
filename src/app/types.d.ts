@@ -165,6 +165,7 @@ export type Workflow = {
   links: WorkflowNodeLink[];
   created_at?: string;
   updated_at?: string;
+  category?: string;
 };
 
 export type WorkflowNodeLink = {
@@ -200,6 +201,7 @@ export type WorkflowNodeType = {
   name: string;
   icon: string;
   bg_color: string;
+  category: string;
 };
 
 type WorkflowItemMetadataItem = {

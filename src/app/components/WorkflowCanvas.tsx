@@ -19,6 +19,7 @@ import {
 interface WorkflowCanvasProps {
   nodes: WorkflowNode[];
   links: WorkflowNodeLink[];
+  workflowCategory?: string;
   onNodeDragEnd?: (nodeId: number, x: number, y: number) => void;
   onDeleteNode?: (nodeId: number) => Promise<void>;
   onLinkNodes?: (parentId: number, childId: number) => Promise<void>;
@@ -30,6 +31,7 @@ interface WorkflowCanvasProps {
 export function WorkflowCanvas({
   nodes = [],
   links = [],
+  workflowCategory,
   onNodeDragEnd,
   onDeleteNode,
   onLinkNodes,
@@ -44,7 +46,11 @@ export function WorkflowCanvas({
   useEffect(() => {
     if (!svgRef.current) return;
 
-    const layout = processWorkflowLayout({ nodes, links });
+    const layout = processWorkflowLayout({
+      nodes,
+      links,
+      category: workflowCategory,
+    });
 
     if (!layout) {
       if (totalNodeCount !== 0) {
@@ -67,13 +73,16 @@ export function WorkflowCanvas({
       d3NodeMap,
       onEditLink,
       onDeleteLink,
+      workflowCategory,
     );
+
     const secondarySelection = renderSecondaryLinks(
       zoomGroup,
       crossLinks,
       d3NodeMap,
       onEditLink,
       onDeleteLink,
+      workflowCategory,
     );
 
     const dragLine = renderDragLine(zoomGroup);
@@ -83,6 +92,7 @@ export function WorkflowCanvas({
       secondarySelection,
       d3NodeMap,
       onNodeDragEnd,
+      workflowCategory,
     );
 
     const nodeSelection = renderNodes(
@@ -98,13 +108,19 @@ export function WorkflowCanvas({
       dragLine,
       realNodes,
       onLinkNodes,
+      workflowCategory,
     );
 
-    // Render Bottom Green Connector Handles
-    renderConnectorHandles(nodeSelection, connectorDragBehavior);
+    // Render Connector Handles (Positioned Right for GTM, Bottom for vertical)
+    renderConnectorHandles(
+      nodeSelection,
+      connectorDragBehavior,
+      workflowCategory,
+    );
   }, [
     nodes,
     links,
+    workflowCategory,
     onDeleteNode,
     onLinkNodes,
     onEditNodeMetadata,

@@ -10,6 +10,48 @@ import {
   WorkflowLinkMetadataItem,
 } from "../types";
 
+// Helper to purge local draft whenever the backend state mutates
+function clearWorkflowDraft(workflowId: number | string) {
+  if (typeof window !== "undefined" && workflowId) {
+    localStorage.removeItem(`jaw_workflow_${workflowId}_draft`);
+  }
+}
+
+// Helper to construct uniform request headers
+function getHeaders(token?: string, isJson: boolean = false): HeadersInit {
+  const headers: Record<string, string> = {};
+  if (isJson) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (token) {
+    // Support both Bearer and legacy x-access-token if present
+    headers["Authorization"] = `Bearer ${token}`;
+    headers["x-access-token"] = token;
+  }
+  return headers;
+}
+
+// ============================================================================
+// WORKFLOW OPERATIONS
+// ============================================================================
+
+export async function fetchWorkflow(
+  workflowId: number,
+  token?: string,
+): Promise<{ nodes: WorkflowNode[]; links: WorkflowNodeLink[] } | null> {
+  try {
+    const res = await fetch(`/api/workflows/${workflowId}`, {
+      headers: getHeaders(token),
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch workflow data");
+    return await res.json();
+  } catch (error) {
+    console.error("Error loading workflow data:", error);
+    return null;
+  }
+}
+
 export const createWorkflow = (
   workflow: Partial<WorkflowOJSModel>,
   token: string,
@@ -17,10 +59,7 @@ export const createWorkflow = (
   fetch("/api/workflows", {
     method: "POST",
     body: JSON.stringify(workflow),
-    headers: {
-      "Content-Type": "application/json",
-      "x-access-token": token,
-    },
+    headers: getHeaders(token, true),
   })
     .then((response: Response | PostInsightsRouteResponse) => {
       if (!response.ok) {
@@ -28,21 +67,18 @@ export const createWorkflow = (
       }
       return response.json();
     })
-    .then(
-      (createdWf: WorkflowOJSModel) =>
-        ({
-          action: 1,
-          facts: [createdWf],
-        }) as FLVResponse,
-    );
+    .then((createdWf: WorkflowOJSModel) => {
+      if (createdWf.id) clearWorkflowDraft(createdWf.id);
+      return {
+        action: 1,
+        facts: [createdWf],
+      } as FLVResponse;
+    });
 
 export const deleteWorkflow = async (workflow: Workflow, token: string) =>
   fetch(`/api/workflows/${workflow.id}`, {
     method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      "x-access-token": token,
-    },
+    headers: getHeaders(token, true),
   })
     .then((response: Response | PostInsightsRouteResponse) => {
       if (!response.ok) {
@@ -50,21 +86,23 @@ export const deleteWorkflow = async (workflow: Workflow, token: string) =>
       }
       return response.json();
     })
-    .then(
-      (deletedWf: WorkflowOJSModel) =>
-        ({
-          action: -1,
-          facts: [deletedWf],
-        }) as FLVResponse,
-    );
+    .then((deletedWf: WorkflowOJSModel) => {
+      if (workflow.id) clearWorkflowDraft(workflow.id);
+      return {
+        action: -1,
+        facts: [deletedWf],
+      } as FLVResponse;
+    });
 
 export const getWorkflowNodeTypes = async (): Promise<WorkflowNodeType[]> => {
   const res = await fetch("/api/workflows/types");
-
   if (!res.ok) throw new Error("Failed to get workflow node types");
-
   return await res.json();
 };
+
+// ============================================================================
+// NODE OPERATIONS
+// ============================================================================
 
 export const createWorkflowNode = async (
   workflowId: number,
@@ -74,20 +112,41 @@ export const createWorkflowNode = async (
   try {
     const res = await fetch(`/api/workflows/${workflowId}/nodes`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
+      headers: getHeaders(token, true),
       body: JSON.stringify(nodeData),
     });
 
     if (!res.ok) throw new Error("Failed to create node");
-    return await res.json();
+    const data = await res.json();
+
+    clearWorkflowDraft(workflowId);
+    return data;
   } catch (error) {
     console.error("Error creating workflow node:", error);
     return null;
   }
 };
+
+export async function updateWorkflowNode(
+  workflowId: number,
+  nodeId: number,
+  updates: Partial<WorkflowNode>,
+  token?: string,
+): Promise<WorkflowNode> {
+  const res = await fetch(`/api/workflows/${workflowId}/nodes/${nodeId}`, {
+    method: "PATCH",
+    headers: getHeaders(token, true),
+    body: JSON.stringify(updates),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to update workflow node");
+  }
+
+  const data = await res.json();
+  clearWorkflowDraft(workflowId);
+  return data;
+}
 
 export async function deleteWorkflowNode(
   workflowId: number,
@@ -96,10 +155,21 @@ export async function deleteWorkflowNode(
 ) {
   const res = await fetch(`/api/workflows/${workflowId}/nodes/${nodeId}`, {
     method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
+    headers: getHeaders(token),
   });
-  return res.ok;
+
+  if (!res.ok) {
+    throw new Error("Failed to delete workflow node");
+  }
+
+  const data = await res.json();
+  clearWorkflowDraft(workflowId);
+  return data;
 }
+
+// ============================================================================
+// LINK OPERATIONS
+// ============================================================================
 
 export const createWorkflowLink = async (
   workflowId: number,
@@ -109,21 +179,40 @@ export const createWorkflowLink = async (
   try {
     const res = await fetch(`/api/workflows/${workflowId}/links`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
+      headers: getHeaders(token, true),
       body: JSON.stringify(linkData),
     });
 
     if (!res.ok) throw new Error("Failed to create workflow link");
     const data = await res.json();
+
+    clearWorkflowDraft(workflowId);
     return data.link || data;
   } catch (error) {
     console.error("Error creating workflow link:", error);
     return null;
   }
 };
+
+export async function deleteWorkflowLink(
+  workflowId: number,
+  linkId: number,
+  token?: string,
+): Promise<boolean> {
+  const res = await fetch(`/api/workflows/${workflowId}/links/${linkId}`, {
+    method: "DELETE",
+    headers: getHeaders(token),
+  });
+
+  if (res.ok) {
+    clearWorkflowDraft(workflowId);
+  }
+  return res.ok;
+}
+
+// ============================================================================
+// METADATA OPERATIONS (NODE)
+// ============================================================================
 
 export async function getNodeMetadata(
   workflowId: number,
@@ -133,9 +222,7 @@ export async function getNodeMetadata(
   const res = await fetch(
     `/api/workflows/${workflowId}/nodes/${nodeId}/metadata`,
     {
-      headers: {
-        Authorization: `Bearer ${token || ""}`,
-      },
+      headers: getHeaders(token),
     },
   );
   if (!res.ok) return [];
@@ -152,13 +239,14 @@ export async function saveNodeMetadata(
     `/api/workflows/${workflowId}/nodes/${nodeId}/metadata`,
     {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token || ""}`,
-      },
+      headers: getHeaders(token, true),
       body: JSON.stringify(metadata),
     },
   );
+
+  if (res.ok) {
+    clearWorkflowDraft(workflowId);
+  }
   return res.ok;
 }
 
@@ -172,27 +260,19 @@ export async function deleteNodeMetadata(
     `/api/workflows/${workflowId}/nodes/${nodeId}/metadata/${metadataId}`,
     {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token || ""}`,
-      },
+      headers: getHeaders(token),
     },
   );
+
+  if (res.ok) {
+    clearWorkflowDraft(workflowId);
+  }
   return res.ok;
 }
 
-export async function deleteWorkflowLink(
-  workflowId: number,
-  linkId: number,
-  token?: string,
-): Promise<boolean> {
-  const res = await fetch(`/api/workflows/${workflowId}/links/${linkId}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token || ""}`,
-    },
-  });
-  return res.ok;
-}
+// ============================================================================
+// METADATA OPERATIONS (LINK)
+// ============================================================================
 
 export async function getLinkMetadata(
   workflowId: number,
@@ -202,9 +282,7 @@ export async function getLinkMetadata(
   const res = await fetch(
     `/api/workflows/${workflowId}/links/${linkId}/metadata`,
     {
-      headers: {
-        Authorization: `Bearer ${token || ""}`,
-      },
+      headers: getHeaders(token),
     },
   );
   if (!res.ok) return [];
@@ -221,12 +299,13 @@ export async function saveLinkMetadata(
     `/api/workflows/${workflowId}/links/${linkId}/metadata`,
     {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token || ""}`,
-      },
+      headers: getHeaders(token, true),
       body: JSON.stringify(metadata),
     },
   );
+
+  if (res.ok) {
+    clearWorkflowDraft(workflowId);
+  }
   return res.ok;
 }
