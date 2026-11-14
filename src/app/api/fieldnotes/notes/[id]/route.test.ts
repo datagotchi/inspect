@@ -31,6 +31,15 @@ jest.mock("../../../../functions", () => ({
 }));
 
 describe("API /api/fieldnotes/notes/[id]", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    const queryBuilder = NoteModel.query();
+    (queryBuilder.patch as jest.Mock).mockReturnThis();
+    (queryBuilder.where as jest.Mock).mockReturnThis();
+    (queryBuilder.first as jest.Mock).mockReturnThis();
+    (queryBuilder.deleteById as jest.Mock).mockReturnThis();
+    (queryBuilder.findById as jest.Mock).mockReturnThis();
+  });
   describe("GET /[id]", () => {
     it("should return a note when requesting it and return 200", async () => {
       const searchParams = new URLSearchParams();

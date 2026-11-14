@@ -354,7 +354,9 @@ export function createNodeDragBehavior(
     .filter((event) => {
       if (
         event.target &&
-        (event.target as HTMLElement).closest(".node-edit-btn")
+        (event.target as HTMLElement).closest(
+          "button, .node-edit-btn, .node-delete-btn",
+        )
       ) {
         return false;
       }

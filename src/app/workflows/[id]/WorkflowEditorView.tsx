@@ -47,14 +47,20 @@ export default function WorkflowEditorView() {
 
   const handleDeleteNode = useCallback(
     async (nodeId: number) => {
-      // FIXME: clicking delete buttons does not work!
       if (!workflow) return;
       const success = await deleteWorkflowNode(workflow.id, nodeId, token);
       if (success) {
+        setWorkflow({
+          ...workflow,
+          nodes: (workflow.nodes || []).filter((n) => n.id !== nodeId),
+          links: (workflow.links || []).filter(
+            (l) => l.parent_id !== nodeId && l.child_id !== nodeId,
+          ),
+        });
         router.refresh();
       }
     },
-    [workflow, token, router],
+    [workflow, token, setWorkflow, router],
   );
 
   const handleLinkNodes = useCallback(
@@ -66,10 +72,27 @@ export default function WorkflowEditorView() {
         token,
       );
       if (link) {
+        setWorkflow({
+          ...workflow,
+          links: [...(workflow.links || []), link],
+        });
         router.refresh();
       }
     },
-    [workflow, token, router],
+    [workflow, token, setWorkflow, router],
+  );
+
+  const handleDeleteLink = useCallback(
+    async (linkId: number) => {
+      if (!workflow) return;
+      await deleteWorkflowLink(workflow.id, linkId, token);
+      setWorkflow({
+        ...workflow,
+        links: (workflow.links || []).filter((l) => l.id !== linkId),
+      });
+      router.refresh();
+    },
+    [workflow, token, setWorkflow, router],
   );
 
   const handleEditNodeMetadata = useCallback((node: WorkflowNode) => {
@@ -79,15 +102,6 @@ export default function WorkflowEditorView() {
   const handleEditLink = useCallback((link: WorkflowNodeLink) => {
     setEditingLink(link);
   }, []);
-
-  const handleDeleteLink = useCallback(
-    async (linkId: number) => {
-      if (!workflow) return;
-      await deleteWorkflowLink(workflow.id, linkId, token);
-      router.refresh();
-    },
-    [workflow, token, router],
-  );
 
   if (!workflow) return null;
 
@@ -172,6 +186,10 @@ export default function WorkflowEditorView() {
       );
 
       if (newNode) {
+        setWorkflow({
+          ...workflow,
+          nodes: [...(workflow.nodes || []), newNode],
+        });
         setIsModalOpen(false);
         router.refresh();
       } else {

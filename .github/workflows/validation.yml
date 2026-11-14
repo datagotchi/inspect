@@ -76,7 +76,8 @@ jobs:
           done
           exit 1
       - name: Run jest tests
-        run: yarn test
+        run: yarn test # FIXME: test for full enough coverage?
+
 
   # e2e:
   #   name: Playwright E2E Tests

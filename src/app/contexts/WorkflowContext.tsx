@@ -6,6 +6,7 @@ import React, {
   useState,
   useEffect,
   useMemo,
+  useRef,
 } from "react";
 import { Workflow, WorkflowNode, WorkflowNodeLink } from "../types";
 
@@ -27,9 +28,15 @@ export const WorkflowProvider = ({
   initialWorkflow?: Workflow;
   children: React.ReactNode;
 }) => {
-  const [workflow, setWorkflow] = useState<Workflow | undefined>(() => {
-    if (!initialWorkflow) return undefined;
-    if (typeof window === "undefined") return initialWorkflow;
+  // 1. Always initialize with initialWorkflow so SSR and first client render match (zero hydration mismatch)
+  const [workflow, setWorkflow] = useState<Workflow | undefined>(
+    initialWorkflow,
+  );
+  const hasHydratedSession = useRef(false);
+
+  // 2. Sync fresh server data on mount / router.refresh(), preserving cached canvas (x, y) coordinates
+  useEffect(() => {
+    if (!initialWorkflow) return;
 
     const saved = sessionStorage.getItem(getSessionKey(initialWorkflow.id));
     if (saved) {
@@ -38,25 +45,33 @@ export const WorkflowProvider = ({
           nodes?: WorkflowNode[];
           links?: WorkflowNodeLink[];
         };
-        return {
+        const cachedCoords = new Map(
+          (parsed.nodes ?? [])
+            .filter((n) => n.x !== undefined && n.y !== undefined)
+            .map((n) => [n.id, { x: n.x, y: n.y }]),
+        );
+
+        setWorkflow({
           ...initialWorkflow,
-          nodes: Array.isArray(parsed.nodes)
-            ? parsed.nodes
-            : initialWorkflow.nodes,
-          links: Array.isArray(parsed.links)
-            ? parsed.links
-            : initialWorkflow.links,
-        };
+          nodes: (initialWorkflow.nodes ?? []).map((node) => {
+            const coords = cachedCoords.get(node.id);
+            return coords ? { ...node, x: coords.x, y: coords.y } : node;
+          }),
+        });
+        hasHydratedSession.current = true;
+        return;
       } catch (err) {
-        console.error("Failed to hydrate workflow from sessionStorage:", err);
+        console.error("Failed to parse workflow sessionStorage:", err);
       }
     }
-    return initialWorkflow;
-  });
 
-  // Automatically persist live nodes & links to tab-scoped sessionStorage
+    setWorkflow(initialWorkflow);
+    hasHydratedSession.current = true;
+  }, [initialWorkflow]);
+
+  // 3. Persist updated nodes & links to tab-scoped sessionStorage after initial sync
   useEffect(() => {
-    if (!workflow || typeof window === "undefined") return;
+    if (!workflow || !hasHydratedSession.current) return;
     sessionStorage.setItem(
       getSessionKey(workflow.id),
       JSON.stringify({
