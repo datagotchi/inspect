@@ -1,7 +1,28 @@
 import readline from "node:readline";
+import fs from "node:fs";
+import path from "node:path";
 import { createClient } from "@libsql/client";
 
 const dbfile = process.argv[2];
+
+// 1. Guard against missing CLI argument
+if (!dbfile) {
+  console.error("\x1b[31mError: No database file specified.\x1b[0m");
+  console.error(
+    "Usage: yarn sqlite <path-to-db-file> (e.g., yarn sqlite dev.db)",
+  );
+  process.exit(1);
+}
+
+// 2. Guard against non-existent database file
+const resolvedPath = path.resolve(dbfile);
+if (!fs.existsSync(resolvedPath)) {
+  console.error(
+    `\x1b[31mError: Database file not found at "${resolvedPath}"\x1b[0m`,
+  );
+  process.exit(1);
+}
+
 const db = createClient({ url: `file:${dbfile}` });
 
 const rl = readline.createInterface({
@@ -10,7 +31,7 @@ const rl = readline.createInterface({
   prompt: "sqlite> ",
 });
 
-console.info("SQLite Shell (Type 'exit' to quit)");
+console.info(`Connected to [${dbfile}] (Type 'exit' to quit)`);
 rl.prompt();
 
 rl.on("line", async (line) => {

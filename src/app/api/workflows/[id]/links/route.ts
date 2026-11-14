@@ -12,10 +12,6 @@ export async function POST(
     const { id: workflowId } = await params;
     const { parent_id, child_id } = await req.json();
 
-    console.log(
-      `[POST /links] Incoming request for workflowId=${workflowId}: parent_id=${parent_id}, child_id=${child_id}`,
-    );
-
     if (!parent_id || !child_id) {
       console.warn(
         "[POST /links] Validation failed: Missing parent_id or child_id",
@@ -57,7 +53,6 @@ export async function POST(
     });
 
     if (existingLink) {
-      console.log(`[POST /links] Link already exists (ID: ${existingLink.id})`);
       return NextResponse.json({ link: existingLink }, { status: 200 });
     }
 
@@ -67,10 +62,6 @@ export async function POST(
       child_id,
       workflow_id: Number(workflowId), // 👈 FIXED: Added workflow_id here!
     });
-
-    console.log(
-      `[POST /links] Successfully created link ID ${newLink.id} for workflow ${workflowId}`,
-    );
 
     return NextResponse.json({ link: newLink }, { status: 201 });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -21,7 +21,9 @@ const Notes = () => {
             const fieldDefinition = fieldDefinitions.find(
               (fd: Field) => fd.id === fv.field_id,
             );
-            fv.name = fieldDefinition.name;
+            if (fieldDefinition) {
+              fv.name = fieldDefinition.name;
+            }
           });
           return n;
         });
@@ -38,16 +40,14 @@ const Notes = () => {
         setNotes(
           notes.map((n) => {
             if (n.id === updatedNote.id) {
-              // Merge logic: keep existing fields, but replace if IDs match,
-              // or append if the ID is new.
               const incomingField = updatedNote.field_values?.[0];
               const otherFields =
                 n.field_values?.filter((fv) => fv.id !== incomingField?.id) ??
                 [];
 
               return {
-                ...n, // Keep existing note data
-                ...updatedNote, // Apply new text/updates
+                ...n,
+                ...updatedNote,
                 field_values: incomingField
                   ? [...otherFields, incomingField]
                   : n.field_values,
@@ -65,11 +65,10 @@ const Notes = () => {
 
   return (
     <ul style={styles.list}>
-      {!notes ||
-        (notes.length === 0 && (
-          <li style={styles.empty}>No notes yet — add one above.</li>
-        ))}
-      {notes && (
+      {(!notes || notes.length === 0) && (
+        <li style={styles.empty}>No notes yet — add one above.</li>
+      )}
+      {notes && notes.length > 0 && (
         <p
           style={{
             fontSize: "smaller",
@@ -82,30 +81,28 @@ const Notes = () => {
       )}
       {notes &&
         notes
+          .slice()
           .sort(
             (a, b) =>
-              new Date(b.datetime!).getTime() - new Date(a.datetime!).getTime(),
+              new Date(b.created_at ?? b.updated_at ?? 0).getTime() -
+              new Date(a.created_at ?? a.updated_at ?? 0).getTime(),
           )
-          .map((note) => {
-            return (
-              <NoteType
-                // user={user}
-                data={note}
-                setData={(updatedNote) => {
-                  const updatedNotes = notes.map((n) =>
-                    n.id === updatedNote.id ? updatedNote : n,
-                  );
-                  setNotes(updatedNotes);
-                }}
-                removeNote={async () => {
-                  await api.deleteNote(note);
-                  setNotes(notes.filter((n) => n.id !== note.id));
-                }}
-                // fieldDefinitions={fieldDefinitions}
-                key={`note: ${note.id}`}
-              />
-            );
-          })}
+          .map((note) => (
+            <NoteType
+              key={`note:${note.id}`}
+              data={note}
+              setData={(updatedNote) => {
+                const updatedNotes = notes.map((n) =>
+                  n.id === updatedNote.id ? updatedNote : n,
+                );
+                setNotes(updatedNotes);
+              }}
+              removeNote={async () => {
+                await api.deleteNote(note);
+                setNotes(notes.filter((n) => n.id !== note.id));
+              }}
+            />
+          ))}
     </ul>
   );
 };

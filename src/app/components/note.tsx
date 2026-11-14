@@ -7,7 +7,6 @@ import NoteEditor from "./NoteEditor";
 import FieldComponent from "./Field";
 import { useFieldTransferContext } from "../contexts/useFieldTransferContext";
 import { useUserContext } from "../contexts/useUserContext";
-// import EmojiSelection from "./EmojiSelection";
 import { Field, Note as NoteType } from "../types";
 
 interface Props {
@@ -35,6 +34,11 @@ const Note = ({ data, setData, removeNote }: Props) => {
     [fieldDefinitions],
   );
 
+  const formattedDate =
+    data.created_at || data.updated_at
+      ? new Date(data.created_at ?? data.updated_at!).toLocaleString()
+      : "";
+
   return (
     <li key={`note: ${data.id}`} style={styles.item}>
       <div
@@ -56,17 +60,9 @@ const Note = ({ data, setData, removeNote }: Props) => {
               id: data.id,
               text: newValue,
             });
-            // data.text = changes.text;
             setData({ ...data, text: changes.text });
           }}
-          editComponent={
-            <NoteEditor
-              // user={user}
-              note={data}
-              setNote={setData}
-              // fieldDefinitions={fieldDefinitions}
-            />
-          }
+          editComponent={<NoteEditor note={data} setNote={setData} />}
         />
       </div>
 
@@ -77,20 +73,6 @@ const Note = ({ data, setData, removeNote }: Props) => {
         </div>
       )}
 
-      {/* <EmojiSelection
-        noteId={data.id}
-        onSelect={async (noteId, emoji) => {
-          try {
-            const updatedNote = await api.updateNote({
-              id: noteId,
-              emoji,
-            });
-            setData({ ...data, ...updatedNote });
-          } catch (err) {
-            console.error("Failed to save affective state:", err);
-          }
-        }}
-      /> */}
       {data.field_values && data.field_values.length > 0 && (
         <>
           <p style={{ margin: 0 }}>
@@ -102,7 +84,6 @@ const Note = ({ data, setData, removeNote }: Props) => {
                 .sort((a, b) => a.id! - b.id!)
                 .map((fv) => (
                   <FieldComponent
-                    // user={user}
                     data={{
                       ...fv,
                       id: fv.id!,
@@ -129,7 +110,7 @@ const Note = ({ data, setData, removeNote }: Props) => {
         </>
       )}
       <div style={styles.itemMeta}>
-        <small>{new Date(data.datetime!).toLocaleString()}</small>
+        <small>{formattedDate}</small>
         <button
           onClick={() => {
             if (confirm("Are you sure?")) {
