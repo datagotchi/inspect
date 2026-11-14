@@ -9,7 +9,7 @@ import cardStyles from "../../styles/components/card.module.css";
 
 import { User, Workflow } from "../types";
 import CurrentUserContext from "../contexts/CurrentUserContext";
-import { createWorkflow, deleteWorkflow } from "../components/WorkflowsAPI";
+import { createWorkflow, deleteWorkflow } from "./WorkflowsAPI";
 import useUser from "../hooks/useUser";
 import { CreateModal } from "../components/CreateModal";
 

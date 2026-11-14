@@ -219,3 +219,60 @@ export type WorkflowLinkMetadataItem = WorkflowItemMetadataItem & {
   link_id: number;
   link?: WorkflowNodeLink;
 };
+
+export type WorkflowCategory = "system" | "cwa" | "gtm";
+
+export type JsonLdNodeTerm =
+  | "HumanActor"
+  | "SystemDatabase"
+  | "GenerativeAILLM"
+  | "ValidationGate"
+  | "ImpactReporting"
+  | "RiskBottleneck"
+  | "SomaticSubcorticalSensor"
+  | "SensemakingReframing"
+  | "BoundaryObjectArtifact"
+  | "SovereignDemandFilter"
+  | "TargetUserMarket"
+  | "MarketingGTMChannel"
+  | "UXCXBenefit"
+  | "TechnicalFeature";
+
+export type JsonLdWorkflowNode = Indexable & {
+  id: string; // e.g., "urn:inspect:workflow:1:node:42"
+  type: JsonLdNodeTerm | "prov:Entity";
+  title: string;
+  category: WorkflowCategory | string;
+  icon: string;
+  bgColor: string;
+  canvasPosition?: {
+    x: number;
+    y: number;
+  };
+};
+
+export type JsonLdCausalLink = Indexable & {
+  id: string; // e.g., "urn:inspect:workflow:1:link:19"
+  type: "CausalLink";
+  source: string; // parentNode URI (prov:influencer)
+  target: string; // childNode URI (prov:influenced)
+  derivedFrom: string; // parentNode URI (prov:wasDerivedFrom)
+  polarity?: "+" | "-" | "neutral";
+  causalMechanism?: string;
+  conditionalProbability?: number;
+  ostromRuleTier?: "operational" | "collective-choice" | "constitutional";
+  ogatrLevel?: "Objectives" | "Goals" | "Activities" | "Tasks" | "Resources";
+  epistemicUncertainty?: number;
+};
+
+export type JsonLdWorkflowDocument = {
+  "@context": string | Record<string, unknown>;
+  id: string; // e.g., "urn:inspect:workflow:1"
+  type: "WorkflowGraph";
+  title: string;
+  category?: WorkflowCategory | string;
+  creator?: string;
+  created?: string;
+  modified?: string;
+  graph: (JsonLdWorkflowNode | JsonLdCausalLink)[];
+};

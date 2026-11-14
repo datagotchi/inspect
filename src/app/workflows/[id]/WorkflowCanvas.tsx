@@ -14,7 +14,7 @@ import {
   renderConnectorHandles,
   createNodeDragBehavior,
   createConnectorHandleDragBehavior,
-} from "./WorkflowHelpers";
+} from "../WorkflowHelpers";
 
 interface WorkflowCanvasProps {
   nodes: WorkflowNode[];

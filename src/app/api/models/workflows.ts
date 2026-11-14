@@ -164,6 +164,7 @@ export class WorkflowNodeTypeOJSModel
   bg_color!: string;
   border_color!: string;
   text_color!: string;
+  category!: string;
 
   static jsonSchema = {
     type: "object",

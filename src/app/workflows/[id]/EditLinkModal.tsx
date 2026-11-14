@@ -5,7 +5,7 @@ import { WorkflowLinkMetadataItem, WorkflowNodeLink } from "@/app/types";
 import {
   getLinkMetadata,
   saveLinkMetadata,
-} from "@/app/components/WorkflowsAPI";
+} from "@/app/workflows/WorkflowsAPI";
 import { MetadataFieldsEditor } from "./MetadataFieldsEditor";
 
 interface EditLinkModalProps {

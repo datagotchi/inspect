@@ -75,6 +75,7 @@ describe("API /api/fieldnotes/notes/[id]", () => {
       const noteId = "1";
       const updates = { text: "Updated text" };
       const updatedNote = { id: 1, ...updates };
+
       (NoteModel.query().withGraphFetched as jest.Mock).mockResolvedValue(
         updatedNote,
       );
@@ -90,13 +91,19 @@ describe("API /api/fieldnotes/notes/[id]", () => {
         id: parseInt(noteId, 10),
         user_id: 2,
       });
+      expect(NoteModel.query().findById).toHaveBeenCalledWith(1);
+      expect(NoteModel.query().withGraphFetched).toHaveBeenCalledWith(
+        "field_values.field",
+      );
       expect(res.status).toBe(200);
       const json = await res.json();
       expect(json).toEqual(updatedNote);
     });
 
     it("should return 404 if note not found", async () => {
-      (NoteModel.query().returning as jest.Mock).mockResolvedValue(undefined);
+      (NoteModel.query().withGraphFetched as jest.Mock).mockResolvedValue(
+        undefined,
+      );
 
       const req = {
         json: jest.fn().mockResolvedValue({ text: "update" }),

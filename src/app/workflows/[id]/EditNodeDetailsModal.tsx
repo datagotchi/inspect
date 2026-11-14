@@ -5,7 +5,7 @@ import {
   getNodeMetadata,
   saveNodeMetadata,
   updateWorkflowNode,
-} from "@/app/components/WorkflowsAPI";
+} from "@/app/workflows/WorkflowsAPI";
 import { WorkflowNode, WorkflowNodeMetadataItem } from "@/app/types";
 import { MetadataFieldsEditor } from "./MetadataFieldsEditor";
 

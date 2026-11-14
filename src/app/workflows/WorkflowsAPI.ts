@@ -38,7 +38,7 @@ function getHeaders(token?: string, isJson: boolean = false): HeadersInit {
 export async function fetchWorkflow(
   workflowId: number,
   token?: string,
-): Promise<{ nodes: WorkflowNode[]; links: WorkflowNodeLink[] } | null> {
+): Promise<Workflow | null> {
   try {
     const res = await fetch(`/api/workflows/${workflowId}`, {
       headers: getHeaders(token),
