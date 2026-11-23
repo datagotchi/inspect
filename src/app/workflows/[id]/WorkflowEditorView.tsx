@@ -25,6 +25,8 @@ import { WorkflowCanvas } from "@/app/workflows/[id]/WorkflowCanvas";
 import { CreateModal } from "@/app/components/CreateModal";
 import { EditLinkModal } from "./EditLinkModal";
 import { EditNodeDetailsModal } from "./EditNodeDetailsModal";
+import { WorkflowNameEditor } from "./WorkflowNameEditor";
+import { getViewportCenterCoords } from "../WorkflowHelpers";
 
 export default function WorkflowEditorView() {
   const [isCreating, setIsCreating] = useState(false);
@@ -33,7 +35,7 @@ export default function WorkflowEditorView() {
   const [editingLink, setEditingLink] = useState<WorkflowNodeLink | null>(null);
   const [nodeTypes, setNodeTypes] = useState<WorkflowNodeType[]>();
 
-  const { workflow, setWorkflow } = useWorkflowContext();
+  const { viewport, workflow, setWorkflow } = useWorkflowContext();
   const { token } = useUser();
   const router = useRouter();
 
@@ -186,9 +188,11 @@ export default function WorkflowEditorView() {
       );
 
       if (newNode) {
+        const { x, y } = getViewportCenterCoords(viewport);
+        const newNodeWithCoords = { ...newNode, x, y };
         setWorkflow({
           ...workflow,
-          nodes: [...(workflow.nodes || []), newNode],
+          nodes: [...(workflow.nodes || []), newNodeWithCoords],
         });
         setIsModalOpen(false);
         router.refresh();
@@ -205,7 +209,7 @@ export default function WorkflowEditorView() {
   const hasNodes = nodes.length > 0;
 
   const nodeTypeOptions = (nodeTypes || [])
-    .filter((nt) => nt.category === workflow.category)
+    // .filter((nt) => nt.category === workflow.category)
     .map((t) => ({
       value: t.id!,
       label: `${t.icon} ${t.name}`,
@@ -220,7 +224,10 @@ export default function WorkflowEditorView() {
               <div className={styles.headerInfo}>
                 <h1 className={styles.headerTitle}>Workflow Canvas</h1>
                 <p className={styles.headerSubtitle}>
-                  Workflow: <strong>{workflow.name}</strong>
+                  Workflow:{" "}
+                  <strong>
+                    <WorkflowNameEditor />
+                  </strong>
                 </p>
                 <p className={styles.headerSubtitle}>
                   {hasNodes

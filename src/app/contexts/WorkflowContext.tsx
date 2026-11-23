@@ -7,12 +7,22 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useCallback,
 } from "react";
 import { Workflow, WorkflowNode, WorkflowNodeLink } from "../types";
+
+export interface CanvasViewport {
+  x: number;
+  y: number;
+  k: number;
+}
 
 interface WorkflowContextType {
   workflow: Workflow | undefined;
   setWorkflow: React.Dispatch<React.SetStateAction<Workflow | undefined>>;
+  viewport: CanvasViewport | undefined;
+  setViewport: (vp: CanvasViewport) => void;
+  isHydrated: boolean;
 }
 
 const WorkflowContext = createContext<WorkflowContextType | undefined>(
@@ -28,13 +38,16 @@ export const WorkflowProvider = ({
   initialWorkflow?: Workflow;
   children: React.ReactNode;
 }) => {
-  // 1. Always initialize with initialWorkflow so SSR and first client render match (zero hydration mismatch)
   const [workflow, setWorkflow] = useState<Workflow | undefined>(
     initialWorkflow,
   );
-  const hasHydratedSession = useRef(false);
+  const [viewport, setViewportState] = useState<CanvasViewport | undefined>(
+    undefined,
+  );
+  const [isHydrated, setIsHydrated] = useState(false);
+  const isHydratedRef = useRef(false);
 
-  // 2. Sync fresh server data on mount / router.refresh(), preserving cached canvas (x, y) coordinates
+  // 1. Hydrate nodes AND viewport from sessionStorage on mount
   useEffect(() => {
     if (!initialWorkflow) return;
 
@@ -44,10 +57,12 @@ export const WorkflowProvider = ({
         const parsed = JSON.parse(saved) as {
           nodes?: WorkflowNode[];
           links?: WorkflowNodeLink[];
+          viewport?: CanvasViewport;
         };
+
         const cachedCoords = new Map(
           (parsed.nodes ?? [])
-            .filter((n) => n.x !== undefined && n.y !== undefined)
+            .filter((n) => typeof n.x === "number" && typeof n.y === "number")
             .map((n) => [n.id, { x: n.x, y: n.y }]),
         );
 
@@ -58,7 +73,18 @@ export const WorkflowProvider = ({
             return coords ? { ...node, x: coords.x, y: coords.y } : node;
           }),
         });
-        hasHydratedSession.current = true;
+
+        if (
+          parsed.viewport &&
+          typeof parsed.viewport.x === "number" &&
+          typeof parsed.viewport.y === "number" &&
+          typeof parsed.viewport.k === "number"
+        ) {
+          setViewportState(parsed.viewport);
+        }
+
+        isHydratedRef.current = true;
+        setIsHydrated(true);
         return;
       } catch (err) {
         console.error("Failed to parse workflow sessionStorage:", err);
@@ -66,22 +92,38 @@ export const WorkflowProvider = ({
     }
 
     setWorkflow(initialWorkflow);
-    hasHydratedSession.current = true;
+    isHydratedRef.current = true;
+    setIsHydrated(true);
   }, [initialWorkflow]);
 
-  // 3. Persist updated nodes & links to tab-scoped sessionStorage after initial sync
+  // 2. Persist nodes, links, and viewport to sessionStorage
   useEffect(() => {
-    if (!workflow || !hasHydratedSession.current) return;
+    if (!workflow || !isHydratedRef.current) return;
+
+    const hasAnyCoords = (workflow.nodes ?? []).some(
+      (n) => typeof n.x === "number" && typeof n.y === "number",
+    );
+    const existing = sessionStorage.getItem(getSessionKey(workflow.id));
+    if (!hasAnyCoords && !viewport && existing) return;
+
     sessionStorage.setItem(
       getSessionKey(workflow.id),
       JSON.stringify({
         nodes: workflow.nodes ?? [],
         links: workflow.links ?? [],
+        viewport,
       }),
     );
-  }, [workflow]);
+  }, [workflow, viewport]);
 
-  const contextValue = useMemo(() => ({ workflow, setWorkflow }), [workflow]);
+  const setViewport = useCallback((vp: CanvasViewport) => {
+    setViewportState(vp);
+  }, []);
+
+  const contextValue = useMemo(
+    () => ({ workflow, setWorkflow, viewport, setViewport, isHydrated }),
+    [workflow, viewport, setViewport, isHydrated],
+  );
 
   return (
     <WorkflowContext.Provider value={contextValue}>

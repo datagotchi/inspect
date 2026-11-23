@@ -37,6 +37,11 @@ const nextConfig = {
   },
   productionBrowserSourceMaps: true,
   serverExternalPackages: ["knex", "@libsql/client"],
+  // output: 'standalone' // to avoid dynamic backend security risks
+  // note: Next.js intentionally does not copy public/ or .next/static/ into .next/standalone,
+  // so the eventual npx build script needs to copy those two directories
+  // into .next/standalone/public and .next/standalone/.next/static before packing,
+  // or CSS and static assets will 404 when a user launches it
 };
 
 export default nextConfig;

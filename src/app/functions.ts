@@ -295,6 +295,7 @@ function reduceMetadata(
   return result;
 }
 
+// FIXME: get x and y coordinates from sessionStorage either here or in a useEffect elsewhere into the JS variables
 export function serializeWorkflowToJsonLd(
   workflow: Workflow,
   inlineContext = true,

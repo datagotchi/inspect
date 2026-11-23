@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import React from "react";
 import * as d3 from "d3";
 import { WorkflowNode, WorkflowNodeLink } from "@/app/types";
 
@@ -21,6 +22,21 @@ export const CARD_WIDTH = 180;
 export const CARD_HEIGHT = 80;
 export const CANVAS_WIDTH = 1200;
 export const CANVAS_HEIGHT = 800;
+
+export function getViewportCenterCoords(viewport?: {
+  x: number;
+  y: number;
+  k: number;
+}): { x: number; y: number } {
+  const vx = viewport?.x ?? CANVAS_WIDTH / 2;
+  const vy = viewport?.y ?? 60;
+  const vk = viewport?.k ?? 1;
+
+  return {
+    x: (CANVAS_WIDTH / 2 - vx) / vk - CARD_WIDTH / 2,
+    y: (CANVAS_HEIGHT / 2 - vy) / vk - CARD_HEIGHT / 2,
+  };
+}
 
 export function calculatePrimaryPath(
   link: LinkData,
@@ -100,11 +116,10 @@ export interface LayoutParams {
 export function processWorkflowLayout({
   nodes,
   links,
-  category,
 }: LayoutParams): WorkflowLayoutResult | null {
   if (!nodes || nodes.length === 0) return null;
 
-  const isGtm = category === "gtm";
+  const isGtm = false;
 
   const realNodesMap = new Map<number, WorkflowNode>();
   nodes.forEach((n) => realNodesMap.set(n.id!, { ...n }));
@@ -114,8 +129,6 @@ export function processWorkflowLayout({
   links.forEach((l) => childSet.add(l.child_id));
 
   const rootCandidates = nodes.filter((n) => !childSet.has(n.id!));
-  // rootCandidates.sort((a, b) => a.id! - b.id!);
-  // or b.id - a.id depending on your DB IDs
 
   let virtualRoot: any;
   if (rootCandidates.length === 1) {
@@ -142,25 +155,33 @@ export function processWorkflowLayout({
 
     treeLayout(rootHierarchy);
 
-    let maxDepth = 0;
-    rootHierarchy.each((node) => {
-      if (node.depth > maxDepth) maxDepth = node.depth;
-    });
-
-    // Swap and project coordinates (Features on LEFT x=0, Target Users on far RIGHT)
+    // Swap and project coordinates
     rootHierarchy.each((node: any) => {
       const originalBreadthY = node.x;
       node.x = node.depth * (CARD_WIDTH + 120);
       node.y = originalBreadthY;
     });
   } else {
-    // Standard top-down layout for system/cwa
+    // Standard top-down layout
     const treeLayout = d3
       .tree<WorkflowNode>()
       .nodeSize([CARD_WIDTH + 60, CARD_HEIGHT + 100]);
 
     treeLayout(rootHierarchy);
   }
+
+  // Preserve manual (x, y) coordinates from state / sessionStorage
+  rootHierarchy.each((node: any) => {
+    if (
+      node.data &&
+      node.data.id !== -1 &&
+      typeof node.data.x === "number" &&
+      typeof node.data.y === "number"
+    ) {
+      node.x = node.data.x;
+      node.y = node.data.y;
+    }
+  });
 
   const d3NodeMap = new Map<number, d3.HierarchyPointNode<WorkflowNode>>();
   const realNodesList: d3.HierarchyPointNode<WorkflowNode>[] = [];
@@ -190,19 +211,91 @@ export function processWorkflowLayout({
   };
 }
 
-export function setupCanvasZoom(svgElement: SVGSVGElement) {
+export function setupCanvasZoom(
+  svgElement: SVGSVGElement,
+  savedViewport?: { x: number; y: number; k: number },
+  onViewportChange?: (vp: { x: number; y: number; k: number }) => void,
+) {
   const svg = d3.select(svgElement);
-  svg.selectAll("*").remove();
-  svg.attr("viewBox", `0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`);
+  let zoomGroup = svg.select<SVGGElement>("g.zoom-container");
+  const isFirstMount = zoomGroup.empty();
 
-  const zoomGroup = svg.append("g").attr("class", "zoom-container");
+  if (isFirstMount) {
+    svg.attr("viewBox", `0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`);
+    zoomGroup = svg.append("g").attr("class", "zoom-container");
+  } else {
+    zoomGroup.selectAll("*").remove();
+  }
+
   const zoomBehavior = d3
     .zoom<SVGSVGElement, unknown>()
     .scaleExtent([0.2, 3])
-    .on("zoom", (e) => zoomGroup.attr("transform", e.transform));
+    .filter((event) => {
+      // Always allow wheel / trackpad pinch zoom
+      if (event.type === "wheel") return true;
+      // Reserve Shift+Drag on blank space for marquee box-selection;
+      // normal left-click drag pans the canvas
+      if (event.shiftKey) return false;
+      return !event.ctrlKey && event.button === 0;
+    })
+    .on("zoom", (e) => zoomGroup.attr("transform", e.transform))
+    .on("end", (e) => {
+      if (onViewportChange) {
+        onViewportChange({
+          x: e.transform.x,
+          y: e.transform.y,
+          k: e.transform.k,
+        });
+      }
+    });
 
+  // Updates filter/handlers while preserving existing svgElement.__zoom state
   svg.call(zoomBehavior);
+
+  if (isFirstMount) {
+    const initialTransform = savedViewport
+      ? d3.zoomIdentity
+          .translate(savedViewport.x, savedViewport.y)
+          .scale(savedViewport.k)
+      : d3.zoomIdentity.translate(CANVAS_WIDTH / 2, 60);
+
+    svg.call(zoomBehavior.transform, initialTransform);
+  }
+
   return { svg, zoomGroup };
+}
+
+export function applySelectionHighlight(
+  zoomGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+  selectedIds: Set<number>,
+) {
+  zoomGroup
+    .selectAll<
+      SVGGElement,
+      d3.HierarchyPointNode<WorkflowNode>
+    >("g.workflow-node-group")
+    .each(function (d) {
+      const isSelected = d.data.id !== undefined && selectedIds.has(d.data.id);
+      d3.select(this)
+        .select("foreignObject > div")
+        .style(
+          "box-shadow",
+          isSelected
+            ? "0 0 0 3px #2563eb, 0 6px 16px rgba(37, 99, 235, 0.25)"
+            : "0 2px 6px rgba(0, 0, 0, 0.08)",
+        );
+    });
+
+  zoomGroup
+    .selectAll<SVGPathElement, LinkData>("g.primary-links path")
+    .attr("stroke", (l) =>
+      selectedIds.has(l.sourceId) && selectedIds.has(l.targetId)
+        ? "#1d4ed8"
+        : "#3b82f6",
+    )
+    .attr("stroke-width", (l) =>
+      selectedIds.has(l.sourceId) && selectedIds.has(l.targetId) ? 4.5 : 3.5,
+    );
 }
 
 export function renderPrimaryLinks(
@@ -211,9 +304,8 @@ export function renderPrimaryLinks(
   d3NodeMap: Map<number, d3.HierarchyPointNode<WorkflowNode>>,
   onEditLink?: (link: WorkflowNodeLink) => void,
   onDeleteLink?: (linkId: number) => Promise<void>,
-  category?: string,
 ) {
-  const isGtm = category === "gtm";
+  const isGtm = false;
   const g = parentGroup.append("g").attr("class", "primary-links");
 
   // Render Optional Link Labels
@@ -238,18 +330,22 @@ export function renderPrimaryLinks(
     .style("pointer-events", "none")
     .text((l) => getLinkLabel(l) || "");
 
-  // Return the path selection directly so createNodeDragBehavior receives SVGPathElement
   return g
     .attr("fill", "none")
     .attr("stroke", "#3b82f6")
-    .attr("stroke-width", 2.5)
+    .attr("stroke-width", 3.5)
     .selectAll<SVGPathElement, LinkData>("path")
     .data(primaryLinksData)
     .join("path")
     .attr("d", (l) => calculatePrimaryPath(l, d3NodeMap, isGtm))
     .style("cursor", "pointer")
-    .on("click", (event, d) => {
+    .style("pointer-events", "stroke")
+    .on("mousedown", (event) => event.stopPropagation())
+    .on("click", async (event, d) => {
       event.stopPropagation();
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
       if (onEditLink && d.rawLink) {
         onEditLink(d.rawLink);
       } else if (onDeleteLink && d.id !== undefined) {
@@ -266,11 +362,10 @@ export function renderSecondaryLinks(
   d3NodeMap: Map<number, d3.HierarchyPointNode<WorkflowNode>>,
   onEditLink?: (link: WorkflowNodeLink) => void,
   onDeleteLink?: (linkId: number) => Promise<void>,
-  category?: string,
 ) {
   if (!crossLinksData || crossLinksData.length === 0) return null;
 
-  const isGtm = category === "gtm";
+  const isGtm = false;
   const g = parentGroup.append("g").attr("class", "secondary-links");
 
   // Render Optional Link Labels for Secondary Connections
@@ -295,10 +390,9 @@ export function renderSecondaryLinks(
     .style("pointer-events", "none")
     .text((l) => getLinkLabel(l) || "");
 
-  // Return path selection directly
   return g
     .attr("stroke", "#ef4444")
-    .attr("stroke-width", 2)
+    .attr("stroke-width", 3)
     .attr("stroke-dasharray", "4,4")
     .attr("fill", "none")
     .selectAll<SVGPathElement, LinkData>("path")
@@ -306,8 +400,13 @@ export function renderSecondaryLinks(
     .join("path")
     .attr("d", (d) => calculateSecondaryPath(d, d3NodeMap, isGtm))
     .style("cursor", "pointer")
-    .on("click", (event, d) => {
+    .style("pointer-events", "stroke")
+    .on("mousedown", (event) => event.stopPropagation())
+    .on("click", async (event, d) => {
       event.stopPropagation();
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
       if (onEditLink && d.rawLink) {
         onEditLink(d.rawLink);
       } else if (onDeleteLink && d.id !== undefined) {
@@ -331,6 +430,9 @@ export function renderDragLine(
 }
 
 export function createNodeDragBehavior(
+  zoomGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+  realNodes: d3.HierarchyPointNode<WorkflowNode>[],
+  selectedIdsRef: React.RefObject<Set<number>>,
   primarySelection: d3.Selection<
     SVGPathElement,
     LinkData,
@@ -345,9 +447,11 @@ export function createNodeDragBehavior(
   > | null,
   d3NodeMap: Map<number, d3.HierarchyPointNode<WorkflowNode>>,
   onNodeDragEnd?: (nodeId: number, x: number, y: number) => void,
-  category?: string,
+  onBatchNodeDragEnd?: (
+    updates: Array<{ id: number; x: number; y: number }>,
+  ) => void,
 ) {
-  const isGtm = category === "gtm";
+  const isGtm = false;
 
   return d3
     .drag<SVGGElement, d3.HierarchyPointNode<WorkflowNode>>()
@@ -362,14 +466,38 @@ export function createNodeDragBehavior(
       }
       return !event.ctrlKey && event.button === 0;
     })
-    .on("drag", (event, d) => {
-      d.x += event.dx;
-      d.y += event.dy;
+    .on("drag", function (event, d) {
+      const draggedId = d.data.id;
+      const isGroupDrag =
+        draggedId !== undefined &&
+        selectedIdsRef.current.has(draggedId) &&
+        selectedIdsRef.current.size > 1;
 
-      d3.select(event.sourceEvent.target.closest("g")).attr(
-        "transform",
-        `translate(${d.x}, ${d.y})`,
-      );
+      if (isGroupDrag) {
+        realNodes.forEach((n) => {
+          if (
+            n.data.id !== undefined &&
+            selectedIdsRef.current.has(n.data.id)
+          ) {
+            n.x += event.dx;
+            n.y += event.dy;
+          }
+        });
+
+        zoomGroup
+          .selectAll<SVGGElement, d3.HierarchyPointNode<WorkflowNode>>(
+            "g.workflow-node-group",
+          )
+          .filter(
+            (n) =>
+              n.data.id !== undefined && selectedIdsRef.current.has(n.data.id),
+          )
+          .attr("transform", (n) => `translate(${n.x}, ${n.y})`);
+      } else {
+        d.x += event.dx;
+        d.y += event.dy;
+        d3.select(this).attr("transform", `translate(${d.x}, ${d.y})`);
+      }
 
       primarySelection.attr("d", (l: LinkData) =>
         calculatePrimaryPath(l, d3NodeMap, isGtm),
@@ -381,10 +509,23 @@ export function createNodeDragBehavior(
         );
       }
     })
-    .on("end", (event, d) => {
-      // Sync the final (x, y) back to React state
-      if (onNodeDragEnd && d.data.id !== undefined) {
-        onNodeDragEnd(d.data.id, d.x, d.y);
+    .on("end", (_event, d) => {
+      const draggedId = d.data.id;
+      const isGroupDrag =
+        draggedId !== undefined &&
+        selectedIdsRef.current.has(draggedId) &&
+        selectedIdsRef.current.size > 1;
+
+      if (isGroupDrag && onBatchNodeDragEnd) {
+        const updates = realNodes
+          .filter(
+            (n) =>
+              n.data.id !== undefined && selectedIdsRef.current.has(n.data.id),
+          )
+          .map((n) => ({ id: n.data.id!, x: n.x, y: n.y }));
+        onBatchNodeDragEnd(updates);
+      } else if (onNodeDragEnd && draggedId !== undefined) {
+        onNodeDragEnd(draggedId, d.x, d.y);
       }
     });
 }
@@ -394,9 +535,8 @@ export function createConnectorHandleDragBehavior(
   dragLine: d3.Selection<SVGPathElement, unknown, null, undefined>,
   realNodes: d3.HierarchyPointNode<WorkflowNode>[],
   onLinkNodes?: (parentId: number, childId: number) => Promise<void>,
-  category?: string,
 ) {
-  const isGtm = category === "gtm";
+  const isGtm = false;
 
   return d3
     .drag<SVGCircleElement, d3.HierarchyPointNode<WorkflowNode>>()
@@ -450,6 +590,8 @@ export function renderNodes(
     .selectAll<SVGGElement, d3.HierarchyPointNode<WorkflowNode>>("g")
     .data(realNodes)
     .join("g")
+    .attr("class", "workflow-node-group")
+    .attr("data-node-id", (d) => d.data.id ?? "")
     .attr("transform", (d) => `translate(${d.x}, ${d.y})`)
     .style("cursor", "move")
     .call(dragBehavior);
@@ -498,9 +640,13 @@ export function renderNodes(
     .style("line-height", "1")
     .attr("title", "Delete Node")
     .html("🗑️")
-    .on("click", (event, d) => {
+    .on("mousedown", (event) => event.stopPropagation())
+    .on("click", async (event, d) => {
       event.stopPropagation();
       if (onDeleteNode && d.data.id !== undefined) {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        }
         if (
           confirm(`Are you sure you want to delete node "${d.data.label}"?`)
         ) {
@@ -521,9 +667,13 @@ export function renderNodes(
     .style("line-height", "1")
     .attr("title", "Edit Node Metadata")
     .html("✏️")
-    .on("click", (event, d) => {
+    .on("mousedown", (event) => event.stopPropagation())
+    .on("click", async (event, d) => {
       event.stopPropagation();
       if (onEditNodeMetadata) {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        }
         onEditNodeMetadata(d.data);
       }
     });
@@ -559,9 +709,8 @@ export function renderConnectorHandles(
     d3.HierarchyPointNode<WorkflowNode>,
     unknown
   >,
-  category?: string,
 ) {
-  const isGtm = category === "gtm";
+  const isGtm = false;
 
   nodeSelection
     .append("circle")

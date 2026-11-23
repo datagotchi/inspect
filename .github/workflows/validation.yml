@@ -76,8 +76,7 @@ jobs:
           done
           exit 1
       - name: Run jest tests
-        run: yarn test # FIXME: test for full enough coverage?
-
+        run: yarn test --ci --coverage --coverageThreshold='{"global":{"branches":50,"functions":55,"statements":65}}'
 
   # e2e:
   #   name: Playwright E2E Tests

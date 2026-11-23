@@ -194,7 +194,13 @@ export const WORKFLOW_JSONLD_SCHEMA = {
   },
 
   // Canvas layout properties
-  canvasPosition: "inspect:canvasPosition",
+  canvasPosition: {
+    "@id": "inspect:canvasPosition",
+    "@context": {
+      x: { "@id": "inspect:x", "@type": "xsd:double" },
+      y: { "@id": "inspect:y", "@type": "xsd:double" },
+    },
+  },
   bgColor: "inspect:bgColor",
   icon: "inspect:icon",
 } as const;
