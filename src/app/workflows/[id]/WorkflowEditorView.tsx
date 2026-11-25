@@ -110,19 +110,61 @@ export default function WorkflowEditorView() {
   const nodes = workflow.nodes || [];
   const links = workflow.links || [];
 
-  const handleExportModel = () => {
+  const handleExportModel = async () => {
     const payload = serializeWorkflowToJsonLd(workflow, true);
+    const jsonString = JSON.stringify(payload, null, 2);
+    const fileName = `${(workflow.name || "workflow")
+      .toLowerCase()
+      .replace(/\s+/g, "_")}_${workflow.id}.jsonld`;
 
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    if ("showSaveFilePicker" in window) {
+      try {
+        const handle = await (
+          window as unknown as {
+            showSaveFilePicker: (options?: {
+              suggestedName?: string;
+              types?: Array<{
+                description?: string;
+                accept: Record<string, string[]>;
+              }>;
+            }) => Promise<{
+              createWritable: () => Promise<{
+                write: (data: string) => Promise<void>;
+                close: () => Promise<void>;
+              }>;
+            }>;
+          }
+        ).showSaveFilePicker({
+          suggestedName: fileName,
+          types: [
+            {
+              description: "JSON-LD Workflow",
+              accept: { "application/ld+json": [".jsonld"] },
+            },
+          ],
+        });
+
+        const writable = await handle.createWritable();
+        await writable.write(jsonString);
+        await writable.close();
+        return;
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") {
+          return;
+        }
+        console.warn(
+          "showSaveFilePicker failed, falling back to download:",
+          err,
+        );
+      }
+    }
+
+    const blob = new Blob([jsonString], {
       type: "application/ld+json;charset=utf-8",
     });
     const url = URL.createObjectURL(blob);
 
     const downloadAnchor = document.createElement("a");
-    const fileName = `${(workflow.name || "workflow")
-      .toLowerCase()
-      .replace(/\s+/g, "_")}_${workflow.id}.jsonld`;
-
     downloadAnchor.href = url;
     downloadAnchor.download = fileName;
     document.body.appendChild(downloadAnchor);

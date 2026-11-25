@@ -74,14 +74,19 @@ export function WorkflowCanvas({
     }
   };
 
-  // Persist multi-node group drag atomically to WorkflowContext + sessionStorage
+  // Persist multi-node group drag locally to WorkflowContext + sessionStorage
   const handleBatchNodeDragEnd = useCallback(
     (updates: Array<{ id: number; x: number; y: number }>) => {
+      if (updates.length === 0) return;
+
       const coordMap = new Map(updates.map((u) => [u.id, { x: u.x, y: u.y }]));
+      const nowIso = new Date().toISOString();
+
       setWorkflow((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
+          updated_at: nowIso,
           nodes: (prev.nodes ?? []).map((n) => {
             const next = n.id !== undefined ? coordMap.get(n.id) : undefined;
             return next ? { ...n, x: next.x, y: next.y } : n;
@@ -173,7 +178,7 @@ export function WorkflowCanvas({
       const target = event.target as Element;
       if (target.closest(".workflow-node-group, circle, button")) return;
 
-      // Plain mousedown without Shift: let d3.zoom pan, and only clear selection if it was a stationary click
+      // Plain mousedown without Shift: let d3.zoom pan, and clear selection on a stationary click
       if (!event.shiftKey) {
         const downClientX = event.clientX;
         const downClientY = event.clientY;
@@ -182,7 +187,7 @@ export function WorkflowCanvas({
             upEvent.clientX - downClientX,
             upEvent.clientY - downClientY,
           );
-          if (moved < 4 && selectedIdsRef.current.size > 0) {
+          if (moved < 8 && selectedIdsRef.current.size > 0) {
             selectedIdsRef.current = new Set();
             setSelectedCount(0);
             applySelectionHighlight(zoomGroup, selectedIdsRef.current);
