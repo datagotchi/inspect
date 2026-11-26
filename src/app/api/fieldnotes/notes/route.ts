@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
-import { NoteModel } from "../models/notes";
+import { FieldValueModel, NoteModel } from "@/app/api/models/fieldnotes";
 import { getAuthUser } from "../../../functions";
 
 export async function GET() {
@@ -30,28 +30,51 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const authUser = await getAuthUser(headers);
-    if (!authUser) {
+    if (!authUser || !authUser.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { text } = await req.json();
+    const body = await req.json();
+    const { text, field_values } = body;
 
-    const newNote = await NoteModel.query().insertAndFetch({
+    if (!text || typeof text !== "string") {
+      return NextResponse.json(
+        { message: "Text field is required" },
+        { status: 400 },
+      );
+    }
+
+    // 1. Create the note record with an explicit insert cast/type
+    const newNote = await NoteModel.query().insert({
       text,
-      datetime: new Date().toISOString(),
       user_id: authUser.id,
-    });
+    } as Partial<NoteModel>);
 
-    return NextResponse.json(newNote, { status: 201 });
+    // 2. Insert associated field values if present
+    if (Array.isArray(field_values) && field_values.length > 0) {
+      for (const fv of field_values) {
+        if (fv.field_id && fv.value) {
+          await FieldValueModel.query().insert({
+            note_id: newNote.id,
+            field_id: fv.field_id,
+            value: fv.value,
+            user_id: authUser.id,
+          } as Partial<FieldValueModel>);
+        }
+      }
+    }
+
+    // 3. Fetch full created note graph
+    const createdNote = await NoteModel.query()
+      .findById(newNote.id)
+      .withGraphFetched("field_values.field");
+
+    return NextResponse.json(createdNote, { status: 201 });
   } catch (err) {
     console.error("Error in POST /api/fieldnotes/notes:", err);
     return NextResponse.json(
-      {
-        statusText: "Internal server error while creating note",
-      },
-      {
-        status: 500,
-      },
+      { statusText: "Internal server error while creating note" },
+      { status: 500 },
     );
   }
 }

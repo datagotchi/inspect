@@ -1,5 +1,7 @@
 import React from "react";
 
+import { WorkflowCategory, JsonLdNodeTerm } from "./types";
+
 export const INSERT_LINK_DIALOG_ID = "insertLinkDialog";
 
 export const TRASH_ICON = (
@@ -100,3 +102,190 @@ export const emojis = [
   { value: "⚙️", label: "focused" },
   { value: "🛡️", label: "protected" },
 ];
+
+export const WORKFLOW_JSONLD_SCHEMA = {
+  "@version": 1.1,
+  id: "@id",
+  type: "@type",
+  graph: "@graph",
+
+  // Core vocabularies
+  dcterms: "http://purl.org/dc/terms/",
+  prov: "http://www.w3.org/ns/prov#",
+  xsd: "http://www.w3.org/2001/XMLSchema#",
+  inspect: "https://inspect.local/ns/core#",
+  jaw: "https://inspect.local/ns/jaw#", // Joint Activity Workflows & PyWhy SCMs
+  cwa: "https://inspect.local/ns/cwa#", // Cognitive Work Analysis & Bio-Digital Compass
+  gtm: "https://inspect.local/ns/gtm#", // Go-To-Market & Lean Loops
+
+  // Dublin Core document metadata
+  title: "dcterms:title",
+  description: "dcterms:description",
+  category: "dcterms:subject",
+  creator: "dcterms:creator",
+  created: { "@id": "dcterms:created", "@type": "xsd:dateTime" },
+  modified: { "@id": "dcterms:modified", "@type": "xsd:dateTime" },
+
+  // W3C PROV-O & causal topology
+  WorkflowGraph: "prov:Bundle",
+  CausalLink: "prov:Influence",
+  source: { "@id": "prov:influencer", "@type": "@id" },
+  target: { "@id": "prov:influenced", "@type": "@id" },
+  derivedFrom: { "@id": "prov:wasDerivedFrom", "@type": "@id" },
+  used: { "@id": "prov:used", "@type": "@id" },
+  generatedBy: { "@id": "prov:wasGeneratedBy", "@type": "@id" },
+  associatedWith: { "@id": "prov:wasAssociatedWith", "@type": "@id" },
+
+  // 14 workflow_node_types -> JSON-LD @type
+  HumanActor: "prov:Person",
+  SystemDatabase: "prov:SoftwareAgent",
+  GenerativeAILLM: "prov:SoftwareAgent",
+  ValidationGate: "jaw:ValidationGate",
+  ImpactReporting: "prov:Entity",
+  RiskBottleneck: "jaw:RiskBottleneck",
+
+  SomaticSubcorticalSensor: "cwa:SomaticSensor",
+  SensemakingReframing: "cwa:DataFrameLoop",
+  BoundaryObjectArtifact: "cwa:BoundaryObject",
+  SovereignDemandFilter: "cwa:SovereignDemandFilter",
+
+  TargetUserMarket: "gtm:TargetSegment",
+  MarketingGTMChannel: "gtm:Channel",
+  UXCXBenefit: "gtm:ValueProposition",
+  TechnicalFeature: "gtm:Capability",
+
+  // 20 workflow_node_metadata fieldnames
+  Format: "dcterms:format",
+  Medium: "dcterms:medium",
+  Framework: "dcterms:conformsTo",
+  Visibility: "dcterms:accessRights",
+
+  Objective: "jaw:objective",
+  Goal: "jaw:goal",
+  ProcessingEngine: "jaw:processingEngine",
+  TechStack: "jaw:techStack",
+
+  AffectSpikes: "cwa:affectSpikes",
+  Neurotype: "cwa:neurotype",
+  NeurologicalLayer: "cwa:neurologicalLayer",
+  TriggerVector: "cwa:triggerVector",
+
+  CoreNeed: "gtm:coreNeed",
+  IncludedServices: "gtm:includedServices",
+  TargetSegment: "gtm:targetSegment",
+  GTMStrategy: "gtm:gtmStrategy",
+  FeatureScope: "gtm:featureScope",
+  DistributionVector: "gtm:distributionVector",
+  UXResearchGrounding: "gtm:uxResearchGrounding",
+  UserBenefit: "gtm:userBenefit",
+
+  // Causal / DBN / Ostrom IAD link properties (for PyWhy compilation)
+  polarity: "jaw:polarity",
+  causalMechanism: "jaw:causalMechanism",
+  conditionalProbability: {
+    "@id": "jaw:conditionalProbability",
+    "@type": "xsd:decimal",
+  },
+  ostromRuleTier: "jaw:ostromRuleTier",
+  ogatrLevel: "jaw:ogatrLevel",
+  epistemicUncertainty: {
+    "@id": "jaw:epistemicUncertainty",
+    "@type": "xsd:decimal",
+  },
+
+  // Canvas layout properties
+  canvasPosition: {
+    "@id": "inspect:canvasPosition",
+    "@context": {
+      x: { "@id": "inspect:x", "@type": "xsd:double" },
+      y: { "@id": "inspect:y", "@type": "xsd:double" },
+    },
+  },
+  bgColor: "inspect:bgColor",
+  icon: "inspect:icon",
+} as const;
+
+export const NODE_TYPE_REGISTRY: Record<
+  number,
+  {
+    term: JsonLdNodeTerm;
+    category: WorkflowCategory;
+    icon: string;
+    bgColor: string;
+  }
+> = {
+  1: { term: "HumanActor", category: "system", icon: "👤", bgColor: "#e0f2fe" },
+  2: {
+    term: "SystemDatabase",
+    category: "system",
+    icon: "🗄️",
+    bgColor: "#f1f5f9",
+  },
+  3: {
+    term: "GenerativeAILLM",
+    category: "system",
+    icon: "🤖",
+    bgColor: "#fef3c7",
+  },
+  4: {
+    term: "ValidationGate",
+    category: "system",
+    icon: "🛡️",
+    bgColor: "#dcfce7",
+  },
+  5: {
+    term: "ImpactReporting",
+    category: "system",
+    icon: "📊",
+    bgColor: "#f3e8ff",
+  },
+  6: {
+    term: "RiskBottleneck",
+    category: "system",
+    icon: "⚠️",
+    bgColor: "#fee2e2",
+  },
+  7: {
+    term: "SomaticSubcorticalSensor",
+    category: "cwa",
+    icon: "⚡",
+    bgColor: "#ffe4e6",
+  },
+  8: {
+    term: "SensemakingReframing",
+    category: "cwa",
+    icon: "🧩",
+    bgColor: "#e0e7ff",
+  },
+  9: {
+    term: "BoundaryObjectArtifact",
+    category: "cwa",
+    icon: "📄",
+    bgColor: "#f3e8ff",
+  },
+  10: {
+    term: "SovereignDemandFilter",
+    category: "cwa",
+    icon: "🧱",
+    bgColor: "#ffedd5",
+  },
+  11: {
+    term: "TargetUserMarket",
+    category: "gtm",
+    icon: "🎯",
+    bgColor: "#fce7f3",
+  },
+  12: {
+    term: "MarketingGTMChannel",
+    category: "gtm",
+    icon: "📢",
+    bgColor: "#fed7aa",
+  },
+  13: { term: "UXCXBenefit", category: "gtm", icon: "💡", bgColor: "#dbeafe" },
+  14: {
+    term: "TechnicalFeature",
+    category: "gtm",
+    icon: "⚙️",
+    bgColor: "#f3f4f6",
+  },
+};

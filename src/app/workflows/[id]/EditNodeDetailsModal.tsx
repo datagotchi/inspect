@@ -4,26 +4,32 @@ import React, { useState, useEffect } from "react";
 import {
   getNodeMetadata,
   saveNodeMetadata,
-} from "@/app/components/WorkflowsAPI";
+  updateWorkflowNode,
+} from "@/app/workflows/WorkflowsAPI";
 import { WorkflowNode, WorkflowNodeMetadataItem } from "@/app/types";
 import { MetadataFieldsEditor } from "./MetadataFieldsEditor";
 
-interface EditNodeMetadataModalProps {
+interface EditNodeDetailsModalProps {
   node: WorkflowNode;
   token?: string;
   onClose: () => void;
   onSaved: () => void;
 }
 
-export function EditNodeMetadataModal({
+export function EditNodeDetailsModal({
   node,
   token,
   onClose,
   onSaved,
-}: EditNodeMetadataModalProps) {
+}: EditNodeDetailsModalProps) {
   const [metadata, setMetadata] = useState<WorkflowNodeMetadataItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
+  const [nodeLabel, setNodeLabel] = useState<string>(node.label || "");
+
+  useEffect(() => {
+    setNodeLabel(node.label || "");
+  }, [node]);
 
   useEffect(() => {
     if (!node.id) return;
@@ -39,13 +45,24 @@ export function EditNodeMetadataModal({
     setSaving(true);
     try {
       if (node.id) {
+        // 1. Save label if updated
+        if (nodeLabel.trim() !== node.label) {
+          await updateWorkflowNode(
+            node.workflow_id!,
+            node.id,
+            { label: nodeLabel.trim() },
+            token,
+          );
+        }
+
+        // 2. Save key-value metadata
         await saveNodeMetadata(node.workflow_id!, node.id, metadata, token);
       }
       onSaved();
       onClose();
     } catch (err) {
-      console.error("Failed to save node metadata:", err);
-      alert("Failed to save metadata.");
+      console.error("Failed to save node details:", err);
+      alert("Failed to save node details.");
     } finally {
       setSaving(false);
     }
@@ -56,10 +73,10 @@ export function EditNodeMetadataModal({
       <div style={modalContentStyle}>
         <div style={{ marginBottom: "16px" }}>
           <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#0f172a" }}>
-            Node Metadata: {node.label || `Node #${node.id}`}
+            Edit Node: {node.label || `Node #${node.id}`}
           </h3>
           <p style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
-            Configure key-value pairs stored in workflow_node_metadata
+            Update node title and key-value metadata.
           </p>
         </div>
 
@@ -67,11 +84,29 @@ export function EditNodeMetadataModal({
           <div
             style={{ padding: "20px", textAlign: "center", color: "#64748b" }}
           >
-            Loading metadata...
+            Loading node details...
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <MetadataFieldsEditor items={metadata} onChange={setMetadata} />
+            <div className="flex flex-col gap-1 mb-4">
+              <label className="text-xs font-semibold text-slate-700">
+                Node Title / Label
+              </label>
+              <input
+                type="text"
+                value={nodeLabel}
+                onChange={(e) => setNodeLabel(e.target.value)}
+                placeholder="Enter node title"
+                className="px-3 py-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="text-xs font-semibold text-slate-700 block mb-2">
+                Custom Metadata Fields
+              </label>
+              <MetadataFieldsEditor items={metadata} onChange={setMetadata} />
+            </div>
 
             <div style={modalActionsRightStyle}>
               <button type="button" onClick={onClose} style={cancelButtonStyle}>
@@ -82,7 +117,7 @@ export function EditNodeMetadataModal({
                 disabled={saving}
                 style={submitButtonStyle(saving)}
               >
-                {saving ? "Saving..." : "Save Metadata"}
+                {saving ? "Saving..." : "Save Details"}
               </button>
             </div>
           </form>

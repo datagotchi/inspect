@@ -59,7 +59,6 @@ const InsightPage = async ({
   const insight = await getInsightFromServer({ uid });
   if (insight) {
     const authUser = await getAuthUser(headers);
-    // TODO: include a .user in the insight via ojs join?
     const currentUser = authUser ? await getUserFromServer(authUser.id!) : null;
 
     return (

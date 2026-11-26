@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { FieldValueModel } from "../models/field_values";
+
+import { FieldValueModel } from "@/app/api/models/fieldnotes";
 
 export async function POST(req: NextRequest) {
   try {

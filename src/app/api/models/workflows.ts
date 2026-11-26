@@ -21,6 +21,7 @@ export class WorkflowOJSModel extends PostgresBaseModel implements Workflow {
   name!: string;
   created_at?: string;
   updated_at?: string;
+  category?: string;
 
   // Hydrated Relations
   user!: User;
@@ -163,6 +164,7 @@ export class WorkflowNodeTypeOJSModel
   bg_color!: string;
   border_color!: string;
   text_color!: string;
+  category!: string;
 
   static jsonSchema = {
     type: "object",
