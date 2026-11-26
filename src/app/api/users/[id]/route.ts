@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
-import "../../postgres";
+import "@/app/api/postgres";
 import { User } from "../../../types";
 import { getAuthUser } from "../../../functions";
 import { UserLibSqlModel, UserPostgresModel } from "../../models/users";

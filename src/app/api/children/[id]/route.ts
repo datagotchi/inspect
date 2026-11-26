@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
-import "../../postgres";
+import "@/app/api/postgres";
 import { InsightLinkModel } from "../../models/insights";
 import { getAuthUser } from "../../../functions";
 

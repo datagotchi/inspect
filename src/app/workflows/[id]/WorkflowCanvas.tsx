@@ -274,6 +274,7 @@ export function WorkflowCanvas({
     handleBatchNodeDragEnd,
     isHydrated,
     setViewport,
+    viewport,
   ]);
 
   return (

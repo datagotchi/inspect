@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { raw } from "objection";
 
-import "../postgres";
+import "@/app/api/postgres";
 import { SummaryModel } from "../models/summaries";
 
 export interface GetLinksSearchParams {

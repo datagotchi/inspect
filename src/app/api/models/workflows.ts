@@ -1,5 +1,5 @@
 import { Model, QueryBuilder } from "objection";
-import "../postgres";
+import "@/app/api/postgres";
 import { PostgresBaseModel } from "./postgres_models";
 import {
   User,

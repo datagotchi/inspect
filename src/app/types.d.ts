@@ -276,3 +276,18 @@ export type JsonLdWorkflowDocument = {
   modified?: string;
   graph: (JsonLdWorkflowNode | JsonLdCausalLink)[];
 };
+
+export type ConceptNode = {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  note?: string;
+};
+
+export type ConceptEdge = {
+  id: string;
+  from: string;
+  to: string;
+  relation?: string;
+};
