@@ -1,4 +1,4 @@
-import "../api/postgres"; // Ensures DB connection is initialized
+import "@/app/api/postgres"; // Ensures DB connection is initialized
 import { WorkflowOJSModel } from "../api/models/workflows";
 import { Workflow } from "../types";
 

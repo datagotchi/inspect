@@ -71,6 +71,9 @@ const Dashboard = async ({ children }: Props): Promise<React.JSX.Element> => {
                   <Link href="/fieldnotes" className="inspect-nav-link">
                     My Fieldnotes
                   </Link>
+                  <Link href="/brainstorm" className="inspect-nav-link">
+                    My Brainstorming
+                  </Link>
                   <Link href="/workflows" className="inspect-nav-link">
                     My Workflows
                   </Link>

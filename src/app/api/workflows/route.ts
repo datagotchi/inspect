@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
-import "../postgres";
+import "@/app/api/postgres";
 import { Workflow } from "@/app/types";
 import { getAuthUser } from "@/app/functions";
 import { WorkflowOJSModel } from "../models/workflows";

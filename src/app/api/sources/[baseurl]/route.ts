@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
-import "../../postgres";
+import "@/app/api/postgres";
 import { Source } from "../../../types";
 import { SourceModel } from "../../models/sources";
 

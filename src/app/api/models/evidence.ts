@@ -1,6 +1,6 @@
 import { QueryBuilder } from "objection";
 
-import "../postgres";
+import "@/app/api/postgres";
 import { EvidenceRecord } from "../../types";
 import { SummaryModel } from "../models/summaries";
 import { InsightModel } from "./insights";
